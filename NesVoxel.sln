@@ -5,6 +5,8 @@ VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NesVoxelLib", "NesVoxelLib\NesVoxelLib.vcxproj", "{C50BF794-AC22-4556-AFEA-A7ED22A4F835}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NesVoxelD3D11", "NesVoxelD3D11\NesVoxelD3D11.vcxproj", "{FD01B185-4639-4F01-B2F4-F9FF142ABDE0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{C50BF794-AC22-4556-AFEA-A7ED22A4F835}.Release|x64.Build.0 = Release|x64
 		{C50BF794-AC22-4556-AFEA-A7ED22A4F835}.Release|x86.ActiveCfg = Release|Win32
 		{C50BF794-AC22-4556-AFEA-A7ED22A4F835}.Release|x86.Build.0 = Release|Win32
+		{FD01B185-4639-4F01-B2F4-F9FF142ABDE0}.Debug|x64.ActiveCfg = Debug|x64
+		{FD01B185-4639-4F01-B2F4-F9FF142ABDE0}.Debug|x64.Build.0 = Debug|x64
+		{FD01B185-4639-4F01-B2F4-F9FF142ABDE0}.Debug|x86.ActiveCfg = Debug|Win32
+		{FD01B185-4639-4F01-B2F4-F9FF142ABDE0}.Debug|x86.Build.0 = Debug|Win32
+		{FD01B185-4639-4F01-B2F4-F9FF142ABDE0}.Release|x64.ActiveCfg = Release|x64
+		{FD01B185-4639-4F01-B2F4-F9FF142ABDE0}.Release|x64.Build.0 = Release|x64
+		{FD01B185-4639-4F01-B2F4-F9FF142ABDE0}.Release|x86.ActiveCfg = Release|Win32
+		{FD01B185-4639-4F01-B2F4-F9FF142ABDE0}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
