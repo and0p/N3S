@@ -8,7 +8,37 @@
 #include "targetver.h"
 
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
+// Windows Header Files:
+#include <windows.h>
 
+#pragma once
 
+#include <WinSDKVer.h>
+#define _WIN32_WINNT 0x0600
+#include <SDKDDKVer.h>
 
-// TODO: reference additional headers your program requires here
+// Use the C++ standard templated min/max
+#define NOMINMAX
+
+#include <wrl/client.h>
+
+#include <d3d11_1.h>
+#include <DirectXMath.h>
+#include <DirectXColors.h>
+
+#include <algorithm>
+#include <exception>
+#include <memory>
+#include <stdexcept>
+
+namespace DX
+{
+	inline void ThrowIfFailed(HRESULT hr)
+	{
+		if (FAILED(hr))
+		{
+			// Set a breakpoint on this line to catch DirectX API errors
+			throw std::exception();
+		}
+	}
+}
