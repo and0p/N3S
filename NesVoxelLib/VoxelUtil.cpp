@@ -19,6 +19,7 @@ ShaderSet VoxelUtil::shaderSets[2];
 ID3D11InputLayout *VoxelUtil::inputLayouts[2];
 ID3D11Texture2D *VoxelUtil::texture2d;
 ID3D11ShaderResourceView *VoxelUtil::textureView;
+ShaderType VoxelUtil::activeShader;
 
 void VoxelUtil::initPipeline(Microsoft::WRL::ComPtr<ID3D11Device> d3dDevice, Microsoft::WRL::ComPtr<ID3D11DeviceContext> d3dContext,
 						   Microsoft::WRL::ComPtr<ID3D11Device1> d3dDevice1, Microsoft::WRL::ComPtr<ID3D11DeviceContext1> d3dContext1)
@@ -44,8 +45,6 @@ void VoxelUtil::initPipeline(Microsoft::WRL::ComPtr<ID3D11Device> d3dDevice, Mic
 
 	// select which primtive type we are using
 	context->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	context->IASetInputLayout(inputLayouts[0]);
 
 	// Create texture description
 	D3D11_TEXTURE2D_DESC desc;
@@ -128,37 +127,58 @@ void VoxelUtil::setShader(ShaderType type) {
 	switch (type)
 	{
 	case color:
+		context->IASetInputLayout(inputLayouts[0]);
 		context->GSSetShader(NULL, 0, 0);
 		context->VSSetShader(shaderSets[0].vertexShader, 0, 0);
 		context->PSSetShader(shaderSets[0].pixelShader, 0, 0);
+		activeShader = color;
 		break;
 	case texture:
+		context->IASetInputLayout(inputLayouts[1]);
 		context->GSSetShader(NULL, 0, 0);
 		context->VSSetShader(shaderSets[1].vertexShader, 0, 0);
 		context->PSSetShader(shaderSets[1].pixelShader, 0, 0);
+		activeShader = texture;
 		break;
 	}
 }
 
-VoxelMesh* VoxelUtil::CreateRectangle()
+VoxelMesh* VoxelUtil::CreateRectangle(ShaderType type)
 {
 	VoxelMesh *rectangle;
 	rectangle = new VoxelMesh;
 
-	ColorVertex *vertices = new ColorVertex[6]
+	if (type == color)
 	{
-		{ XMFLOAT4(-1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
-		{ XMFLOAT4(-1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
-		{ XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) },
-		{ XMFLOAT4(-1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
-		{ XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) },
-		{ XMFLOAT4(1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) }
-	};
+		ColorVertex *vertices = new ColorVertex[6]
+		{
+			{ XMFLOAT4(-1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
+			{ XMFLOAT4(-1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
+			{ XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) },
+			{ XMFLOAT4(-1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
+			{ XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) },
+			{ XMFLOAT4(1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) }
+		};
+		rectangle->buffer = createBufferFromColorVertices(vertices, 192);
+		rectangle->type = color;
+		
+	}
+	else if (type == texture)
+	{
+		TextureVertex *vertices = new TextureVertex[6]
+		{
+			{ XMFLOAT4(-1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT2(0.0f, 0.0f) },
+			{ XMFLOAT4(-1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT2(0.0f, 1.0f) },
+			{ XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT2(1.0f, 1.0f) },
+			{ XMFLOAT4(-1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT2(0.0f, 0.0f) },
+			{ XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT2(1.0f, 1.0f) },
+			{ XMFLOAT4(1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT2(1.0f, 0.0f) }
+		};
+		rectangle->buffer = createBufferFromTextureVertices(vertices, 144);
+		rectangle->type = texture;
+	}
 
-	rectangle->buffer = createBufferFromColorVertices(vertices, 192);
 	rectangle->size = 6;
-	rectangle->type = color;
-
 	return rectangle;
 }
 
@@ -177,6 +197,28 @@ ID3D11Buffer* VoxelUtil::createBufferFromColorVertices(ColorVertex vertices[], i
 	device1->CreateBuffer(&bd, NULL, &pVBuffer);		// create the buffer
 
 	// copy the vertices into the buffer
+	D3D11_MAPPED_SUBRESOURCE ms;
+	HRESULT result = context1->Map(pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);    // map the buffer
+	memcpy(ms.pData, vertices, arraySize);							// copy the data
+	context1->Unmap(pVBuffer, NULL);                                         // unmap the buffer
+	return pVBuffer;
+}
+
+ID3D11Buffer* VoxelUtil::createBufferFromTextureVertices(TextureVertex vertices[], int arraySize)
+{
+	// create the vertex buffer
+	D3D11_BUFFER_DESC bd;
+	ZeroMemory(&bd, sizeof(bd));
+
+	bd.Usage = D3D11_USAGE_DYNAMIC;                // write access access by CPU and GPU
+	bd.ByteWidth = sizeof(TextureVertex) * arraySize;             // size is the VERTEX struct * 3in
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;       // use as a vertex buffer
+	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;    // allow CPU to write in buffer
+
+	ID3D11Buffer *pVBuffer;								// the vertex buffer
+	device1->CreateBuffer(&bd, NULL, &pVBuffer);		// create the buffer
+
+														// copy the vertices into the buffer
 	D3D11_MAPPED_SUBRESOURCE ms;
 	HRESULT result = context1->Map(pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);    // map the buffer
 	memcpy(ms.pData, vertices, arraySize);							// copy the data
@@ -244,9 +286,21 @@ XMMATRIX VoxelUtil::getProjectionMatrix(const float near_plane, const float far_
 }
 
 void VoxelUtil::renderMesh(VoxelMesh *voxelMesh) {
+	ShaderType type = voxelMesh->type;
+	// Switch shader if needed
+	if (activeShader != type) setShader(type);
 	// Switch based on type
-	if (voxelMesh->type == color) {
+	if (type == color)
+	{
 		UINT stride = sizeof(ColorVertex);
+		UINT offset = 0;
+		context->IASetVertexBuffers(0, 1, &voxelMesh->buffer, &stride, &offset);
+		// draw the vertex buffer to the back buffer
+		context->Draw(voxelMesh->size, 0);
+	}
+	else if (type == texture)
+	{
+		UINT stride = sizeof(TextureVertex);
 		UINT offset = 0;
 		context->IASetVertexBuffers(0, 1, &voxelMesh->buffer, &stride, &offset);
 		// draw the vertex buffer to the back buffer

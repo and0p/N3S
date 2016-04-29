@@ -44,8 +44,9 @@ public:
 		Microsoft::WRL::ComPtr<ID3D11Device1> d3dDevice1, Microsoft::WRL::ComPtr<ID3D11DeviceContext1> d3dContext1);
 
 	static ID3D11Buffer* createBufferFromColorVertices(ColorVertex vertices[], int arraySize);
+	static ID3D11Buffer* createBufferFromTextureVertices(TextureVertex vertices[], int arraySize);
 
-	static VoxelMesh* CreateRectangle();
+	static VoxelMesh* CreateRectangle(ShaderType type);
 
 	static void updateMatricesWithCamera(VoxelCamera * camera);
 
@@ -68,4 +69,5 @@ private:
 	static ID3D11SamplerState* sampleState;
 	static ID3D11Texture2D* texture2d;
 	static ID3D11ShaderResourceView* textureView;
+	static ShaderType activeShader;
 };

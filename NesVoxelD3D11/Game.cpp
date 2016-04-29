@@ -28,7 +28,7 @@ void Game::Initialize(HWND window, int width, int height)
 
 	VoxelUtil::initPipeline(m_deviceResources->GetD3DDevice(), m_deviceResources->GetD3DDeviceContext(), m_deviceResources->GetD3DDevice1(), m_deviceResources->GetD3DDeviceContext1());
 	camera = new VoxelCamera();
-	testMesh = VoxelUtil::CreateRectangle();
+	testMesh = VoxelUtil::CreateRectangle(texture);
 
     // TODO: Change the timer settings if you want something other than the default variable timestep mode.
     // e.g. for 60 FPS fixed timestep update logic, call:
