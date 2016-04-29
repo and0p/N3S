@@ -30,6 +30,8 @@ void Game::Initialize(HWND window, int width, int height)
 	camera = new VoxelCamera();
 	testMesh = VoxelUtil::CreateRectangle(texture);
 
+	NesEmulator::Initialize();
+
     // TODO: Change the timer settings if you want something other than the default variable timestep mode.
     // e.g. for 60 FPS fixed timestep update logic, call:
     /*

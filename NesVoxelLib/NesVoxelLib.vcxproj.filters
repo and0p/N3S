@@ -34,6 +34,12 @@
     <ClInclude Include="VoxelUtil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="libretro.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NesEmulator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -43,6 +49,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="VoxelUtil.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NesEmulator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

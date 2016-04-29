@@ -8,6 +8,7 @@
 #include "StepTimer.h"
 #include "VoxelUtil.h"
 #include "VoxelCamera.h"
+#include "NesEmulator.h"
 
 // A basic game implementation that creates a D3D11 device and
 // provides a game loop.
