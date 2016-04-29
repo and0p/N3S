@@ -26,6 +26,10 @@ void Game::Initialize(HWND window, int width, int height)
     m_deviceResources->CreateWindowSizeDependentResources();
     CreateWindowSizeDependentResources();
 
+	VoxelUtil::initPipeline(m_deviceResources->GetD3DDevice(), m_deviceResources->GetD3DDeviceContext(), m_deviceResources->GetD3DDevice1(), m_deviceResources->GetD3DDeviceContext1());
+	camera = new VoxelCamera();
+	testMesh = VoxelUtil::CreateRectangle();
+
     // TODO: Change the timer settings if you want something other than the default variable timestep mode.
     // e.g. for 60 FPS fixed timestep update logic, call:
     /*
@@ -74,6 +78,10 @@ void Game::Render()
     auto context = m_deviceResources->GetD3DDeviceContext();
 
     // TODO: Add your rendering code here.
+	camera->SetPosition(0, 0, -5);
+	camera->Render();
+	VoxelUtil::updateMatricesWithCamera(camera);
+	VoxelUtil::renderMesh(testMesh);
     context;
 
     m_deviceResources->PIXEndEvent();
