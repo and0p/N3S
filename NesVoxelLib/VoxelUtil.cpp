@@ -12,13 +12,13 @@ Microsoft::WRL::ComPtr<ID3D11Device>            VoxelUtil::device;
 Microsoft::WRL::ComPtr<ID3D11Device1>           VoxelUtil::device1;
 Microsoft::WRL::ComPtr<ID3D11DeviceContext>     VoxelUtil::context;
 Microsoft::WRL::ComPtr<ID3D11DeviceContext1>    VoxelUtil::context1;
-//ID3D11SamplerState *VoxelUtil::sampleState;
+ID3D11SamplerState *VoxelUtil::sampleState;
 ID3D11Buffer *VoxelUtil::m_matrixBuffer;
 MatrixBufferType *VoxelUtil::dataPtr;
 ShaderSet VoxelUtil::shaderSets[2];
 ID3D11InputLayout *VoxelUtil::inputLayouts[2];
-//ID3D11Texture2D *VoxelUtil::texture2d;
-//ID3D11ShaderResourceView *VoxelUtil::textureView;
+ID3D11Texture2D *VoxelUtil::texture2d;
+ID3D11ShaderResourceView *VoxelUtil::textureView;
 
 void VoxelUtil::initPipeline(Microsoft::WRL::ComPtr<ID3D11Device> d3dDevice, Microsoft::WRL::ComPtr<ID3D11DeviceContext> d3dContext,
 						   Microsoft::WRL::ComPtr<ID3D11Device1> d3dDevice1, Microsoft::WRL::ComPtr<ID3D11DeviceContext1> d3dContext1)
@@ -40,7 +40,7 @@ void VoxelUtil::initPipeline(Microsoft::WRL::ComPtr<ID3D11Device> d3dDevice, Mic
 
 	initShaders();
 	setShader(color);
-	//initSampleState();
+	initSampleState();
 
 	// select which primtive type we are using
 	context->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -48,18 +48,19 @@ void VoxelUtil::initPipeline(Microsoft::WRL::ComPtr<ID3D11Device> d3dDevice, Mic
 	context->IASetInputLayout(inputLayouts[0]);
 
 	// Create texture description
-	//D3D11_TEXTURE2D_DESC desc;
-	//desc.Width = 256;
-	//desc.Height = 256;
-	//desc.MipLevels = desc.ArraySize = 1;
-	//desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	//desc.SampleDesc.Count = 1;
-	//desc.Usage = D3D11_USAGE_DYNAMIC;
-	//desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	//desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	//desc.MiscFlags = 0;
+	D3D11_TEXTURE2D_DESC desc;
+	desc.Width = 256;
+	desc.Height = 256;
+	desc.MipLevels = desc.ArraySize = 1;
+	desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	desc.SampleDesc.Count = 1;
+	desc.Usage = D3D11_USAGE_DYNAMIC;
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	desc.MiscFlags = 0;
+	desc.SampleDesc.Quality = 0;
 
-	//device->CreateTexture2D(&desc, NULL, &texture2d);
+	device->CreateTexture2D(&desc, NULL, &texture2d);
 }
 
 void VoxelUtil::initShaders() {
@@ -94,33 +95,33 @@ void VoxelUtil::initShaders() {
 
 	device1->CreatePixelShader(s_data, s_size, 0, &shaderSets[0].pixelShader);
 
-	//s_stream.open("C:\\Users\\and0\\Source\\Repos\\NesVoxel\\Debug\\texture_vertex.cso", ifstream::in | ifstream::binary);
-	//s_stream.seekg(0, ios::end);
-	//s_size = size_t(s_stream.tellg());
-	//s_data = new char[s_size];
-	//s_stream.seekg(0, ios::beg);
-	//s_stream.read(&s_data[0], s_size);
-	//s_stream.close();
+	s_stream.open("C:\\Users\\and0\\Source\\Repos\\NesVoxel\\Debug\\texture_vertex.cso", ifstream::in | ifstream::binary);
+	s_stream.seekg(0, ios::end);
+	s_size = size_t(s_stream.tellg());
+	s_data = new char[s_size];
+	s_stream.seekg(0, ios::beg);
+	s_stream.read(&s_data[0], s_size);
+	s_stream.close();
 
-	//device1->CreateVertexShader(s_data, s_size, 0, &shaderSets[1].vertexShader);
+	device1->CreateVertexShader(s_data, s_size, 0, &shaderSets[1].vertexShader);
 
-	//D3D11_INPUT_ELEMENT_DESC textureLayout[] =
-	//{
-	//	{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	//	{ "TEXTURE",    0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-	//};
+	D3D11_INPUT_ELEMENT_DESC textureLayout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXTURE",    0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
 
-	//device1->CreateInputLayout(textureLayout, 2, &s_data[0], s_size, &inputLayouts[1]);
+	device1->CreateInputLayout(textureLayout, 2, &s_data[0], s_size, &inputLayouts[1]);
 
-	//s_stream.open("C:\\Users\\and0\\Source\\Repos\\NesVoxel\\Debug\\texture_pixel.cso", ifstream::in | ifstream::binary);
-	//s_stream.seekg(0, ios::end);
-	//s_size = size_t(s_stream.tellg());
-	//s_data = new char[s_size];
-	//s_stream.seekg(0, ios::beg);
-	//s_stream.read(&s_data[0], s_size);
-	//s_stream.close();
+	s_stream.open("C:\\Users\\and0\\Source\\Repos\\NesVoxel\\Debug\\texture_pixel.cso", ifstream::in | ifstream::binary);
+	s_stream.seekg(0, ios::end);
+	s_size = size_t(s_stream.tellg());
+	s_data = new char[s_size];
+	s_stream.seekg(0, ios::beg);
+	s_stream.read(&s_data[0], s_size);
+	s_stream.close();
 
-	//device1->CreatePixelShader(s_data, s_size, 0, &shaderSets[1].pixelShader);
+	device1->CreatePixelShader(s_data, s_size, 0, &shaderSets[1].pixelShader);
 }
 
 void VoxelUtil::setShader(ShaderType type) {
@@ -131,11 +132,11 @@ void VoxelUtil::setShader(ShaderType type) {
 		context->VSSetShader(shaderSets[0].vertexShader, 0, 0);
 		context->PSSetShader(shaderSets[0].pixelShader, 0, 0);
 		break;
-	//case texture:
-	//	context->GSSetShader(NULL, 0, 0);
-	//	context->VSSetShader(shaderSets[1].vertexShader, 0, 0);
-	//	context->PSSetShader(shaderSets[1].pixelShader, 0, 0);
-	//	break;
+	case texture:
+		context->GSSetShader(NULL, 0, 0);
+		context->VSSetShader(shaderSets[1].vertexShader, 0, 0);
+		context->PSSetShader(shaderSets[1].pixelShader, 0, 0);
+		break;
 	}
 }
 
@@ -268,5 +269,5 @@ void VoxelUtil::initSampleState() {
 	samplerDesc.BorderColor[3] = 0;
 	samplerDesc.MinLOD = 0;
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	//device->CreateSamplerState(&samplerDesc, &sampleState);
+	device->CreateSamplerState(&samplerDesc, &sampleState);
 }

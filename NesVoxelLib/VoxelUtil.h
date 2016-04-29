@@ -65,7 +65,7 @@ private:
 	static ID3D11InputLayout *inputLayouts[2];
 	static ID3D11Buffer *m_matrixBuffer;
 	static MatrixBufferType *dataPtr;
-	//static ID3D11SamplerState* sampleState;
-	//static ID3D11Texture2D* texture2d;
-	//static ID3D11ShaderResourceView* textureView;
+	static ID3D11SamplerState* sampleState;
+	static ID3D11Texture2D* texture2d;
+	static ID3D11ShaderResourceView* textureView;
 };
