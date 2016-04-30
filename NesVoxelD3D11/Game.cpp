@@ -51,6 +51,8 @@ void Game::Tick()
         Update(m_timer);
     });
 
+	NesEmulator::ExecuteFrame();
+	VoxelUtil::updateGameTexture(NesEmulator::getPixelData());
     Render();
 }
 
@@ -80,7 +82,8 @@ void Game::Render()
     auto context = m_deviceResources->GetD3DDeviceContext();
 
     // TODO: Add your rendering code here.
-	camera->SetPosition(0, 0, -5);
+	camera->SetPosition(2, 0, -2);
+	camera->SetRotation(-45, 0, 0);
 	camera->Render();
 	VoxelUtil::updateMatricesWithCamera(camera);
 	VoxelUtil::renderMesh(testMesh);

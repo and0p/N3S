@@ -12,6 +12,8 @@
 
 #include "NesEmulator.h"
 
+static const void *pixelData;
+
 static struct {
 	HMODULE handle;
 	bool initialized;
@@ -123,8 +125,8 @@ static void video_configure(const struct retro_game_geometry *geom) {
 }
 
 static void core_video_refresh(const void *data, unsigned width, unsigned height, size_t pitch) {
-	//if (data)
-		//video_refresh(data, width, height, pitch);
+	if (data)
+		pixelData = data;
 }
 
 struct keymap {
@@ -279,6 +281,10 @@ void NesEmulator::Initialize(void) {
 
 void NesEmulator::ExecuteFrame() {
 	g_retro.retro_run();
+}
+
+const void* NesEmulator::getPixelData() {
+	return pixelData;
 }
 
 //int main()

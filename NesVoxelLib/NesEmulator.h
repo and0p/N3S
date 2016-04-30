@@ -4,4 +4,5 @@ class NesEmulator {
 public:
 	static void Initialize(void);
 	static void ExecuteFrame();
+	static const void* getPixelData();
 };

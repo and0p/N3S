@@ -42,19 +42,14 @@ public:
 	static void initPipeline(
 		Microsoft::WRL::ComPtr<ID3D11Device> d3dDevice, Microsoft::WRL::ComPtr<ID3D11DeviceContext> d3dContext,
 		Microsoft::WRL::ComPtr<ID3D11Device1> d3dDevice1, Microsoft::WRL::ComPtr<ID3D11DeviceContext1> d3dContext1);
-
 	static ID3D11Buffer* createBufferFromColorVertices(ColorVertex vertices[], int arraySize);
 	static ID3D11Buffer* createBufferFromTextureVertices(TextureVertex vertices[], int arraySize);
-
 	static VoxelMesh* CreateRectangle(ShaderType type);
-
 	static void updateMatricesWithCamera(VoxelCamera * camera);
-
 	static XMMATRIX getProjectionMatrix(const float near_plane, const float far_plane, const float fov_horiz, const float fov_vert);
-
 	static void setShader(ShaderType type);
-
 	static void renderMesh(VoxelMesh *voxelMesh);
+	static void updateGameTexture(const void *data);
 private:
 	static Microsoft::WRL::ComPtr<ID3D11Device>            device;
 	static Microsoft::WRL::ComPtr<ID3D11Device1>           device1;
@@ -70,4 +65,5 @@ private:
 	static ID3D11Texture2D* texture2d;
 	static ID3D11ShaderResourceView* textureView;
 	static ShaderType activeShader;
+	static D3D11_SUBRESOURCE_DATA subData;
 };

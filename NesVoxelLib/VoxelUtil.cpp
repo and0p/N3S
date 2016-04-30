@@ -20,6 +20,7 @@ ID3D11InputLayout *VoxelUtil::inputLayouts[2];
 ID3D11Texture2D *VoxelUtil::texture2d;
 ID3D11ShaderResourceView *VoxelUtil::textureView;
 ShaderType VoxelUtil::activeShader;
+D3D11_SUBRESOURCE_DATA VoxelUtil::subData;
 
 void VoxelUtil::initPipeline(Microsoft::WRL::ComPtr<ID3D11Device> d3dDevice, Microsoft::WRL::ComPtr<ID3D11DeviceContext> d3dContext,
 						   Microsoft::WRL::ComPtr<ID3D11Device1> d3dDevice1, Microsoft::WRL::ComPtr<ID3D11DeviceContext1> d3dContext1)
@@ -49,7 +50,7 @@ void VoxelUtil::initPipeline(Microsoft::WRL::ComPtr<ID3D11Device> d3dDevice, Mic
 	// Create texture description
 	D3D11_TEXTURE2D_DESC desc;
 	desc.Width = 256;
-	desc.Height = 256;
+	desc.Height = 240;
 	desc.MipLevels = desc.ArraySize = 1;
 	desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	desc.SampleDesc.Count = 1;
@@ -59,7 +60,10 @@ void VoxelUtil::initPipeline(Microsoft::WRL::ComPtr<ID3D11Device> d3dDevice, Mic
 	desc.MiscFlags = 0;
 	desc.SampleDesc.Quality = 0;
 
+	subData.SysMemPitch = (UINT)(1024);
+
 	device->CreateTexture2D(&desc, NULL, &texture2d);
+	device->CreateShaderResourceView(texture2d, NULL, &textureView);
 }
 
 void VoxelUtil::initShaders() {
@@ -167,12 +171,12 @@ VoxelMesh* VoxelUtil::CreateRectangle(ShaderType type)
 	{
 		TextureVertex *vertices = new TextureVertex[6]
 		{
-			{ XMFLOAT4(-1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT2(0.0f, 0.0f) },
-			{ XMFLOAT4(-1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT2(0.0f, 1.0f) },
-			{ XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT2(1.0f, 1.0f) },
-			{ XMFLOAT4(-1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT2(0.0f, 0.0f) },
-			{ XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT2(1.0f, 1.0f) },
-			{ XMFLOAT4(1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT2(1.0f, 0.0f) }
+			{ XMFLOAT4(-1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT2(0.0f, 1.0f) },
+			{ XMFLOAT4(-1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT2(0.0f, 0.0f) },
+			{ XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT2(1.0f, 0.0f) },
+			{ XMFLOAT4(-1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT2(0.0f, 1.0f) },
+			{ XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT2(1.0f, 0.0f) },
+			{ XMFLOAT4(1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT2(1.0f, 1.0f) }
 		};
 		rectangle->buffer = createBufferFromTextureVertices(vertices, 144);
 		rectangle->type = texture;
@@ -218,11 +222,11 @@ ID3D11Buffer* VoxelUtil::createBufferFromTextureVertices(TextureVertex vertices[
 	ID3D11Buffer *pVBuffer;								// the vertex buffer
 	device1->CreateBuffer(&bd, NULL, &pVBuffer);		// create the buffer
 
-														// copy the vertices into the buffer
+	// copy the vertices into the buffer
 	D3D11_MAPPED_SUBRESOURCE ms;
-	HRESULT result = context1->Map(pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);    // map the buffer
-	memcpy(ms.pData, vertices, arraySize);							// copy the data
-	context1->Unmap(pVBuffer, NULL);                                         // unmap the buffer
+	HRESULT result = context1->Map(pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);		// map the buffer
+	memcpy(ms.pData, vertices, arraySize);													// copy the data
+	context1->Unmap(pVBuffer, NULL);														// unmap the buffer
 	return pVBuffer;
 }
 
@@ -324,4 +328,17 @@ void VoxelUtil::initSampleState() {
 	samplerDesc.MinLOD = 0;
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	device->CreateSamplerState(&samplerDesc, &sampleState);
+}
+
+void VoxelUtil::updateGameTexture(const void *data) {
+	
+	//data = ((char*)data) + 2;
+	setShader(texture);
+	D3D11_MAPPED_SUBRESOURCE ms;
+	HRESULT result = context1->Map(texture2d, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);
+	//memcpy(ms.pData, data, 144480);
+	memcpy(ms.pData, data, 245760);
+	context1->Unmap(texture2d, NULL);
+	context->PSSetSamplers(0, 1, &sampleState);
+	context->PSSetShaderResources(0, 1, &textureView);
 }
