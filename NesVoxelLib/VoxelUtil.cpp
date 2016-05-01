@@ -186,6 +186,21 @@ VoxelMesh* VoxelUtil::CreateRectangle(ShaderType type)
 	return rectangle;
 }
 
+VoxelMesh *VoxelUtil::CreateSpriteMarker() {
+	VoxelMesh *marker;
+	marker = new VoxelMesh;
+	marker->size = 3;
+	marker->type = color;
+	ColorVertex *vertices = new ColorVertex[3]
+	{
+		{ XMFLOAT4(0.0f, -pixelSizeH, 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
+		{ XMFLOAT4((pixelSizeW / 2), 0.0f, 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
+		{ XMFLOAT4(pixelSizeW, -pixelSizeH, 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) }
+	};
+	marker->buffer = createBufferFromColorVertices(vertices, 96);
+	return marker;
+}
+
 ID3D11Buffer* VoxelUtil::createBufferFromColorVertices(ColorVertex vertices[], int arraySize)
 {
 	// create the vertex buffer
@@ -228,6 +243,22 @@ ID3D11Buffer* VoxelUtil::createBufferFromTextureVertices(TextureVertex vertices[
 	memcpy(ms.pData, vertices, arraySize);													// copy the data
 	context1->Unmap(pVBuffer, NULL);														// unmap the buffer
 	return pVBuffer;
+}
+
+void VoxelUtil::updateWorldMatrix(float x, float y, float z) {
+	XMMATRIX worldMatrix = XMMatrixIdentity();
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	MatrixBufferType* dataPtr;
+	unsigned int bufferNumber;
+	XMVECTOR translation = { x, y, z, 0.0f };
+	worldMatrix = XMMatrixTranslationFromVector(translation);
+	worldMatrix = XMMatrixTranspose(worldMatrix);
+	context1->Map(m_matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	dataPtr = (MatrixBufferType*)mappedResource.pData;
+	dataPtr->world = worldMatrix;
+	context1->Unmap(m_matrixBuffer, 0);
+	bufferNumber = 0;
+	context1->VSSetConstantBuffers(bufferNumber, 1, &m_matrixBuffer);
 }
 
 void VoxelUtil::updateMatricesWithCamera(VoxelCamera * camera) {

@@ -29,6 +29,7 @@ void Game::Initialize(HWND window, int width, int height)
 	VoxelUtil::initPipeline(m_deviceResources->GetD3DDevice(), m_deviceResources->GetD3DDeviceContext(), m_deviceResources->GetD3DDevice1(), m_deviceResources->GetD3DDeviceContext1());
 	camera = new VoxelCamera();
 	testMesh = VoxelUtil::CreateRectangle(texture);
+	marker = VoxelUtil::CreateSpriteMarker();
 
 	NesEmulator::Initialize();
 
@@ -51,8 +52,8 @@ void Game::Tick()
         Update(m_timer);
     });
 
-	NesEmulator::ExecuteFrame();
-	VoxelUtil::updateGameTexture(NesEmulator::getPixelData());
+	
+
     Render();
 }
 
@@ -60,8 +61,11 @@ void Game::Tick()
 void Game::Update(DX::StepTimer const& timer)
 {
     float elapsedTime = float(timer.GetElapsedSeconds());
-
-    // TODO: Add your game logic here.
+	NesEmulator::ExecuteFrame();
+	VoxelUtil::updateGameTexture(NesEmulator::getPixelData());
+	const void* stuff = NesEmulator::getVRam();
+	//VoxelPPUSnapshot *snapshot = new VoxelPPUSnapshot(stuff);
+	//delete snapshot;
     elapsedTime;
 }
 #pragma endregion
@@ -82,10 +86,17 @@ void Game::Render()
     auto context = m_deviceResources->GetD3DDeviceContext();
 
     // TODO: Add your rendering code here.
-	camera->SetPosition(2, 0, -2);
+	camera->SetPosition(3, 0, -3);
 	camera->SetRotation(-45, 0, 0);
 	camera->Render();
 	VoxelUtil::updateMatricesWithCamera(camera);
+	float movement = (m_timer.GetFrameCount() % 60);
+	movement /= 100;
+	VoxelUtil::updateWorldMatrix(movement, 0.0f, -0.03f);
+	VoxelUtil::renderMesh(testMesh);
+	VoxelUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
+	VoxelUtil::renderMesh(marker);
+	VoxelUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
 	VoxelUtil::renderMesh(testMesh);
     context;
 

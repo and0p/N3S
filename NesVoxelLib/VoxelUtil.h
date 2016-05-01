@@ -4,6 +4,9 @@
 #pragma once
 #include "VoxelCamera.h"
 
+static float pixelSizeW = (2 / 256);
+static float pixelSizeH = (2 / 256);
+
 using namespace DirectX;
 
 enum ShaderType { color, texture };
@@ -45,7 +48,9 @@ public:
 	static ID3D11Buffer* createBufferFromColorVertices(ColorVertex vertices[], int arraySize);
 	static ID3D11Buffer* createBufferFromTextureVertices(TextureVertex vertices[], int arraySize);
 	static VoxelMesh* CreateRectangle(ShaderType type);
+	static VoxelMesh* CreateSpriteMarker();
 	static void updateMatricesWithCamera(VoxelCamera * camera);
+	static void updateWorldMatrix(float, float, float);
 	static XMMATRIX getProjectionMatrix(const float near_plane, const float far_plane, const float fov_horiz, const float fov_vert);
 	static void setShader(ShaderType type);
 	static void renderMesh(VoxelMesh *voxelMesh);

@@ -287,6 +287,10 @@ const void* NesEmulator::getPixelData() {
 	return pixelData;
 }
 
+const void* NesEmulator::getVRam() {
+	return g_retro.retro_get_memory_data(RETRO_MEMORY_VIDEO_RAM);
+}
+
 //int main()
 //{
 //	core_load();
