@@ -13,8 +13,9 @@ Microsoft::WRL::ComPtr<ID3D11Device1>           VoxelUtil::device1;
 Microsoft::WRL::ComPtr<ID3D11DeviceContext>     VoxelUtil::context;
 Microsoft::WRL::ComPtr<ID3D11DeviceContext1>    VoxelUtil::context1;
 ID3D11SamplerState *VoxelUtil::sampleState;
-ID3D11Buffer *VoxelUtil::m_matrixBuffer;
-MatrixBufferType *VoxelUtil::dataPtr;
+ID3D11Buffer *VoxelUtil::worldMatrixBuffer;
+ID3D11Buffer *VoxelUtil::viewMatrixBuffer;
+ID3D11Buffer *VoxelUtil::projectionMatrixBuffer;
 ShaderSet VoxelUtil::shaderSets[2];
 ID3D11InputLayout *VoxelUtil::inputLayouts[2];
 ID3D11Texture2D *VoxelUtil::texture2d;
@@ -32,13 +33,15 @@ void VoxelUtil::initPipeline(Microsoft::WRL::ComPtr<ID3D11Device> d3dDevice, Mic
 	// Create view cbuffer desc
 	D3D11_BUFFER_DESC matrixBufferDesc;
 	matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	matrixBufferDesc.ByteWidth = sizeof(MatrixBufferType);
+	matrixBufferDesc.ByteWidth = sizeof(XMMATRIX);
 	matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	matrixBufferDesc.MiscFlags = 0;
 	matrixBufferDesc.StructureByteStride = 0;
 
-	device1->CreateBuffer(&matrixBufferDesc, NULL, &m_matrixBuffer);
+	device1->CreateBuffer(&matrixBufferDesc, NULL, &worldMatrixBuffer);
+	device1->CreateBuffer(&matrixBufferDesc, NULL, &viewMatrixBuffer);
+	device1->CreateBuffer(&matrixBufferDesc, NULL, &projectionMatrixBuffer);
 
 	initShaders();
 	setShader(color);
@@ -193,9 +196,9 @@ VoxelMesh *VoxelUtil::CreateSpriteMarker() {
 	marker->type = color;
 	ColorVertex *vertices = new ColorVertex[3]
 	{
-		{ XMFLOAT4(0.0f, -pixelSizeH, 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
-		{ XMFLOAT4((pixelSizeW / 2), 0.0f, 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
-		{ XMFLOAT4(pixelSizeW, -pixelSizeH, 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) }
+		{ XMFLOAT4(0.0f, (pixelSizeH * -8), 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
+		{ XMFLOAT4((pixelSizeW * 4), 0.0f, 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
+		{ XMFLOAT4((pixelSizeW * 8), (pixelSizeH * -8), 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) }
 	};
 	marker->buffer = createBufferFromColorVertices(vertices, 96);
 	return marker;
@@ -248,25 +251,27 @@ ID3D11Buffer* VoxelUtil::createBufferFromTextureVertices(TextureVertex vertices[
 void VoxelUtil::updateWorldMatrix(float x, float y, float z) {
 	XMMATRIX worldMatrix = XMMatrixIdentity();
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	MatrixBufferType* dataPtr;
-	unsigned int bufferNumber;
+	MatrixBuffer* dataPtr;
 	XMVECTOR translation = { x, y, z, 0.0f };
 	worldMatrix = XMMatrixTranslationFromVector(translation);
 	worldMatrix = XMMatrixTranspose(worldMatrix);
-	context1->Map(m_matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	dataPtr = (MatrixBufferType*)mappedResource.pData;
-	dataPtr->world = worldMatrix;
-	context1->Unmap(m_matrixBuffer, 0);
-	bufferNumber = 0;
-	context1->VSSetConstantBuffers(bufferNumber, 1, &m_matrixBuffer);
+	// Lock the constant buffer so it can be written to.
+	context1->Map(worldMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	// Get a pointer to the data in the constant buffer.
+	dataPtr = (MatrixBuffer*)mappedResource.pData;
+	// Copy the matrices into the constant buffer.
+	dataPtr->matrix = worldMatrix;
+	// Unlock the constant buffer.
+	context1->Unmap(worldMatrixBuffer, 0);
+	// Finally set the constant buffer in the vertex shader with the updated values.
+	context1->VSSetConstantBuffers(0, 1, &worldMatrixBuffer);
 }
 
 void VoxelUtil::updateMatricesWithCamera(VoxelCamera * camera) {
 
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	MatrixBufferType* dataPtr;
-	unsigned int bufferNumber;
+	MatrixBuffer* dataPtr;
 
 	worldMatrix = XMMatrixIdentity();
 	projectionMatrix = getProjectionMatrix(0.1f, 1000.0f, 1, 1);
@@ -278,24 +283,37 @@ void VoxelUtil::updateMatricesWithCamera(VoxelCamera * camera) {
 	projectionMatrix = XMMatrixTranspose(projectionMatrix);
 
 	// Lock the constant buffer so it can be written to.
-	context1->Map(m_matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-
+	context1->Map(worldMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	// Get a pointer to the data in the constant buffer.
-	dataPtr = (MatrixBufferType*)mappedResource.pData;
-
+	dataPtr = (MatrixBuffer*)mappedResource.pData;
 	// Copy the matrices into the constant buffer.
-	dataPtr->world = worldMatrix;
-	dataPtr->view = viewMatrix;
-	dataPtr->projection = projectionMatrix;
-
+	dataPtr->matrix = worldMatrix;
 	// Unlock the constant buffer.
-	context1->Unmap(m_matrixBuffer, 0);
-
-	// Set the position of the constant buffer in the vertex shader.
-	bufferNumber = 0;
-
+	context1->Unmap(worldMatrixBuffer, 0);
 	// Finally set the constant buffer in the vertex shader with the updated values.
-	context1->VSSetConstantBuffers(bufferNumber, 1, &m_matrixBuffer);
+	context1->VSSetConstantBuffers(0, 1, &worldMatrixBuffer);
+
+	// Lock the constant buffer so it can be written to.
+	context1->Map(viewMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	// Get a pointer to the data in the constant buffer.
+	dataPtr = (MatrixBuffer*)mappedResource.pData;
+	// Copy the matrices into the constant buffer.
+	dataPtr->matrix = viewMatrix;
+	// Unlock the constant buffer.
+	context1->Unmap(viewMatrixBuffer, 0);
+	// Finally set the constant buffer in the vertex shader with the updated values.
+	context1->VSSetConstantBuffers(1, 1, &viewMatrixBuffer);
+
+	// Lock the constant buffer so it can be written to.
+	context1->Map(projectionMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	// Get a pointer to the data in the constant buffer.
+	dataPtr = (MatrixBuffer*)mappedResource.pData;
+	// Copy the matrices into the constant buffer.
+	dataPtr->matrix = projectionMatrix;
+	// Unlock the constant buffer.
+	context1->Unmap(projectionMatrixBuffer, 0);
+	// Finally set the constant buffer in the vertex shader with the updated values.
+	context1->VSSetConstantBuffers(2, 1, &projectionMatrixBuffer);
 }
 
 XMMATRIX VoxelUtil::getProjectionMatrix(const float near_plane, const float far_plane, const float fov_horiz, const float fov_vert)

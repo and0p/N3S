@@ -14,7 +14,7 @@ OamSprite *VoxelPPUSnapshot::buildSprite(unsigned char* ptr)
 {
 	OamSprite *sprite = new OamSprite();
 	sprite->y = *ptr;
-	ptr += 2;
+	ptr += 3;
 	sprite->x = *ptr;
 	return sprite;
 }

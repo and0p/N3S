@@ -62,4 +62,7 @@ private:
 
 	// Sample camera
 	VoxelCamera								*camera;
+
+	// PPU Snapshot
+	VoxelPPUSnapshot						*snapshot;
 };

@@ -55,6 +55,8 @@ void Game::Tick()
 	
 
     Render();
+
+	//delete snapshot;
 }
 
 // Updates the world.
@@ -64,8 +66,7 @@ void Game::Update(DX::StepTimer const& timer)
 	NesEmulator::ExecuteFrame();
 	VoxelUtil::updateGameTexture(NesEmulator::getPixelData());
 	const void* stuff = NesEmulator::getVRam();
-	//VoxelPPUSnapshot *snapshot = new VoxelPPUSnapshot(stuff);
-	//delete snapshot;
+	snapshot = new VoxelPPUSnapshot(stuff);
     elapsedTime;
 }
 #pragma endregion
@@ -86,18 +87,23 @@ void Game::Render()
     auto context = m_deviceResources->GetD3DDeviceContext();
 
     // TODO: Add your rendering code here.
-	camera->SetPosition(3, 0, -3);
-	camera->SetRotation(-45, 0, 0);
+	camera->SetPosition(2, 0, -2);
+	camera->SetRotation(-45.0f, 0, 0);
 	camera->Render();
 	VoxelUtil::updateMatricesWithCamera(camera);
-	float movement = (m_timer.GetFrameCount() % 60);
-	movement /= 100;
-	VoxelUtil::updateWorldMatrix(movement, 0.0f, -0.03f);
-	VoxelUtil::renderMesh(testMesh);
-	VoxelUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
-	VoxelUtil::renderMesh(marker);
 	VoxelUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
 	VoxelUtil::renderMesh(testMesh);
+	for (int i = 0; i < 64; i++) {
+		int x = snapshot->sprites[i]->x;
+		int y = snapshot->sprites[i]->y;
+		float posX, posY;
+		if (y > 0 && y < 240) {
+			posX = -1.0f + (pixelSizeW * x);
+			posY = 1.0f - (pixelSizeH * y);
+			VoxelUtil::updateWorldMatrix(posX, posY, -0.001f);
+			VoxelUtil::renderMesh(marker);
+		}
+	}
     context;
 
     m_deviceResources->PIXEndEvent();

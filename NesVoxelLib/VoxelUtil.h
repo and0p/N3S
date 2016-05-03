@@ -4,8 +4,8 @@
 #pragma once
 #include "VoxelCamera.h"
 
-static float pixelSizeW = (2 / 256);
-static float pixelSizeH = (2 / 256);
+static float pixelSizeW = (2.0f / 256.0f);
+static float pixelSizeH = (2.0f / 240.0f);
 
 using namespace DirectX;
 
@@ -27,11 +27,9 @@ struct VoxelMesh {
 	int size;
 };
 
-struct MatrixBufferType
+struct MatrixBuffer
 {
-	XMMATRIX world;
-	XMMATRIX view;
-	XMMATRIX projection;
+	XMMATRIX matrix;
 };
 
 struct ShaderSet
@@ -64,8 +62,12 @@ private:
 	static void initSampleState();
 	static ShaderSet shaderSets[2];
 	static ID3D11InputLayout *inputLayouts[2];
-	static ID3D11Buffer *m_matrixBuffer;
-	static MatrixBufferType *dataPtr;
+	static ID3D11Buffer *worldMatrixBuffer;
+	static ID3D11Buffer *viewMatrixBuffer;
+	static ID3D11Buffer *projectionMatrixBuffer;
+	static MatrixBuffer *worldMatrixPtr;
+	static MatrixBuffer *viewMatrixPtr;
+	static MatrixBuffer *projectionMatrixPtr;
 	static ID3D11SamplerState* sampleState;
 	static ID3D11Texture2D* texture2d;
 	static ID3D11ShaderResourceView* textureView;
