@@ -16,6 +16,7 @@ struct Voxel {
 
 class VoxelSprite {
 public:
+	VoxelSprite();
 	Voxel voxels[2048];
 	int zPosition;
 	bool matchUp;
@@ -23,16 +24,18 @@ public:
 	bool matchLeft;
 	bool matchRight;
 	VoxelMesh *mesh;
-	void addVoxel(int, int, int);
-	void deleteVoxel(int, int, int);
 	void buildMesh();
+	void randomizeSprite();
+	void setVoxel(int, int, int, int);
 private:
 	int getVoxel(int, int, int);
-	void buildSide(std::vector<ColorVertex>& vertices, int x, int y, int z, int color, VoxelSide side);
+	void buildSide(std::vector<ColorVertex> &vertices, int x, int y, int z, int color, VoxelSide side);
+	void clearVoxel();
 };
 
 class VoxelGameData {
 public:
+	VoxelGameData(int totalSprites, int ppuBankSize);
 	int ppuBankSize;
 	int totalSprites;
 	std::vector<VoxelSprite> sprites;

@@ -226,6 +226,28 @@ ID3D11Buffer* VoxelUtil::createBufferFromColorVertices(ColorVertex vertices[], i
 	return pVBuffer;
 }
 
+ID3D11Buffer* VoxelUtil::createBufferFromColorVerticesV(std::vector<ColorVertex> &vertices, int arraySize)
+{
+	// create the vertex buffer
+	D3D11_BUFFER_DESC bd;
+	ZeroMemory(&bd, sizeof(bd));
+
+	bd.Usage = D3D11_USAGE_DYNAMIC;                // write access access by CPU and GPU
+	bd.ByteWidth = sizeof(ColorVertex) * arraySize;             // size is the VERTEX struct * 3in
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;       // use as a vertex buffer
+	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;    // allow CPU to write in buffer
+
+	ID3D11Buffer *pVBuffer;								// the vertex buffer
+	device1->CreateBuffer(&bd, NULL, &pVBuffer);		// create the buffer
+
+														// copy the vertices into the buffer
+	D3D11_MAPPED_SUBRESOURCE ms;
+	HRESULT result = context1->Map(pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);    // map the buffer
+	memcpy(ms.pData, vertices.data(), arraySize);							// copy the data
+	context1->Unmap(pVBuffer, NULL);                                         // unmap the buffer
+	return pVBuffer;
+}
+
 ID3D11Buffer* VoxelUtil::createBufferFromTextureVertices(TextureVertex vertices[], int arraySize)
 {
 	// create the vertex buffer

@@ -2,6 +2,7 @@
 // As well as http://www.braynzarsoft.net/viewtutorial/q16390-4-begin-drawing
 
 #pragma once
+#include <vector>
 #include "VoxelCamera.h"
 
 static float pixelSizeW = (2.0f / 256.0f);
@@ -44,6 +45,7 @@ public:
 		Microsoft::WRL::ComPtr<ID3D11Device> d3dDevice, Microsoft::WRL::ComPtr<ID3D11DeviceContext> d3dContext,
 		Microsoft::WRL::ComPtr<ID3D11Device1> d3dDevice1, Microsoft::WRL::ComPtr<ID3D11DeviceContext1> d3dContext1);
 	static ID3D11Buffer* createBufferFromColorVertices(ColorVertex vertices[], int arraySize);
+	static ID3D11Buffer* createBufferFromColorVerticesV(std::vector<ColorVertex> &vertices, int arraySize);
 	static ID3D11Buffer* createBufferFromTextureVertices(TextureVertex vertices[], int arraySize);
 	static VoxelMesh* CreateRectangle(ShaderType type);
 	static VoxelMesh* CreateSpriteMarker();
