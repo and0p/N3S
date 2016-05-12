@@ -10,6 +10,7 @@
 #include "VoxelCamera.h"
 #include "NesEmulator.h"
 #include "VoxelPPUSnapshot.h"
+#include "VoxelGameData.h"
 
 // A basic game implementation that creates a D3D11 device and
 // provides a game loop.
@@ -17,7 +18,7 @@ class Game : public DX::IDeviceNotify
 {
 public:
 
-    Game();
+	Game();
 
     // Initialization and management
     void Initialize(HWND window, int width, int height);
@@ -64,5 +65,8 @@ private:
 	VoxelCamera								*camera;
 
 	// PPU Snapshot
-	VoxelPPUSnapshot						*snapshot;
+	std::unique_ptr<VoxelPPUSnapshot>		snapshot;
+
+	// Mesh collection
+	VoxelGameData							voxelGameData;
 };

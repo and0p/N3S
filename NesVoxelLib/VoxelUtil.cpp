@@ -243,7 +243,7 @@ ID3D11Buffer* VoxelUtil::createBufferFromColorVerticesV(std::vector<ColorVertex>
 														// copy the vertices into the buffer
 	D3D11_MAPPED_SUBRESOURCE ms;
 	HRESULT result = context1->Map(pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);    // map the buffer
-	memcpy(ms.pData, vertices.data(), arraySize);							// copy the data
+	memcpy(ms.pData, vertices.data(), bd.ByteWidth);							// copy the data
 	context1->Unmap(pVBuffer, NULL);                                         // unmap the buffer
 	return pVBuffer;
 }

@@ -18,7 +18,8 @@ struct OamSprite {
 class VoxelPPUSnapshot {
 public:
 	VoxelPPUSnapshot(const void *vram);
-	struct OamSprite *sprites[64];
+	~VoxelPPUSnapshot();
+	std::shared_ptr<OamSprite> sprites[64];
 private:
-	OamSprite *buildSprite(unsigned char *ptr);
+	std::shared_ptr<OamSprite> buildSprite(unsigned char *ptr);
 };

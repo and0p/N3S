@@ -10,9 +10,13 @@ VoxelPPUSnapshot::VoxelPPUSnapshot(const void *vram)
 	}
 }
 
-OamSprite *VoxelPPUSnapshot::buildSprite(unsigned char* ptr)
+VoxelPPUSnapshot::~VoxelPPUSnapshot()
 {
-	OamSprite *sprite = new OamSprite();
+}
+
+std::shared_ptr<OamSprite> VoxelPPUSnapshot::buildSprite(unsigned char* ptr)
+{
+	std::shared_ptr<OamSprite> sprite(new OamSprite());
 	sprite->y = *ptr;
 	ptr += 3;
 	sprite->x = *ptr;

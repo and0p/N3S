@@ -6,6 +6,7 @@
 const int spriteWidth = 8;
 const int spriteHeight = 8;
 const int spriteDepth = 32;
+const int spriteSize = 8 * 8 * 32;
 
 enum VoxelSide { left, right, top, bottom, front, back };
 
@@ -27,8 +28,9 @@ public:
 	void buildMesh();
 	void randomizeSprite();
 	void setVoxel(int, int, int, int);
+
 private:
-	int getVoxel(int, int, int);
+	Voxel getVoxel(int, int, int);
 	void buildSide(std::vector<ColorVertex> &vertices, int x, int y, int z, int color, VoxelSide side);
 	void clearVoxel();
 };
@@ -39,5 +41,6 @@ public:
 	int ppuBankSize;
 	int totalSprites;
 	std::vector<VoxelSprite> sprites;
+	void buildAllMeshes();
 private:
 };

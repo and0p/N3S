@@ -9,7 +9,7 @@ using namespace DirectX;
 
 using Microsoft::WRL::ComPtr;
 
-Game::Game()
+Game::Game(): voxelGameData(VoxelGameData(1, 1))
 {
     m_deviceResources = std::make_unique<DX::DeviceResources>();
     m_deviceResources->RegisterDeviceNotify(this);
@@ -30,6 +30,8 @@ void Game::Initialize(HWND window, int width, int height)
 	camera = new VoxelCamera();
 	testMesh = VoxelUtil::CreateRectangle(texture);
 	marker = VoxelUtil::CreateSpriteMarker();
+
+	voxelGameData.buildAllMeshes();
 
 	NesEmulator::Initialize();
 
@@ -52,10 +54,7 @@ void Game::Tick()
         Update(m_timer);
     });
 
-	
-
     Render();
-
 	//delete snapshot;
 }
 
@@ -66,7 +65,7 @@ void Game::Update(DX::StepTimer const& timer)
 	NesEmulator::ExecuteFrame();
 	VoxelUtil::updateGameTexture(NesEmulator::getPixelData());
 	const void* stuff = NesEmulator::getVRam();
-	snapshot = new VoxelPPUSnapshot(stuff);
+	snapshot.reset(new VoxelPPUSnapshot(stuff));
     elapsedTime;
 }
 #pragma endregion
@@ -87,8 +86,8 @@ void Game::Render()
     auto context = m_deviceResources->GetD3DDeviceContext();
 
     // TODO: Add your rendering code here.
-	camera->SetPosition(2, 0, -2);
-	camera->SetRotation(-45.0f, 0, 0);
+	camera->SetPosition(-0.0, 0.0f, -2.0f);
+	camera->SetRotation(0.0f, 0.0f, 0);
 	camera->Render();
 	VoxelUtil::updateMatricesWithCamera(camera);
 	VoxelUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
@@ -100,8 +99,9 @@ void Game::Render()
 		if (y > 0 && y < 240) {
 			posX = -1.0f + (pixelSizeW * x);
 			posY = 1.0f - (pixelSizeH * y);
-			VoxelUtil::updateWorldMatrix(posX, posY, -0.001f);
-			VoxelUtil::renderMesh(marker);
+			VoxelUtil::updateWorldMatrix(posX, posY, -0.4f);
+			VoxelUtil::renderMesh(voxelGameData.sprites[0].mesh);
+			//VoxelUtil::renderMesh(marker);
 		}
 	}
     context;
