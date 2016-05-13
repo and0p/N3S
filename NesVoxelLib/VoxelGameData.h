@@ -15,6 +15,18 @@ struct Voxel {
 	bool smooth;
 };
 
+class BitmapSprite {
+public:
+	BitmapSprite();
+	BitmapSprite(char *data);
+	~BitmapSprite();
+	int pixels[64];
+private:
+	void addPixels(char a, char b, int row);
+	static bool getBit(char byte, int bitNumber);
+	static bool getBitLeftSide(char byte, int position);
+};
+
 class VoxelSprite {
 public:
 	VoxelSprite();
@@ -25,14 +37,15 @@ public:
 	bool matchLeft;
 	bool matchRight;
 	VoxelMesh *mesh;
-	void buildMesh();
+	bool buildMesh();
+	bool meshExists;
 	void randomizeSprite();
 	void setVoxel(int, int, int, int);
-
+	void buildFromBitmapSprite(BitmapSprite bitmap);
 private:
 	Voxel getVoxel(int, int, int);
 	void buildSide(std::vector<ColorVertex> &vertices, int x, int y, int z, int color, VoxelSide side);
-	void clearVoxel();
+	void clear();
 };
 
 class VoxelGameData {
@@ -41,6 +54,9 @@ public:
 	int ppuBankSize;
 	int totalSprites;
 	std::vector<VoxelSprite> sprites;
+	std::vector<BitmapSprite> bitmaps;
+	void createSpritesFromBitmaps();
 	void buildAllMeshes();
+	void grabBitmapSprites(const void * gameData, int offsetBytes);
 private:
 };

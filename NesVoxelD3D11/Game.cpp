@@ -9,7 +9,7 @@ using namespace DirectX;
 
 using Microsoft::WRL::ComPtr;
 
-Game::Game(): voxelGameData(VoxelGameData(1, 1))
+Game::Game(): voxelGameData(VoxelGameData(256, 1))
 {
     m_deviceResources = std::make_unique<DX::DeviceResources>();
     m_deviceResources->RegisterDeviceNotify(this);
@@ -31,9 +31,11 @@ void Game::Initialize(HWND window, int width, int height)
 	testMesh = VoxelUtil::CreateRectangle(texture);
 	marker = VoxelUtil::CreateSpriteMarker();
 
-	voxelGameData.buildAllMeshes();
-
 	NesEmulator::Initialize();
+	retro_game_info *info = NesEmulator::getGameInfo();
+	voxelGameData.grabBitmapSprites(info->data, 32784);
+	voxelGameData.createSpritesFromBitmaps();
+	voxelGameData.buildAllMeshes();
 
     // TODO: Change the timer settings if you want something other than the default variable timestep mode.
     // e.g. for 60 FPS fixed timestep update logic, call:
@@ -86,8 +88,8 @@ void Game::Render()
     auto context = m_deviceResources->GetD3DDeviceContext();
 
     // TODO: Add your rendering code here.
-	camera->SetPosition(-0.0, 0.0f, -2.0f);
-	camera->SetRotation(0.0f, 0.0f, 0);
+	camera->SetPosition(1.0, 0.0f, -2.0f);
+	camera->SetRotation(-25.0f, 0.0f, 0);
 	camera->Render();
 	VoxelUtil::updateMatricesWithCamera(camera);
 	VoxelUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
@@ -95,13 +97,16 @@ void Game::Render()
 	for (int i = 0; i < 64; i++) {
 		int x = snapshot->sprites[i]->x;
 		int y = snapshot->sprites[i]->y;
+		int tile = snapshot->sprites[i]->tile;
 		float posX, posY;
 		if (y > 0 && y < 240) {
 			posX = -1.0f + (pixelSizeW * x);
 			posY = 1.0f - (pixelSizeH * y);
-			VoxelUtil::updateWorldMatrix(posX, posY, -0.4f);
-			VoxelUtil::renderMesh(voxelGameData.sprites[0].mesh);
-			//VoxelUtil::renderMesh(marker);
+			VoxelUtil::updateWorldMatrix(posX, posY, -0.2f);
+			if (voxelGameData.sprites[tile].meshExists)
+			{
+				VoxelUtil::renderMesh(voxelGameData.sprites[tile].mesh);
+			}
 		}
 	}
     context;

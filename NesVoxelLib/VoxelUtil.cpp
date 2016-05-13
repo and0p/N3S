@@ -228,6 +228,9 @@ ID3D11Buffer* VoxelUtil::createBufferFromColorVertices(ColorVertex vertices[], i
 
 ID3D11Buffer* VoxelUtil::createBufferFromColorVerticesV(std::vector<ColorVertex> &vertices, int arraySize)
 {
+	if (vertices.size() == 0) {
+		return nullptr;
+	}
 	// create the vertex buffer
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));

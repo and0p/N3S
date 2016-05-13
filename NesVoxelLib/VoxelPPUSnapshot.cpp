@@ -18,7 +18,14 @@ std::shared_ptr<OamSprite> VoxelPPUSnapshot::buildSprite(unsigned char* ptr)
 {
 	std::shared_ptr<OamSprite> sprite(new OamSprite());
 	sprite->y = *ptr;
-	ptr += 3;
+	ptr += 1;
+	sprite->tile = *ptr;
+	ptr += 2;
 	sprite->x = *ptr;
 	return sprite;
+}
+
+int VoxelPPUSnapshot::getTileAddress(char byte)
+{
+	return (byte >> 1);
 }

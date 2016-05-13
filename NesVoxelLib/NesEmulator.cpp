@@ -13,6 +13,7 @@
 #include "NesEmulator.h"
 
 static const void *pixelData;
+static retro_game_info *info;
 
 static struct {
 	HMODULE handle;
@@ -240,7 +241,7 @@ static void core_load_game(const char *filename) {
 	struct retro_system_av_info av = { 0 };
 	struct retro_system_info system = { 0 };
 	printf(filename);
-	struct retro_game_info info = { filename, 0 };
+	info = new retro_game_info { filename, 0 };
 	FILE *file;
 	fopen_s(&file, filename, "rb");
 
@@ -248,19 +249,19 @@ static void core_load_game(const char *filename) {
 		goto libc_error;
 
 	fseek(file, 0, SEEK_END);
-	info.size = ftell(file);
+	info->size = ftell(file);
 	rewind(file);
 
 	g_retro.retro_get_system_info(&system);
 
 	if (!system.need_fullpath) {
-		info.data = malloc(info.size);
+		info->data = malloc(info->size);
 
-		if (!info.data || !fread((void*)info.data, info.size, 1, file))
+		if (!info->data || !fread((void*)info->data, info->size, 1, file))
 			goto libc_error;
 	}
 
-	if (!g_retro.retro_load_game(&info))
+	if (!g_retro.retro_load_game(info))
 		exit(0);
 
 	g_retro.retro_get_system_av_info(&av);
@@ -289,6 +290,11 @@ const void* NesEmulator::getPixelData() {
 
 const void* NesEmulator::getVRam() {
 	return g_retro.retro_get_memory_data(RETRO_MEMORY_VIDEO_RAM);
+}
+
+retro_game_info *NesEmulator::getGameInfo()
+{
+	return info;
 }
 
 //int main()

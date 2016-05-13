@@ -22,4 +22,5 @@ public:
 	std::shared_ptr<OamSprite> sprites[64];
 private:
 	std::shared_ptr<OamSprite> buildSprite(unsigned char *ptr);
+	static int getTileAddress(char byte);
 };

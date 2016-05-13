@@ -3,7 +3,9 @@
 
 VoxelSprite::VoxelSprite()
 {
-	randomizeSprite();
+	//randomizeSprite();
+	meshExists = false;
+	clear();
 }
 
 void VoxelSprite::setVoxel(int x, int y, int z, int color)
@@ -13,6 +15,20 @@ void VoxelSprite::setVoxel(int x, int y, int z, int color)
 	if (voxelSlot >= 0 && voxelSlot < spriteSize) {
 		voxels[voxelSlot].color = color;
 	}
+}
+
+void VoxelSprite::buildFromBitmapSprite(BitmapSprite bitmap)
+{
+	// Offset to middle of z-index
+	int offset = 64 * 8;
+	// Insert all bitmap colors in that z-column
+	for (int c = 0; c < 3; c++) {
+		offset += 64 * c;
+		for (int i = 0; i < 64; i++) {
+			voxels[offset + i].color = bitmap.pixels[i];
+		}
+	}
+	meshExists = buildMesh();
 }
 
 
@@ -27,7 +43,7 @@ Voxel VoxelSprite::getVoxel(int x, int y, int z)
 	}
 }
 
-void VoxelSprite::clearVoxel() 
+void VoxelSprite::clear() 
 {
 	for (int i = 0; i < 2048; i++) 
 	{
@@ -67,7 +83,7 @@ void VoxelSprite::randomizeSprite() {
 	}
 }
 
-void VoxelSprite::buildMesh()
+bool VoxelSprite::buildMesh()
 {
 	//VoxelMesh *mesh;
 	mesh = new VoxelMesh;
@@ -80,33 +96,34 @@ void VoxelSprite::buildMesh()
 		{
 			for (int x = 0; x < spriteWidth; x++)
 			{
+				int color = getVoxel(x, y, z).color;
 				// See if the voxel is not empty
-				if (getVoxel(x, y, z).color > 0)
+				if (color > 0)
 				{
 					// Check each adjacent voxel/edge and draw a square as needed
 					// TODO: Also add > evaluation for semi-transparent voxels in the future
 					if (x == 0 || getVoxel(x - 1, y, z).color == 0) {
-						buildSide(*vertices, x, y, z, 1, left);
+						buildSide(*vertices, x, y, z, color, left);
 						sideCount++;
 					}
 					if (x == spriteWidth - 1 || getVoxel(x + 1, y, z).color == 0) {
-						buildSide(*vertices, x, y, z, 1, right);
+						buildSide(*vertices, x, y, z, color, right);
 						sideCount++;
 					}
 					if (y == 0 || getVoxel(x, y - 1, z).color == 0) {
-						buildSide(*vertices, x, y, z, 1, top);
+						buildSide(*vertices, x, y, z, color, top);
 						sideCount++;
 					}
 					if (y == spriteHeight - 1 || getVoxel(x, y + 1, z).color == 0) {
-						buildSide(*vertices, x, y, z, 1, bottom);
+						buildSide(*vertices, x, y, z, color, bottom);
 						sideCount++;
 					}
 					if (z == 0 || getVoxel(x - 1, y, z - 1).color == 0) {
-						buildSide(*vertices, x, y, z, 1, front);
+						buildSide(*vertices, x, y, z, color, front);
 						sideCount++;
 					}
 					if (z == spriteDepth - 1 || getVoxel(x, y, z + 1).color == 0) {
-						buildSide(*vertices, x, y, z, 1, back);
+						buildSide(*vertices, x, y, z, color, back);
 						sideCount++;
 					}
 				}
@@ -115,7 +132,17 @@ void VoxelSprite::buildMesh()
 	}
 	mesh->size = sideCount * 6;
 	mesh->type = color;
-	mesh->buffer = VoxelUtil::createBufferFromColorVerticesV(*vertices, mesh->size);
+	// Return true if there is an actual mesh to render
+	if (vertices->size() > 0) {
+		mesh->buffer = VoxelUtil::createBufferFromColorVerticesV(*vertices, mesh->size);
+		meshExists = true;
+		return true;
+	}
+	else
+	{
+		meshExists = false;
+		return false;
+	}
 }
 
 void VoxelSprite::buildSide(std::vector<ColorVertex> &vertices, int x, int y, int z, int color, VoxelSide side) {
@@ -123,16 +150,31 @@ void VoxelSprite::buildSide(std::vector<ColorVertex> &vertices, int x, int y, in
 	float xf = x * pixelSizeW;
 	float yf = y * -pixelSizeH;
 	float zf = z * pixelSizeW;
-	if (x > 6) {
-		int debuuuug = 1;
-	}
 	// Init 4 vertices
 	ColorVertex v1, v2, v3, v4;
 	// Set all colors to red for now
-	v1.Col = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-	v2.Col = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-	v3.Col = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-	v4.Col = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+	if (color == 1)
+	{
+		v4.Col = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
+		v1.Col = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
+		v2.Col = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
+		v3.Col = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
+	}
+	else if (color == 2)
+	{
+		v1.Col = XMFLOAT4(0.6f, 0.6f, 0.6f, 1.0f);
+		v2.Col = XMFLOAT4(0.6f, 0.6f, 0.6f, 1.0f);
+		v3.Col = XMFLOAT4(0.6f, 0.6f, 0.6f, 1.0f);
+		v4.Col = XMFLOAT4(0.6f, 0.6f, 0.6f, 1.0f);
+	}
+	else if (color == 3)
+	{
+		v1.Col = XMFLOAT4(0.9f, 0.9f, 0.9f, 1.0f);
+		v2.Col = XMFLOAT4(0.9f, 0.9f, 0.9f, 1.0f);
+		v3.Col = XMFLOAT4(0.9f, 0.9f, 0.9f, 1.0f);
+		v4.Col = XMFLOAT4(0.9f, 0.9f, 0.9f, 1.0f);
+	}
+	
 	// Switch based on side
 	switch(side) {
 	case left:
@@ -184,14 +226,86 @@ VoxelGameData::VoxelGameData(int totalSprites, int ppuBankSize): totalSprites(to
 {
 	// Initialize sprite list
 	sprites.reserve(totalSprites);
+	bitmaps.reserve(totalSprites);
 	// Build all sprites, no meshes yet
 	for (int i = 0; i < totalSprites; i++) {
 		sprites.push_back(VoxelSprite());
+		//bitmaps.push_back(BitmapSprite());
+	}
+}
+
+void VoxelGameData::createSpritesFromBitmaps()
+{
+	for (int i = 0; i < totalSprites; i++) {
+		sprites[i].buildFromBitmapSprite(bitmaps[i]);
 	}
 }
 
 void VoxelGameData::buildAllMeshes() {
 	for (int i = 0; i < sprites.size(); i++) {
-		sprites[i].buildMesh();
+		if (sprites.size() > 0) {
+			sprites[i].buildMesh();
+		}
 	}
+}
+
+void VoxelGameData::grabBitmapSprites(const void * gameData, int offsetBytes)
+{
+	char *charData = ((char*)gameData);
+	for (int i = 0; i < totalSprites; i++)
+	{
+		bitmaps.push_back(BitmapSprite(charData + offsetBytes + (i * 16)));
+	}
+}
+
+// Create blank sprite
+BitmapSprite::BitmapSprite()
+{
+	for (int i = 0; i < 64; i++)
+	{
+		pixels[i] = 0;
+	}
+}
+
+// Create sprite from data
+BitmapSprite::BitmapSprite(char * data)
+{
+	// Sprite is 16 bytes, 2 per row
+	// Iterate and add all rows
+	for (int i = 0; i < 8; i++)
+	{
+		int offset = i;
+		addPixels(*(data + offset), *(data + offset + 8), i);
+	}
+}
+
+BitmapSprite::~BitmapSprite()
+{
+}
+
+// Add pixels to specified row using both bytes of sprite row
+void BitmapSprite::addPixels(char a, char b, int row)
+{
+	int rowOffset = row * 8;
+	for (int i = 0; i < 8; i++)
+	{
+		int color = 0;
+		bool bit1 = getBitLeftSide(a, i);
+		bool bit2 = getBitLeftSide(b, i);
+		if (bit1)
+			color += 1;
+		if (bit2)
+			color += 2;
+		pixels[rowOffset + i] = color;
+	}
+}
+
+bool BitmapSprite::getBit(char byte, int position)
+{
+	return (byte >> position) & 0x1;
+}
+
+bool BitmapSprite::getBitLeftSide(char byte, int position)
+{
+	return (byte << position) & 0x80;
 }
