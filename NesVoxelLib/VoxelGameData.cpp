@@ -22,8 +22,8 @@ void VoxelSprite::buildFromBitmapSprite(BitmapSprite bitmap)
 	// Offset to middle of z-index
 	int offset = 64 * 8;
 	// Insert all bitmap colors in that z-column
-	for (int c = 0; c < 3; c++) {
-		offset += 64 * c;
+	for (int c = 0; c < 6; c++) {
+		offset += 64;
 		for (int i = 0; i < 64; i++) {
 			voxels[offset + i].color = bitmap.pixels[i];
 		}

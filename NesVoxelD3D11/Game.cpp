@@ -9,7 +9,7 @@ using namespace DirectX;
 
 using Microsoft::WRL::ComPtr;
 
-Game::Game(): voxelGameData(VoxelGameData(256, 1))
+Game::Game(): voxelGameData(VoxelGameData(512, 1))
 {
     m_deviceResources = std::make_unique<DX::DeviceResources>();
     m_deviceResources->RegisterDeviceNotify(this);
@@ -88,16 +88,16 @@ void Game::Render()
     auto context = m_deviceResources->GetD3DDeviceContext();
 
     // TODO: Add your rendering code here.
-	camera->SetPosition(1.0, 0.0f, -2.0f);
-	camera->SetRotation(-25.0f, 0.0f, 0);
+	camera->SetPosition(2.0, 0.0f, -1.0f);
+	camera->SetRotation(-65.0f, 0.0f, 0);
 	camera->Render();
 	VoxelUtil::updateMatricesWithCamera(camera);
 	VoxelUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
 	VoxelUtil::renderMesh(testMesh);
 	for (int i = 0; i < 64; i++) {
-		int x = snapshot->sprites[i]->x;
-		int y = snapshot->sprites[i]->y;
-		int tile = snapshot->sprites[i]->tile;
+		int x = snapshot->sprites[i].x;
+		int y = snapshot->sprites[i].y;
+		int tile = snapshot->sprites[i].tile;
 		float posX, posY;
 		if (y > 0 && y < 240) {
 			posX = -1.0f + (pixelSizeW * x);
@@ -107,6 +107,19 @@ void Game::Render()
 			{
 				VoxelUtil::renderMesh(voxelGameData.sprites[tile].mesh);
 			}
+		}
+	}
+	for (int i = 0; i < 960; i++) {
+		int x = i % 32;
+		int y = floor(i / 32);
+		float posX, posY;
+		posX = -1.0f + (pixelSizeW * x * 8);
+		posY = 1.0f - (pixelSizeH * y * 8);
+		VoxelUtil::updateWorldMatrix(posX, posY, -0.2f);
+		int tile = snapshot->nameTables->operator[](0).tiles[i].tile + 256;
+		if (voxelGameData.sprites[tile].meshExists)
+		{
+			VoxelUtil::renderMesh(voxelGameData.sprites[tile].mesh);
 		}
 	}
     context;

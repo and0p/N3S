@@ -4,6 +4,8 @@
 #define OAM_SIZE		256;
 #define	TABLE_SIZE		2048;
 
+#include <vector>
+
 struct OamSprite {
 	unsigned char x;
 	unsigned char y;
@@ -15,12 +17,26 @@ struct OamSprite {
 	unsigned char palette;
 };
 
+struct NameTableTile {
+	int tile;
+	int palette;
+};
+
+class NameTable {
+public:
+	NameTable(unsigned char * data);
+	void update(unsigned char * data);
+	NameTableTile tiles[960];
+};
+
 class VoxelPPUSnapshot {
 public:
 	VoxelPPUSnapshot(const void *vram);
 	~VoxelPPUSnapshot();
-	std::shared_ptr<OamSprite> sprites[64];
+	std::vector<OamSprite> sprites;
+	std::shared_ptr<std::vector<NameTable>> nameTables;
+	int ppuScroll;
 private:
-	std::shared_ptr<OamSprite> buildSprite(unsigned char *ptr);
-	static int getTileAddress(char byte);
+	OamSprite buildSprite(unsigned char *ptr);
+	static int getTileAddress(unsigned char byte);
 };
