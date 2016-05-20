@@ -4,6 +4,7 @@
 
 #include "pch.h"
 #include "Game.h"
+#include <iostream>
 
 using namespace DirectX;
 
@@ -84,6 +85,8 @@ void Game::Render()
 
     Clear();
 
+	OutputDebugStringA("Rendering!\n");
+
     m_deviceResources->PIXBeginEvent(L"Render");
     auto context = m_deviceResources->GetD3DDeviceContext();
 
@@ -114,6 +117,7 @@ void Game::Render()
 		int y = floor(i / 32);
 		float posX, posY;
 		posX = -1.0f + (pixelSizeW * x * 8);
+		posX -= (pixelSizeW * snapshot->ppuScroll);
 		posY = 1.0f - (pixelSizeH * y * 8);
 		VoxelUtil::updateWorldMatrix(posX, posY, -0.2f);
 		int tile = snapshot->nameTables->operator[](0).tiles[i].tile + 256;

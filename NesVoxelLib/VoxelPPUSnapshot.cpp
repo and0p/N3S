@@ -10,6 +10,9 @@ VoxelPPUSnapshot::VoxelPPUSnapshot(const void *vram): nameTables(new std::vector
 	}
 	nameTables->push_back(NameTable(vramStart + 32 + 256));
 	nameTables->push_back(NameTable(vramStart + 32 + 256 + 1024));
+	Scroll *s = (Scroll*)(vramStart + 32 + 256 + 2048);
+	ppuScroll = s->xFine;
+	int test = 0;
 }
 
 VoxelPPUSnapshot::~VoxelPPUSnapshot()

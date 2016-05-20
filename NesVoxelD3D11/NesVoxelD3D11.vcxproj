@@ -68,7 +68,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <LibraryPath>C:\Users\and0\Source\Repos\NesVoxel\Debug;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\Users\and0\Source\Repos\nestopia\libretro\msvc\msvc-2010\Debug;C:\Users\and0\Source\Repos\NesVoxel\Debug;$(LibraryPath)</LibraryPath>
     <IncludePath>C:\Users\and0\Source\Repos\NesVoxel\NesVoxelLib;C:\Users\and0\Source\Repos\NesVoxel\Debug;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
