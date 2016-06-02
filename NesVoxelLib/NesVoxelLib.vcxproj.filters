@@ -46,6 +46,9 @@
     <ClInclude Include="VoxelGameData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="VxlRawPPU.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

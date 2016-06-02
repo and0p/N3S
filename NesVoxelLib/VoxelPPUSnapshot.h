@@ -8,30 +8,6 @@
 
 #include <vector>
 
-struct Scroll
-{
-	enum
-	{
-		X_TILE = 0x001F,
-		Y_TILE = 0x03E0,
-		Y_FINE = 0x7000,
-		LOW = 0x00FF,
-		HIGH = 0xFF00,
-		NAME = 0x0C00,
-		NAME_LOW = 0x0400,
-		NAME_HIGH = 0x0800
-	};
-
-	NST_FORCE_INLINE void ClockX();
-	NST_SINGLE_CALL  void ResetX();
-	NST_SINGLE_CALL  void ClockY();
-
-	unsigned int address;
-	unsigned int toggle;
-	unsigned int latch;
-	unsigned int xFine;
-};
-
 struct OamSprite {
 	unsigned char x;
 	unsigned char y;

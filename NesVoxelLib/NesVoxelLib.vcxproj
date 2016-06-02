@@ -138,6 +138,7 @@
     <ClInclude Include="VoxelPPUSnapshot.h" />
     <ClInclude Include="VoxelUtil.h" />
     <ClInclude Include="VoxelCamera.h" />
+    <ClInclude Include="VxlRawPPU.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="NesEmulator.cpp" />

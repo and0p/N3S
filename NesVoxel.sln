@@ -7,30 +7,46 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NesVoxelLib", "NesVoxelLib\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NesVoxelD3D11", "NesVoxelD3D11\NesVoxelD3D11.vcxproj", "{FD01B185-4639-4F01-B2F4-F9FF142ABDE0}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "msvc-2010", "..\nestopia\libretro\msvc\msvc-2010\msvc-2010.vcxproj", "{C4D4209C-05D5-404F-8925-BD7ABA58D686}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|ARM = Debug|ARM
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
+		Release|ARM = Release|ARM
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C50BF794-AC22-4556-AFEA-A7ED22A4F835}.Debug|ARM.ActiveCfg = Debug|Win32
 		{C50BF794-AC22-4556-AFEA-A7ED22A4F835}.Debug|x64.ActiveCfg = Debug|x64
 		{C50BF794-AC22-4556-AFEA-A7ED22A4F835}.Debug|x64.Build.0 = Debug|x64
 		{C50BF794-AC22-4556-AFEA-A7ED22A4F835}.Debug|x86.ActiveCfg = Debug|Win32
 		{C50BF794-AC22-4556-AFEA-A7ED22A4F835}.Debug|x86.Build.0 = Debug|Win32
+		{C50BF794-AC22-4556-AFEA-A7ED22A4F835}.Release|ARM.ActiveCfg = Release|Win32
 		{C50BF794-AC22-4556-AFEA-A7ED22A4F835}.Release|x64.ActiveCfg = Release|x64
 		{C50BF794-AC22-4556-AFEA-A7ED22A4F835}.Release|x64.Build.0 = Release|x64
 		{C50BF794-AC22-4556-AFEA-A7ED22A4F835}.Release|x86.ActiveCfg = Release|Win32
 		{C50BF794-AC22-4556-AFEA-A7ED22A4F835}.Release|x86.Build.0 = Release|Win32
+		{FD01B185-4639-4F01-B2F4-F9FF142ABDE0}.Debug|ARM.ActiveCfg = Debug|Win32
 		{FD01B185-4639-4F01-B2F4-F9FF142ABDE0}.Debug|x64.ActiveCfg = Debug|x64
 		{FD01B185-4639-4F01-B2F4-F9FF142ABDE0}.Debug|x64.Build.0 = Debug|x64
 		{FD01B185-4639-4F01-B2F4-F9FF142ABDE0}.Debug|x86.ActiveCfg = Debug|Win32
 		{FD01B185-4639-4F01-B2F4-F9FF142ABDE0}.Debug|x86.Build.0 = Debug|Win32
+		{FD01B185-4639-4F01-B2F4-F9FF142ABDE0}.Release|ARM.ActiveCfg = Release|Win32
 		{FD01B185-4639-4F01-B2F4-F9FF142ABDE0}.Release|x64.ActiveCfg = Release|x64
 		{FD01B185-4639-4F01-B2F4-F9FF142ABDE0}.Release|x64.Build.0 = Release|x64
 		{FD01B185-4639-4F01-B2F4-F9FF142ABDE0}.Release|x86.ActiveCfg = Release|Win32
 		{FD01B185-4639-4F01-B2F4-F9FF142ABDE0}.Release|x86.Build.0 = Release|Win32
+		{C4D4209C-05D5-404F-8925-BD7ABA58D686}.Debug|ARM.ActiveCfg = Debug|Win32
+		{C4D4209C-05D5-404F-8925-BD7ABA58D686}.Debug|x64.ActiveCfg = Debug|Win32
+		{C4D4209C-05D5-404F-8925-BD7ABA58D686}.Debug|x86.ActiveCfg = Debug|Win32
+		{C4D4209C-05D5-404F-8925-BD7ABA58D686}.Debug|x86.Build.0 = Debug|Win32
+		{C4D4209C-05D5-404F-8925-BD7ABA58D686}.Release|ARM.ActiveCfg = Release|Win32
+		{C4D4209C-05D5-404F-8925-BD7ABA58D686}.Release|x64.ActiveCfg = Release|Win32
+		{C4D4209C-05D5-404F-8925-BD7ABA58D686}.Release|x86.ActiveCfg = Release|Win32
+		{C4D4209C-05D5-404F-8925-BD7ABA58D686}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
