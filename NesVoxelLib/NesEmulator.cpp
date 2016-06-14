@@ -292,11 +292,6 @@ const void* NesEmulator::getVRam() {
 	return g_retro.retro_get_memory_data(RETRO_MEMORY_VIDEO_RAM);
 }
 
-void NesEmulator::takeSnapshot()
-{
-	snapshot = VxlPPUSnapshot(g_retro.retro_get_memory_data(RETRO_MEMORY_VIDEO_RAM));
-}
-
 retro_game_info *NesEmulator::getGameInfo()
 {
 	return info;

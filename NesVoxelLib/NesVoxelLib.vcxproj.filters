@@ -28,19 +28,10 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="VoxelCamera.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="VoxelUtil.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="libretro.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="NesEmulator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="VoxelGameData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VxlRawPPU.h">
@@ -49,24 +40,42 @@
     <ClInclude Include="VxlPPUSnapshot.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="VxlApp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VxlD3DContext.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VxlCamera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VxlGameData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VxlUtil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="VoxelCamera.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="VoxelUtil.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="NesEmulator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="VoxelGameData.cpp">
+    <ClCompile Include="VxlPPUSnapshot.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="VxlPPUSnapshot.cpp">
+    <ClCompile Include="VxlApp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VxlCamera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VxlGameData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VxlUtil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

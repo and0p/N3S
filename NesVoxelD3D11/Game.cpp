@@ -5,12 +5,13 @@
 #include "pch.h"
 #include "Game.h"
 #include <iostream>
+#include "VxlD3DContext.h"
 
 using namespace DirectX;
 
 using Microsoft::WRL::ComPtr;
 
-Game::Game(): voxelGameData(VoxelGameData(512, 1))
+Game::Game():
 {
     m_deviceResources = std::make_unique<DX::DeviceResources>();
     m_deviceResources->RegisterDeviceNotify(this);
@@ -27,16 +28,12 @@ void Game::Initialize(HWND window, int width, int height)
     m_deviceResources->CreateWindowSizeDependentResources();
     CreateWindowSizeDependentResources();
 
-	VoxelUtil::initPipeline(m_deviceResources->GetD3DDevice(), m_deviceResources->GetD3DDeviceContext(), m_deviceResources->GetD3DDevice1(), m_deviceResources->GetD3DDeviceContext1());
-	camera = new VoxelCamera();
-	testMesh = VoxelUtil::CreateRectangle(texture);
-	marker = VoxelUtil::CreateSpriteMarker();
+	VxlD3DContext c = { m_deviceResources->GetD3DDevice(), 
+						m_deviceResources->GetD3DDeviceContext(), 
+						m_deviceResources->GetD3DDevice1(), 
+						m_deviceResources->GetD3DDeviceContext1() };
 
-	NesEmulator::Initialize();
-	retro_game_info *info = NesEmulator::getGameInfo();
-	voxelGameData.grabBitmapSprites(info->data, 32784);
-	voxelGameData.createSpritesFromBitmaps();
-	voxelGameData.buildAllMeshes();
+	app = VxlApp(c);
 
     // TODO: Change the timer settings if you want something other than the default variable timestep mode.
     // e.g. for 60 FPS fixed timestep update logic, call:
@@ -58,17 +55,13 @@ void Game::Tick()
     });
 
     Render();
-	//delete snapshot;
 }
 
 // Updates the world.
 void Game::Update(DX::StepTimer const& timer)
 {
     float elapsedTime = float(timer.GetElapsedSeconds());
-	NesEmulator::ExecuteFrame();
-	VoxelUtil::updateGameTexture(NesEmulator::getPixelData());
-	const void* stuff = NesEmulator::getVRam();
-	snapshot.reset(new VoxelPPUSnapshot(stuff));
+	app.update();
     elapsedTime;
 }
 #pragma endregion
@@ -90,43 +83,10 @@ void Game::Render()
     m_deviceResources->PIXBeginEvent(L"Render");
     auto context = m_deviceResources->GetD3DDeviceContext();
 
-    // TODO: Add your rendering code here.
-	camera->SetPosition(2.0, 0.0f, -1.0f);
-	camera->SetRotation(-65.0f, 0.0f, 0);
-	camera->Render();
-	VoxelUtil::updateMatricesWithCamera(camera);
-	VoxelUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
-	VoxelUtil::renderMesh(testMesh);
-	for (int i = 0; i < 64; i++) {
-		int x = snapshot->sprites[i].x;
-		int y = snapshot->sprites[i].y;
-		int tile = snapshot->sprites[i].tile;
-		float posX, posY;
-		if (y > 0 && y < 240) {
-			posX = -1.0f + (pixelSizeW * x);
-			posY = 1.0f - (pixelSizeH * y);
-			VoxelUtil::updateWorldMatrix(posX, posY, -0.2f);
-			if (voxelGameData.sprites[tile].meshExists)
-			{
-				VoxelUtil::renderMesh(voxelGameData.sprites[tile].mesh);
-			}
-		}
-	}
-	for (int i = 0; i < 960; i++) {
-		int x = i % 32;
-		int y = floor(i / 32);
-		float posX, posY;
-		posX = -1.0f + (pixelSizeW * x * 8);
-		posX -= (pixelSizeW * snapshot->ppuScroll);
-		posY = 1.0f - (pixelSizeH * y * 8);
-		VoxelUtil::updateWorldMatrix(posX, posY, -0.2f);
-		int tile = snapshot->nameTables->operator[](0).tiles[i].tile + 256;
-		if (voxelGameData.sprites[tile].meshExists)
-		{
-			VoxelUtil::renderMesh(voxelGameData.sprites[tile].mesh);
-		}
-	}
-    context;
+	// Let the app render
+	app.render();
+
+	context;
 
     m_deviceResources->PIXEndEvent();
 

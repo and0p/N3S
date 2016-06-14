@@ -3,7 +3,8 @@
 
 #pragma once
 #include <vector>
-#include "VoxelCamera.h"
+#include "VxlCamera.h"
+#include "VxlD3DContext.h"
 
 static float pixelSizeW = (2.0f / 256.0f);
 static float pixelSizeH = (2.0f / 240.0f);
@@ -39,17 +40,15 @@ struct ShaderSet
 	ID3D11PixelShader *pixelShader;
 };
 
-class VoxelUtil {
+class VxlUtil {
 public:
-	static void initPipeline(
-		Microsoft::WRL::ComPtr<ID3D11Device> d3dDevice, Microsoft::WRL::ComPtr<ID3D11DeviceContext> d3dContext,
-		Microsoft::WRL::ComPtr<ID3D11Device1> d3dDevice1, Microsoft::WRL::ComPtr<ID3D11DeviceContext1> d3dContext1);
+	static void initPipeline(VxlD3DContext context);
 	static ID3D11Buffer* createBufferFromColorVertices(ColorVertex vertices[], int arraySize);
 	static ID3D11Buffer* createBufferFromColorVerticesV(std::vector<ColorVertex> &vertices, int arraySize);
 	static ID3D11Buffer* createBufferFromTextureVertices(TextureVertex vertices[], int arraySize);
 	static VoxelMesh* CreateRectangle(ShaderType type);
 	static VoxelMesh* CreateSpriteMarker();
-	static void updateMatricesWithCamera(VoxelCamera * camera);
+	static void updateMatricesWithCamera(VxlCamera * camera);
 	static void updateWorldMatrix(float, float, float);
 	static XMMATRIX getProjectionMatrix(const float near_plane, const float far_plane, const float fov_horiz, const float fov_vert);
 	static void setShader(ShaderType type);

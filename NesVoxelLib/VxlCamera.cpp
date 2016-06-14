@@ -1,9 +1,9 @@
 // Also shamelessly stolen from http://www.rastertek.com/dx11tut04.html
 
 #include "stdafx.h"
-#include "VoxelCamera.h"
+#include "VxlCamera.h"
 
-VoxelCamera::VoxelCamera()
+VxlCamera::VxlCamera()
 {
 	m_positionX = 0.0f;
 	m_positionY = 0.0f;
@@ -15,16 +15,16 @@ VoxelCamera::VoxelCamera()
 }
 
 
-VoxelCamera::VoxelCamera(const VoxelCamera& other)
+VxlCamera::VxlCamera(const VxlCamera& other)
 {
 }
 
 
-VoxelCamera::~VoxelCamera()
+VxlCamera::~VxlCamera()
 {
 }
 
-void VoxelCamera::SetPosition(float x, float y, float z)
+void VxlCamera::SetPosition(float x, float y, float z)
 {
 	m_positionX = x;
 	m_positionY = y;
@@ -33,7 +33,7 @@ void VoxelCamera::SetPosition(float x, float y, float z)
 }
 
 
-void VoxelCamera::SetRotation(float x, float y, float z)
+void VxlCamera::SetRotation(float x, float y, float z)
 {
 	m_rotationX = x;
 	m_rotationY = y;
@@ -41,18 +41,18 @@ void VoxelCamera::SetRotation(float x, float y, float z)
 	return;
 }
 
-XMFLOAT3 VoxelCamera::GetPosition()
+XMFLOAT3 VxlCamera::GetPosition()
 {
 	return XMFLOAT3(m_positionX, m_positionY, m_positionZ);
 }
 
 
-XMFLOAT3 VoxelCamera::GetRotation()
+XMFLOAT3 VxlCamera::GetRotation()
 {
 	return XMFLOAT3(m_rotationX, m_rotationY, m_rotationZ);
 }
 
-void VoxelCamera::Render()
+void VxlCamera::Render()
 {
 	XMVECTOR up, position, lookAt;
 	float yaw, pitch, roll;
@@ -90,7 +90,7 @@ void VoxelCamera::Render()
 	return;
 }
 
-void VoxelCamera::GetViewMatrix(XMMATRIX& viewMatrix)
+void VxlCamera::GetViewMatrix(XMMATRIX& viewMatrix)
 {
 	viewMatrix = m_viewMatrix;
 	return;

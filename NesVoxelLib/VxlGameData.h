@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "VoxelUtil.h"
+#include "VxlUtil.h"
 
 const int spriteWidth = 8;
 const int spriteHeight = 8;

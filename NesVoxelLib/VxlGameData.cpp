@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "VoxelGameData.h"
+#include "VxlGameData.h"
 
 VoxelSprite::VoxelSprite()
 {
@@ -134,7 +134,7 @@ bool VoxelSprite::buildMesh()
 	mesh->type = color;
 	// Return true if there is an actual mesh to render
 	if (vertices->size() > 0) {
-		mesh->buffer = VoxelUtil::createBufferFromColorVerticesV(*vertices, mesh->size);
+		mesh->buffer = VxlUtil::createBufferFromColorVerticesV(*vertices, mesh->size);
 		meshExists = true;
 		return true;
 	}

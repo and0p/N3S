@@ -4,32 +4,31 @@
 #include "stdafx.h"
 #include <iostream>
 #include <fstream>
-#include "VoxelUtil.h"
+#include "VxlUtil.h"
 
 using namespace std;
 
-Microsoft::WRL::ComPtr<ID3D11Device>            VoxelUtil::device;
-Microsoft::WRL::ComPtr<ID3D11Device1>           VoxelUtil::device1;
-Microsoft::WRL::ComPtr<ID3D11DeviceContext>     VoxelUtil::context;
-Microsoft::WRL::ComPtr<ID3D11DeviceContext1>    VoxelUtil::context1;
-ID3D11SamplerState *VoxelUtil::sampleState;
-ID3D11Buffer *VoxelUtil::worldMatrixBuffer;
-ID3D11Buffer *VoxelUtil::viewMatrixBuffer;
-ID3D11Buffer *VoxelUtil::projectionMatrixBuffer;
-ShaderSet VoxelUtil::shaderSets[2];
-ID3D11InputLayout *VoxelUtil::inputLayouts[2];
-ID3D11Texture2D *VoxelUtil::texture2d;
-ID3D11ShaderResourceView *VoxelUtil::textureView;
-ShaderType VoxelUtil::activeShader;
-D3D11_SUBRESOURCE_DATA VoxelUtil::subData;
+Microsoft::WRL::ComPtr<ID3D11Device>            VxlUtil::device;
+Microsoft::WRL::ComPtr<ID3D11Device1>           VxlUtil::device1;
+Microsoft::WRL::ComPtr<ID3D11DeviceContext>     VxlUtil::context;
+Microsoft::WRL::ComPtr<ID3D11DeviceContext1>    VxlUtil::context1;
+ID3D11SamplerState *VxlUtil::sampleState;
+ID3D11Buffer *VxlUtil::worldMatrixBuffer;
+ID3D11Buffer *VxlUtil::viewMatrixBuffer;
+ID3D11Buffer *VxlUtil::projectionMatrixBuffer;
+ShaderSet VxlUtil::shaderSets[2];
+ID3D11InputLayout *VxlUtil::inputLayouts[2];
+ID3D11Texture2D *VxlUtil::texture2d;
+ID3D11ShaderResourceView *VxlUtil::textureView;
+ShaderType VxlUtil::activeShader;
+D3D11_SUBRESOURCE_DATA VxlUtil::subData;
 
-void VoxelUtil::initPipeline(Microsoft::WRL::ComPtr<ID3D11Device> d3dDevice, Microsoft::WRL::ComPtr<ID3D11DeviceContext> d3dContext,
-						   Microsoft::WRL::ComPtr<ID3D11Device1> d3dDevice1, Microsoft::WRL::ComPtr<ID3D11DeviceContext1> d3dContext1)
+void VxlUtil::initPipeline(VxlD3DContext c)
 {
-	device = d3dDevice;
-	context = d3dContext;
-	device1 = d3dDevice1;
-	context1 = d3dContext1;
+	device = c.device;
+	context = c.context;
+	device1 = c.device1;
+	context1 = c.context1;
 	// Create view cbuffer desc
 	D3D11_BUFFER_DESC matrixBufferDesc;
 	matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
@@ -69,7 +68,7 @@ void VoxelUtil::initPipeline(Microsoft::WRL::ComPtr<ID3D11Device> d3dDevice, Mic
 	device->CreateShaderResourceView(texture2d, NULL, &textureView);
 }
 
-void VoxelUtil::initShaders() {
+void VxlUtil::initShaders() {
 	ifstream s_stream;
 	size_t s_size;
 	char* s_data;
@@ -130,7 +129,7 @@ void VoxelUtil::initShaders() {
 	device1->CreatePixelShader(s_data, s_size, 0, &shaderSets[1].pixelShader);
 }
 
-void VoxelUtil::setShader(ShaderType type) {
+void VxlUtil::setShader(ShaderType type) {
 	switch (type)
 	{
 	case color:
@@ -150,7 +149,7 @@ void VoxelUtil::setShader(ShaderType type) {
 	}
 }
 
-VoxelMesh* VoxelUtil::CreateRectangle(ShaderType type)
+VoxelMesh* VxlUtil::CreateRectangle(ShaderType type)
 {
 	VoxelMesh *rectangle;
 	rectangle = new VoxelMesh;
@@ -189,7 +188,7 @@ VoxelMesh* VoxelUtil::CreateRectangle(ShaderType type)
 	return rectangle;
 }
 
-VoxelMesh *VoxelUtil::CreateSpriteMarker() {
+VoxelMesh *VxlUtil::CreateSpriteMarker() {
 	VoxelMesh *marker;
 	marker = new VoxelMesh;
 	marker->size = 3;
@@ -204,7 +203,7 @@ VoxelMesh *VoxelUtil::CreateSpriteMarker() {
 	return marker;
 }
 
-ID3D11Buffer* VoxelUtil::createBufferFromColorVertices(ColorVertex vertices[], int arraySize)
+ID3D11Buffer* VxlUtil::createBufferFromColorVertices(ColorVertex vertices[], int arraySize)
 {
 	// create the vertex buffer
 	D3D11_BUFFER_DESC bd;
@@ -226,7 +225,7 @@ ID3D11Buffer* VoxelUtil::createBufferFromColorVertices(ColorVertex vertices[], i
 	return pVBuffer;
 }
 
-ID3D11Buffer* VoxelUtil::createBufferFromColorVerticesV(std::vector<ColorVertex> &vertices, int arraySize)
+ID3D11Buffer* VxlUtil::createBufferFromColorVerticesV(std::vector<ColorVertex> &vertices, int arraySize)
 {
 	if (vertices.size() == 0) {
 		return nullptr;
@@ -251,7 +250,7 @@ ID3D11Buffer* VoxelUtil::createBufferFromColorVerticesV(std::vector<ColorVertex>
 	return pVBuffer;
 }
 
-ID3D11Buffer* VoxelUtil::createBufferFromTextureVertices(TextureVertex vertices[], int arraySize)
+ID3D11Buffer* VxlUtil::createBufferFromTextureVertices(TextureVertex vertices[], int arraySize)
 {
 	// create the vertex buffer
 	D3D11_BUFFER_DESC bd;
@@ -273,7 +272,7 @@ ID3D11Buffer* VoxelUtil::createBufferFromTextureVertices(TextureVertex vertices[
 	return pVBuffer;
 }
 
-void VoxelUtil::updateWorldMatrix(float x, float y, float z) {
+void VxlUtil::updateWorldMatrix(float x, float y, float z) {
 	XMMATRIX worldMatrix = XMMatrixIdentity();
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	MatrixBuffer* dataPtr;
@@ -292,7 +291,7 @@ void VoxelUtil::updateWorldMatrix(float x, float y, float z) {
 	context1->VSSetConstantBuffers(0, 1, &worldMatrixBuffer);
 }
 
-void VoxelUtil::updateMatricesWithCamera(VoxelCamera * camera) {
+void VxlUtil::updateMatricesWithCamera(VxlCamera * camera) {
 
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -341,7 +340,7 @@ void VoxelUtil::updateMatricesWithCamera(VoxelCamera * camera) {
 	context1->VSSetConstantBuffers(2, 1, &projectionMatrixBuffer);
 }
 
-XMMATRIX VoxelUtil::getProjectionMatrix(const float near_plane, const float far_plane, const float fov_horiz, const float fov_vert)
+XMMATRIX VxlUtil::getProjectionMatrix(const float near_plane, const float far_plane, const float fov_horiz, const float fov_vert)
 {
 	float    h, w, Q;
 
@@ -363,7 +362,7 @@ XMMATRIX VoxelUtil::getProjectionMatrix(const float near_plane, const float far_
 	return XMLoadFloat4x4(&tmp);
 }
 
-void VoxelUtil::renderMesh(VoxelMesh *voxelMesh) {
+void VxlUtil::renderMesh(VoxelMesh *voxelMesh) {
 	ShaderType type = voxelMesh->type;
 	// Switch shader if needed
 	if (activeShader != type) setShader(type);
@@ -386,7 +385,7 @@ void VoxelUtil::renderMesh(VoxelMesh *voxelMesh) {
 	}
 }
 
-void VoxelUtil::initSampleState() {
+void VxlUtil::initSampleState() {
 	D3D11_SAMPLER_DESC samplerDesc;
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -404,7 +403,7 @@ void VoxelUtil::initSampleState() {
 	device->CreateSamplerState(&samplerDesc, &sampleState);
 }
 
-void VoxelUtil::updateGameTexture(const void *data) {
+void VxlUtil::updateGameTexture(const void *data) {
 	
 	//data = ((char*)data) + 2;
 	setShader(texture);

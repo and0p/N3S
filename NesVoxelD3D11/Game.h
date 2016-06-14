@@ -6,12 +6,8 @@
 
 #include "DeviceResources.h"
 #include "StepTimer.h"
-#include "VoxelUtil.h"
-#include "VoxelCamera.h"
-#include "NesEmulator.h"
-#include "VoxelPPUSnapshot.h"
-#include "VoxelGameData.h"
 #include "libretro.h"
+#include "VxlApp.h"
 
 // A basic game implementation that creates a D3D11 device and
 // provides a game loop.
@@ -58,16 +54,6 @@ private:
     // Rendering loop timer.
     DX::StepTimer                           m_timer;
 
-	// Sample mesh
-	VoxelMesh								*testMesh;
-	VoxelMesh								*marker;
-
-	// Sample camera
-	VoxelCamera								*camera;
-
-	// PPU Snapshot
-	std::unique_ptr<VoxelPPUSnapshot>		snapshot;
-
-	// Mesh collection
-	VoxelGameData							voxelGameData;
+	// Voxel NES app
+	VxlApp									app;
 };
