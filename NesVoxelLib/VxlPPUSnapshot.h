@@ -1,12 +1,7 @@
 #pragma once
 
-#define PALETTE_SIZE	32;
-#define OAM_SIZE		256;
-#define	TABLE_SIZE		2048;
-#define NST_FORCE_INLINE inline
-#define NST_SINGLE_CALL __forceinline
-
 #include <vector>
+#include "VxlRawPPU.h"
 
 struct OamSprite {
 	unsigned char x;
@@ -24,20 +19,21 @@ struct NameTableTile {
 	int palette;
 };
 
-class NameTable {
+class NameTableWrapper {
 public:
-	NameTable(unsigned char * data);
+	NameTableWrapper(unsigned char * data);
 	void update(unsigned char * data);
 	NameTableTile tiles[960];
 };
 
-class VoxelPPUSnapshot {
+class VxlPPUSnapshot {
 public:
-	VoxelPPUSnapshot(const void *vram);
-	~VoxelPPUSnapshot();
+	VxlPPUSnapshot(VxlRawPPU *rawPPU);
+	~VxlPPUSnapshot();
 	std::vector<OamSprite> sprites;
-	std::shared_ptr<std::vector<NameTable>> nameTables;
-	int ppuScroll;
+	std::shared_ptr<std::vector<NameTableWrapper>> nameTables;
+	std::vector<ScrollState> scrollStates;
+	int ppuScroll = 0;
 private:
 	OamSprite buildSprite(unsigned char *ptr);
 	static int getTileAddress(unsigned char byte);

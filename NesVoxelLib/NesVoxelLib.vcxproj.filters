@@ -40,13 +40,13 @@
     <ClInclude Include="NesEmulator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="VoxelPPUSnapshot.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="VoxelGameData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VxlRawPPU.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VxlPPUSnapshot.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -63,10 +63,10 @@
     <ClCompile Include="NesEmulator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="VoxelPPUSnapshot.cpp">
+    <ClCompile Include="VoxelGameData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="VoxelGameData.cpp">
+    <ClCompile Include="VxlPPUSnapshot.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

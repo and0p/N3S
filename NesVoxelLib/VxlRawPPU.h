@@ -3,7 +3,7 @@
 #include <vector>
 
 struct PatternTable {
-	char data[4098];
+	char data[4096];
 };
 
 struct NameTable {
@@ -44,4 +44,4 @@ inline void VxlRawPPU::writeScrollValue(int v, int scanline) {
 	}
 	// Increment writes
 	scrollWrites++;
-}
+};
