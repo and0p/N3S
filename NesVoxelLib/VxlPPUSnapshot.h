@@ -31,7 +31,7 @@ public:
 	VxlPPUSnapshot(VxlRawPPU *rawPPU);
 	~VxlPPUSnapshot();
 	std::vector<OamSprite> sprites;
-	std::shared_ptr<std::vector<NameTableWrapper>> nameTables;
+	std::vector<NameTableWrapper> nameTables;
 	std::vector<ScrollState> scrollStates;
 	int ppuScroll = 0;
 private:

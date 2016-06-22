@@ -27,16 +27,14 @@ void NameTableWrapper::update(unsigned char * data)
 	}
 }
 
-
 VxlPPUSnapshot::VxlPPUSnapshot(VxlRawPPU * rawPPU)
 {
 		for (int i = 0; i < 64; i++) {
 			unsigned char *spritePtr = (unsigned char*)(&rawPPU->oam[0] + (i*4));
 			sprites.push_back(buildSprite(spritePtr));
 		}
-		nameTables->push_back(NameTableWrapper((unsigned char*)&rawPPU->nameTables[0]));
-		nameTables->push_back(NameTableWrapper((unsigned char*)&rawPPU->nameTables[1]));
-		// scrollStates = rawPPU->scrollStates;
+		nameTables.push_back(NameTableWrapper((unsigned char*)&rawPPU->nameTables[0]));
+		nameTables.push_back(NameTableWrapper((unsigned char*)&rawPPU->nameTables[1]));
 }
 
 VxlPPUSnapshot::~VxlPPUSnapshot()

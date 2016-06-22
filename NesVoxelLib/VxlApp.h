@@ -11,7 +11,8 @@
 
 class VxlApp {
 public:
-	VxlApp(VxlD3DContext);
+	VxlApp();
+	void assignD3DContext(VxlD3DContext);
 	void load();
 	void update();
 	void render();

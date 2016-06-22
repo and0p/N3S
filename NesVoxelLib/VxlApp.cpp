@@ -1,11 +1,16 @@
 #include "stdafx.h"
 #include "VxlApp.h"
 
-VxlApp::VxlApp(VxlD3DContext context)
+VxlApp::VxlApp()
 {
-	VxlUtil::initPipeline(context);
+	
 	gameData = std::shared_ptr<VoxelGameData>(new VoxelGameData(512, 1));
 	camera = VxlCamera();
+}
+
+void VxlApp::assignD3DContext(VxlD3DContext context)
+{
+	VxlUtil::initPipeline(context);
 }
 
 void VxlApp::load()
@@ -55,7 +60,7 @@ void VxlApp::render()
 		posX -= (pixelSizeW * snapshot->ppuScroll);
 		posY = 1.0f - (pixelSizeH * y * 8);
 		VxlUtil::updateWorldMatrix(posX, posY, -0.2f);
-		int tile = snapshot->nameTables->operator[](0).tiles[i].tile + 256;
+		int tile = snapshot->nameTables.operator[](0).tiles[i].tile + 256;
 		if (gameData->sprites[tile].meshExists)
 		{
 			VxlUtil::renderMesh(gameData->sprites[tile].mesh);

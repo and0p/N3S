@@ -11,7 +11,7 @@ using namespace DirectX;
 
 using Microsoft::WRL::ComPtr;
 
-Game::Game():
+Game::Game()
 {
     m_deviceResources = std::make_unique<DX::DeviceResources>();
     m_deviceResources->RegisterDeviceNotify(this);
@@ -29,11 +29,12 @@ void Game::Initialize(HWND window, int width, int height)
     CreateWindowSizeDependentResources();
 
 	VxlD3DContext c = { m_deviceResources->GetD3DDevice(), 
-						m_deviceResources->GetD3DDeviceContext(), 
 						m_deviceResources->GetD3DDevice1(), 
+						m_deviceResources->GetD3DDeviceContext(),
 						m_deviceResources->GetD3DDeviceContext1() };
 
-	app = VxlApp(c);
+    app.assignD3DContext(c);
+	app.load();
 
     // TODO: Change the timer settings if you want something other than the default variable timestep mode.
     // e.g. for 60 FPS fixed timestep update logic, call:

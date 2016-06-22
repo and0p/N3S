@@ -289,7 +289,8 @@ const void* NesEmulator::getPixelData() {
 }
 
 const void* NesEmulator::getVRam() {
-	return g_retro.retro_get_memory_data(RETRO_MEMORY_VIDEO_RAM);
+	const void* vramData = g_retro.retro_get_memory_data(RETRO_MEMORY_VIDEO_RAM);
+	return vramData;
 }
 
 retro_game_info *NesEmulator::getGameInfo()
