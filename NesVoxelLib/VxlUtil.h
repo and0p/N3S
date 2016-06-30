@@ -40,6 +40,14 @@ struct ShaderSet
 	ID3D11PixelShader *pixelShader;
 };
 
+struct Sides
+{
+	int top;
+	int left;
+	int bottom;
+	int right;
+};
+
 class VxlUtil {
 public:
 	static void initPipeline(VxlD3DContext context);

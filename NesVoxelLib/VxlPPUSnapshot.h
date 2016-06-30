@@ -19,11 +19,47 @@ struct NameTableTile {
 	int palette;
 };
 
-class NameTableWrapper {
-public:
-	NameTableWrapper(unsigned char * data);
-	void update(unsigned char * data);
+struct NameTableQuadrant {
 	NameTableTile tiles[960];
+};
+
+class Background {
+public:
+	static enum MirrorType { vertical, horizontal, single, full, diagonal };
+	int mirrorLayouts[5][4] = { 
+		{ 0, 1, 0, 1},
+		{ 0, 0, 1, 1 },
+		{ 0, 0, 0, 0 },
+		{ 0, 1, 2, 3 },
+		{ 0, 1, 1, 0 }
+	};
+	int mirrorPositions[5][4][2] = {
+		{ { 0, 0 },{ 1, 0 },{ 0, 0 },{ 0, 0 } },
+		{ { 0, 0 },{ 0, 1 },{ 0, 0 },{ 0, 0 } },
+		{ { 0, 0 },{ 0, 0 },{ 0, 0 },{ 0, 0 } },
+		{ { 0, 0 },{ 1, 0 },{ 0, 1 },{ 1, 1 } },
+		{ { 0, 0 },{ 1, 0 },{ 0, 0 },{ 0, 0 } },
+	};
+	int mirrorSizes[5][2] = {
+		{ 64, 30 },
+		{ 32, 60 },
+		{ 32, 30 },
+		{ 64, 60 },
+		{ 64, 60 }
+	};
+	MirrorType mirrorType = vertical;
+	NameTableTile getTile(int x, int y, int nametable);
+	void addQuadrant(char * data);
+private:
+	std::vector<NameTableQuadrant> quadrants;
+};
+
+struct ScrollSection {
+	int x;
+	int y;
+	int nameTable;
+	int top;
+	int bottom;
 };
 
 class VxlPPUSnapshot {
@@ -31,8 +67,8 @@ public:
 	VxlPPUSnapshot(VxlRawPPU *rawPPU);
 	~VxlPPUSnapshot();
 	std::vector<OamSprite> sprites;
-	std::vector<NameTableWrapper> nameTables;
-	std::vector<ScrollState> scrollStates;
+	Background background;
+	std::vector<ScrollSection> scrollSections;
 	int ppuScroll = 0;
 private:
 	OamSprite buildSprite(unsigned char *ptr);

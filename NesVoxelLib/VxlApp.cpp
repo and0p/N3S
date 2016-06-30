@@ -31,8 +31,8 @@ void VxlApp::update()
 void VxlApp::render()
 {
 	VxlUtil::updateGameTexture(NesEmulator::getPixelData());
-	camera.SetPosition(2.0, 0.0f, -1.0f);
-	camera.SetRotation(-65.0f, 0.0f, 0);
+	camera.SetPosition(0.5f, 0.0f, -2.0f);
+	camera.SetRotation(-15.0f, 0.0f, 0);
 	camera.Render();
 	VxlUtil::updateMatricesWithCamera(&camera);
 	VxlUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
@@ -52,18 +52,52 @@ void VxlApp::render()
 			}
 		}
 	}
-	for (int i = 0; i < 960; i++) {
-		int x = i % 32;
-		int y = floor(i / 32);
-		float posX, posY;
-		posX = -1.0f + (pixelSizeW * x * 8);
-		posX -= (pixelSizeW * snapshot->ppuScroll);
-		posY = 1.0f - (pixelSizeH * y * 8);
-		VxlUtil::updateWorldMatrix(posX, posY, -0.2f);
-		int tile = snapshot->nameTables.operator[](0).tiles[i].tile + 256;
-		if (gameData->sprites[tile].meshExists)
+	for (int y = 0; y < 30; y++)
+	{
+		for (int x = 0; x < 32; x++)
 		{
-			VxlUtil::renderMesh(gameData->sprites[tile].mesh);
+			float posX, posY;
+			posX = -1.0f + (pixelSizeW * x * 8);
+			posX -= (pixelSizeW * snapshot->ppuScroll);
+			posY = 1.0f - (pixelSizeH * y * 8);
+			VxlUtil::updateWorldMatrix(posX, posY, -0.2f);
+			int tile = snapshot->background.getTile(x, y, 0).tile;
+			if (tile < 0)
+				tile = 512 + tile;
+			else
+				tile += 256;
+			if (gameData->sprites[tile].meshExists)
+			{
+				VxlUtil::renderMesh(gameData->sprites[tile].mesh);
+			}
 		}
 	}
+}
+
+void renderNameTables()
+{
+
+}
+
+void renderScrollSection(VxlPPUSnapshot snapshot, int scrollSectionNumber)
+{
+	ScrollSection section = snapshot.scrollSections[scrollSectionNumber];
+	// Get offset of top-left pixel within top-left sprite referenced
+	int xOffset = section.x % 8;
+	int yOffset = section.y % 8;
+	// Count height of section
+	int sectionHeight = section.bottom - section.top;
+	// Figure out how much to clip the sprites on the edges, if at all
+	Sides offset = { 0, 0, 0, 0 };
+	if (yOffset > 0)
+	{
+		offset.top = 8 - yOffset;
+		offset.bottom = (sectionHeight - yOffset) % 8;
+	}
+	if (xOffset > 0)
+	{
+		offset.left = 8 - xOffset;
+		offset.right = (256 - xOffset) % 8;
+	}
+	
 }
