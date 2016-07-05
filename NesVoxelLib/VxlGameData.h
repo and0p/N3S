@@ -2,6 +2,8 @@
 
 #include <vector>
 #include "VxlUtil.h"
+#include <unordered_map>
+#include <string>
 
 const int spriteWidth = 8;
 const int spriteHeight = 8;
@@ -27,6 +29,12 @@ private:
 	static bool getBitLeftSide(char byte, int position);
 };
 
+class SharedMesh {
+public:
+	VoxelMesh mesh;
+	int referenceCount;
+};
+
 class VoxelSprite {
 public:
 	VoxelSprite();
@@ -37,14 +45,17 @@ public:
 	bool matchLeft;
 	bool matchRight;
 	VoxelMesh *mesh;
+	VoxelMesh zMeshes[64];
 	bool buildMesh();
+	void buildZMeshes();
+	static VoxelMesh buildZMesh(int zArray[32]);
 	bool meshExists;
 	void randomizeSprite();
 	void setVoxel(int, int, int, int);
 	void buildFromBitmapSprite(BitmapSprite bitmap);
 private:
 	Voxel getVoxel(int, int, int);
-	void buildSide(std::vector<ColorVertex> &vertices, int x, int y, int z, int color, VoxelSide side);
+	static void buildSide(std::vector<ColorVertex> &vertices, int x, int y, int z, int color, VoxelSide side);
 	void clear();
 };
 
@@ -58,5 +69,8 @@ public:
 	void createSpritesFromBitmaps();
 	void buildAllMeshes();
 	void grabBitmapSprites(const void * gameData, int offsetBytes);
+	static VoxelMesh getSharedMesh(int zArray[32]);
+	static void releaseSharedMesh(std::string hash);
 private:
+	static std::unordered_map<std::string, SharedMesh> sharedMeshes;
 };

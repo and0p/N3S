@@ -29,8 +29,9 @@ void VoxelSprite::buildFromBitmapSprite(BitmapSprite bitmap)
 		}
 	}
 	meshExists = buildMesh();
+	if (meshExists)
+		buildZMeshes();
 }
-
 
 Voxel VoxelSprite::getVoxel(int x, int y, int z)
 {
@@ -85,10 +86,8 @@ void VoxelSprite::randomizeSprite() {
 
 bool VoxelSprite::buildMesh()
 {
-	//VoxelMesh *mesh;
 	mesh = new VoxelMesh;
 	std::shared_ptr<std::vector<ColorVertex>> vertices(new std::vector<ColorVertex>);
-	//vertices->reserve(256);
 	int sideCount = 0;
 	for (int z = 0; z < spriteDepth; z++)
 	{
@@ -133,7 +132,8 @@ bool VoxelSprite::buildMesh()
 	mesh->size = sideCount * 6;
 	mesh->type = color;
 	// Return true if there is an actual mesh to render
-	if (vertices->size() > 0) {
+	if (vertices->size() > 0)
+	{
 		mesh->buffer = VxlUtil::createBufferFromColorVerticesV(*vertices, mesh->size);
 		meshExists = true;
 		return true;
@@ -145,6 +145,61 @@ bool VoxelSprite::buildMesh()
 	}
 }
 
+void VoxelSprite::buildZMeshes()
+{
+	int i = 0;
+	for (int y = 0; y < 8; y++)
+	{
+		for (int x = 0; x < 8; x++)
+		{
+			int zArray[32];
+			for (int z = 0; z < 32; z++)
+			{
+				zArray[z] = getVoxel(x, y, z).color;
+			}
+			zMeshes[i] = VoxelGameData::getSharedMesh(zArray);
+			i++;
+		}
+	}
+}
+
+VoxelMesh VoxelSprite::buildZMesh(int zArray[32])
+{
+	VoxelMesh mesh = VoxelMesh();
+	std::shared_ptr<std::vector<ColorVertex>> vertices(new std::vector<ColorVertex>);
+	int sideCount = 0;
+	for (int z = 0; z < spriteDepth; z++)
+	{
+		int color = zArray[z];
+		// See if the voxel is not empty
+		if (color > 0)
+		{
+			// Draw left, right, top, and bottom edges, which should be visible on Z-Meshes no matter what
+			buildSide(*vertices, 0, 0, z, color, left);
+			buildSide(*vertices, 0, 0, z, color, right);
+			buildSide(*vertices, 0, 0, z, color, top);
+			buildSide(*vertices, 0, 0, z, color, bottom);
+			sideCount += 4;
+			// See if front and/or back are exposed, and add sides if so
+			if (z == 0 || zArray[z - 1] == 0)
+			{
+				buildSide(*vertices, 0, 0, z, color, front);
+				sideCount++;
+			}
+			if (z == 31 || zArray[z + 1] == 0)
+			{
+				buildSide(*vertices, 0, 0, z, color, back);
+				sideCount++;
+			}
+			// TODO: Also add > evaluation for semi-transparent voxels in the future
+		}
+	}
+	mesh.size = sideCount * 6;
+	mesh.type = color;
+	mesh.buffer = VxlUtil::createBufferFromColorVerticesV(*vertices, mesh.size);
+	return mesh;
+}
+
 void VoxelSprite::buildSide(std::vector<ColorVertex> &vertices, int x, int y, int z, int color, VoxelSide side) {
 	// Translate voxel-space xyz into model-space based on pixel size in 3d space, phew
 	float xf = x * pixelSizeW;
@@ -152,7 +207,7 @@ void VoxelSprite::buildSide(std::vector<ColorVertex> &vertices, int x, int y, in
 	float zf = z * pixelSizeW;
 	// Init 4 vertices
 	ColorVertex v1, v2, v3, v4;
-	// Set all colors to red for now
+	// Set all colors to greyscale
 	if (color == 1)
 	{
 		v4.Col = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
@@ -234,6 +289,8 @@ VoxelGameData::VoxelGameData(int totalSprites, int ppuBankSize): totalSprites(to
 	}
 }
 
+std::unordered_map<std::string, SharedMesh> VoxelGameData::sharedMeshes;
+
 void VoxelGameData::createSpritesFromBitmaps()
 {
 	for (int i = 0; i < totalSprites; i++) {
@@ -255,6 +312,47 @@ void VoxelGameData::grabBitmapSprites(const void * gameData, int offsetBytes)
 	for (int i = 0; i < totalSprites; i++)
 	{
 		bitmaps.push_back(BitmapSprite(charData + offsetBytes + (i * 16)));
+	}
+}
+
+VoxelMesh VoxelGameData::getSharedMesh(int zArray[32])
+{
+	// Create simple string hash from the voxels
+	std::string hash = "";
+	char digits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+	for (int z = 0; z < 31; z++)
+	{
+		hash += digits[zArray[z]];
+		hash += '.';
+	}
+	hash += digits[zArray[31]];
+	// Return mesh if it exists, otherwise create
+	if (sharedMeshes.count(hash) > 0)
+	{
+		// Increase number of references
+		sharedMeshes[hash].referenceCount++;
+		// Return reference
+		return sharedMeshes[hash].mesh;
+	}
+	else
+	{
+		SharedMesh m = SharedMesh();
+		m.mesh = VoxelSprite::buildZMesh(zArray);
+		m.referenceCount++;
+		sharedMeshes[hash] = m;
+		return m.mesh;
+	}
+}
+
+void VoxelGameData::releaseSharedMesh(std::string hash)
+{
+	// Make sure this actually exists
+	if (sharedMeshes.count(hash) > 0)
+	{
+		sharedMeshes[hash].referenceCount--;
+		// Delete this mesh if it is no longer in use
+		sharedMeshes[hash].mesh.buffer->Release();
+		sharedMeshes.erase(hash);
 	}
 }
 
