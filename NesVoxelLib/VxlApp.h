@@ -16,6 +16,10 @@ public:
 	void load();
 	void update();
 	void render();
+	void renderSprites();
+	void renderNameTables();
+	void renderScrollSection(ScrollSection section);
+	void renderRow(int y, int height, int xOffset, int nametableX, int nametableY, int nameTable);
 	retro_game_info *info;
 	VxlCamera camera;
 	std::shared_ptr<VoxelGameData> gameData;

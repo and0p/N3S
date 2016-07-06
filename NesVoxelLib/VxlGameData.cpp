@@ -33,6 +33,18 @@ void VoxelSprite::buildFromBitmapSprite(BitmapSprite bitmap)
 		buildZMeshes();
 }
 
+void VoxelSprite::render(int x, int y, bool mirrorH, bool mirrorV)
+{
+	if (meshExists)
+	{
+		float posX, posY;
+		posX = -1.0f + (pixelSizeW * x);
+		posY = 1.0f - (pixelSizeH * y);
+		VxlUtil::updateWorldMatrix(posX, posY, 0);
+		VxlUtil::renderMesh(mesh);
+	}
+}
+
 Voxel VoxelSprite::getVoxel(int x, int y, int z)
 {
 	int voxelSlot = x + (y * spriteWidth) + (z * (spriteHeight * spriteWidth));
