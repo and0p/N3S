@@ -71,6 +71,7 @@ int VxlPPUSnapshot::getTileAddress(unsigned char byte)
 {
 	return (byte >> 1);
 }
+
 int getQuadrant(int x, int y)
 {
 	if (x < 32)
@@ -81,14 +82,14 @@ int getQuadrant(int x, int y)
 		}
 		else
 		{
-			return 1;
+			return 2;
 		}
 	}
 	else
 	{
 		if (y < 30)
 		{
-			return 2;
+			return 1;
 		}
 		else
 		{
@@ -101,14 +102,24 @@ NameTableTile Background::getTile(int x, int y, int nametable)
 {
 	// Get true X,Y
 	if (mirrorPositions[mirrorType][nametable][0])
+	{
 		x += 32;
+	}
 	if (mirrorPositions[mirrorType][nametable][1])
+	{
 		y += 30;
+	}
+	if (x > 64)
+		int test = 0;
 	// If this new X,Y is out of bounds, make it wrap around back from the top-left
-	x % mirrorSizes[mirrorType][0];
-	y % mirrorSizes[mirrorType][1];
+	x %= mirrorSizes[mirrorType][0];
+	y %= mirrorSizes[mirrorType][1];
 	// Find which quadrant this ultimately falls into
 	int quadrant = getQuadrant(x, y);
+	if (quadrant != 0)
+	{
+		int hi = 0;
+	}
 	// Reset X&Y to local quadrant coordinates
 	x %= 32;
 	y %= 30;

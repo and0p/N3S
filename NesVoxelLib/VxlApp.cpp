@@ -31,7 +31,7 @@ void VxlApp::update()
 void VxlApp::render()
 {
 	VxlUtil::updateGameTexture(NesEmulator::getPixelData());
-	camera.SetPosition(0.5f, 0.0f, -2.0f);
+	camera.SetPosition(0.65f, 0.0f, -2.0f);
 	camera.SetRotation(-15.0f, 0.0f, 0);
 	camera.Render();
 	VxlUtil::updateMatricesWithCamera(&camera);
