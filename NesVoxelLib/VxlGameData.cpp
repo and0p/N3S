@@ -40,6 +40,12 @@ void VoxelSprite::render(int x, int y, bool mirrorH, bool mirrorV)
 		float posX, posY;
 		posX = -1.0f + (pixelSizeW * x);
 		posY = 1.0f - (pixelSizeH * y);
+		if(mirrorH || mirrorV)
+			// Turn off backface culling
+		if(mirrorH)
+			posX += (pixelSizeW * 8);
+		if (mirrorV)
+			posY += (pixelSizeH * 8);
 		VxlUtil::updateWorldMatrix(posX, posY, 0);
 		VxlUtil::renderMesh(mesh);
 	}
@@ -249,36 +255,60 @@ void VoxelSprite::buildSide(std::vector<ColorVertex> &vertices, int x, int y, in
 		v2.Pos = XMFLOAT4(xf, yf, zf, 1.0f);
 		v3.Pos = XMFLOAT4(xf, yf - pixelSizeH, zf, 1.0f);
 		v4.Pos = XMFLOAT4(xf, yf - pixelSizeH, zf + pixelSizeW, 1.0f);
+		v1.Nor = XMFLOAT4(-1, 0, 0, 0);
+		v2.Nor = XMFLOAT4(-1, 0, 0, 0);
+		v3.Nor = XMFLOAT4(-1, 0, 0, 0);
+		v4.Nor = XMFLOAT4(-1, 0, 0, 0);
 		break;
 	case right:
 		v1.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf, 1.0f);
 		v2.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf + pixelSizeW, 1.0f);
 		v3.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeH, zf + pixelSizeW, 1.0f);
 		v4.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeH, zf, 1.0f);
+		v1.Nor = XMFLOAT4(1, 0, 0, 0);
+		v2.Nor = XMFLOAT4(1, 0, 0, 0);
+		v3.Nor = XMFLOAT4(1, 0, 0, 0);
+		v4.Nor = XMFLOAT4(1, 0, 0, 0);
 		break;
 	case top:
 		v1.Pos = XMFLOAT4(xf, yf, zf + pixelSizeW, 1.0f);
 		v2.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf + pixelSizeW, 1.0f);
 		v3.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf, 1.0f);
 		v4.Pos = XMFLOAT4(xf, yf, zf, 1.0f);
+		v1.Nor = XMFLOAT4(0, 1, 0, 0);
+		v2.Nor = XMFLOAT4(0, 1, 0, 0);
+		v3.Nor = XMFLOAT4(0, 1, 0, 0);
+		v4.Nor = XMFLOAT4(0, 1, 0, 0);
 		break;
 	case bottom:
 		v1.Pos = XMFLOAT4(xf, yf - pixelSizeH, zf, 1.0f);
 		v2.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeH, zf, 1.0f);
 		v3.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeH, zf + pixelSizeW, 1.0f);
 		v4.Pos = XMFLOAT4(xf, yf - pixelSizeH, zf + pixelSizeW, 1.0f);
+		v1.Nor = XMFLOAT4(0, -1, 0, 0);
+		v2.Nor = XMFLOAT4(0, -1, 0, 0);
+		v3.Nor = XMFLOAT4(0, -1, 0, 0);
+		v4.Nor = XMFLOAT4(0, -1, 0, 0);
 		break;
 	case front:
 		v1.Pos = XMFLOAT4(xf, yf, zf, 1.0f);
 		v2.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf, 1.0f);
 		v3.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeH, zf, 1.0f);
 		v4.Pos = XMFLOAT4(xf, yf - pixelSizeH, zf, 1.0f);
+		v1.Nor = XMFLOAT4(0, 0, 1, 0);
+		v2.Nor = XMFLOAT4(0, 0, 1, 0);
+		v3.Nor = XMFLOAT4(0, 0, 1, 0);
+		v4.Nor = XMFLOAT4(0, 0, 1, 0);
 		break;
 	case back:
 		v1.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf + pixelSizeW, 1.0f);
 		v2.Pos = XMFLOAT4(xf, yf, zf + pixelSizeW, 1.0f);
 		v3.Pos = XMFLOAT4(xf, yf - pixelSizeH, zf + pixelSizeW, 1.0f);
 		v4.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeH, zf + pixelSizeW, 1.0f);
+		v1.Nor = XMFLOAT4(0, 0, -1, 0);
+		v2.Nor = XMFLOAT4(0, 0, -1, 0);
+		v3.Nor = XMFLOAT4(0, 0, -1, 0);
+		v4.Nor = XMFLOAT4(0, 0, -1, 0);
 		break;
 	}
 	vertices.push_back(v1);

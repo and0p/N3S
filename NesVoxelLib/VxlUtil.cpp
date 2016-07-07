@@ -16,12 +16,14 @@ ID3D11SamplerState *VxlUtil::sampleState;
 ID3D11Buffer *VxlUtil::worldMatrixBuffer;
 ID3D11Buffer *VxlUtil::viewMatrixBuffer;
 ID3D11Buffer *VxlUtil::projectionMatrixBuffer;
+ID3D11Buffer *VxlUtil::mirrorBuffer;
 ShaderSet VxlUtil::shaderSets[2];
 ID3D11InputLayout *VxlUtil::inputLayouts[2];
 ID3D11Texture2D *VxlUtil::texture2d;
 ID3D11ShaderResourceView *VxlUtil::textureView;
 ShaderType VxlUtil::activeShader;
 D3D11_SUBRESOURCE_DATA VxlUtil::subData;
+MirrorState VxlUtil::mirrorState;
 
 void VxlUtil::initPipeline(VxlD3DContext c)
 {
@@ -29,7 +31,7 @@ void VxlUtil::initPipeline(VxlD3DContext c)
 	context = c.context;
 	device1 = c.device1;
 	context1 = c.context1;
-	// Create view cbuffer desc
+	// Create view buffer desc
 	D3D11_BUFFER_DESC matrixBufferDesc;
 	matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 	matrixBufferDesc.ByteWidth = sizeof(XMMATRIX);
@@ -41,6 +43,17 @@ void VxlUtil::initPipeline(VxlD3DContext c)
 	device1->CreateBuffer(&matrixBufferDesc, NULL, &worldMatrixBuffer);
 	device1->CreateBuffer(&matrixBufferDesc, NULL, &viewMatrixBuffer);
 	device1->CreateBuffer(&matrixBufferDesc, NULL, &projectionMatrixBuffer);
+
+	// Create mirror buffer desc
+	D3D11_BUFFER_DESC mirrorBufferDesc;
+	mirrorBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	mirrorBufferDesc.ByteWidth = 16;
+	mirrorBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	mirrorBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	mirrorBufferDesc.MiscFlags = 0;
+	mirrorBufferDesc.StructureByteStride = 0;
+
+	device1->CreateBuffer(&mirrorBufferDesc, NULL, &mirrorBuffer);
 
 	initShaders();
 	setShader(color);
@@ -66,6 +79,25 @@ void VxlUtil::initPipeline(VxlD3DContext c)
 
 	device->CreateTexture2D(&desc, NULL, &texture2d);
 	device->CreateShaderResourceView(texture2d, NULL, &textureView);
+
+	D3D11_RASTERIZER_DESC rasterDesc;
+	rasterDesc.AntialiasedLineEnable = false;
+	rasterDesc.CullMode = D3D11_CULL_NONE;
+	rasterDesc.DepthBias = 0;
+	rasterDesc.DepthBiasClamp = 0.0f;
+	rasterDesc.DepthClipEnable = true;
+	rasterDesc.FillMode = D3D11_FILL_SOLID;
+	rasterDesc.FrontCounterClockwise = true;
+	rasterDesc.MultisampleEnable = false;
+	rasterDesc.ScissorEnable = false;
+	rasterDesc.SlopeScaledDepthBias = 0.0f;
+
+	ID3D11RasterizerState * m_rasterState;
+	device->CreateRasterizerState(&rasterDesc, &m_rasterState);
+	context->RSSetState(m_rasterState);
+
+	mirrorState = { 0, 0 };
+	updateMirroring(false, false);
 }
 
 void VxlUtil::initShaders() {
@@ -85,10 +117,11 @@ void VxlUtil::initShaders() {
 	D3D11_INPUT_ELEMENT_DESC colorLayout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL",   0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
 
-	device1->CreateInputLayout(colorLayout, 2, &s_data[0], s_size, &inputLayouts[0]);
+	device1->CreateInputLayout(colorLayout, 3, &s_data[0], s_size, &inputLayouts[0]);
 
 	s_stream.open("C:\\Users\\and0\\Source\\Repos\\NesVoxel\\Debug\\color_pixel.cso", ifstream::in | ifstream::binary);
 	s_stream.seekg(0, ios::end);
@@ -289,6 +322,37 @@ void VxlUtil::updateWorldMatrix(float x, float y, float z) {
 	context1->Unmap(worldMatrixBuffer, 0);
 	// Finally set the constant buffer in the vertex shader with the updated values.
 	context1->VSSetConstantBuffers(0, 1, &worldMatrixBuffer);
+}
+
+void VxlUtil::updateMirroring(bool horizontal, bool vertical) {
+	int x, y;
+	if (horizontal)
+		x = -1;
+	else
+		x = 1;
+	if (vertical)
+		y = -1;
+	else
+		y = 1;
+	if (mirrorState.x != x || mirrorState.y != y)
+	{
+		mirrorState.x = x;
+		mirrorState.y = y;
+		D3D11_MAPPED_SUBRESOURCE mappedResource;
+		MirrorState* dataPtr;
+		// Lock the constant buffer so it can be written to.
+		context1->Map(mirrorBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+		// Get a pointer to the data in the constant buffer.
+		dataPtr = (MirrorState*)mappedResource.pData;
+		// Copy the values into the constant buffer.
+		dataPtr->x = x;
+		dataPtr->y = y;
+		// Unlock the constant buffer.
+		context1->Unmap(mirrorBuffer, 0);
+		// Finally set the constant buffer in the vertex shader with the updated values.
+		context1->VSSetConstantBuffers(3, 1, &mirrorBuffer);
+	}
+
 }
 
 void VxlUtil::updateMatricesWithCamera(VxlCamera * camera) {

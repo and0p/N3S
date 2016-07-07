@@ -36,6 +36,7 @@ void VxlApp::render()
 	camera.Render();
 	VxlUtil::updateMatricesWithCamera(&camera);
 	VxlUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
+	VxlUtil::updateMirroring(false, false);
 	renderSprites();
 	renderNameTables();
 	//for (int y = 0; y < 30; y++)

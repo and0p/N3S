@@ -16,6 +16,7 @@ enum ShaderType { color, texture };
 struct ColorVertex {
 	XMFLOAT4 Pos;
 	XMFLOAT4 Col;
+	XMFLOAT4 Nor;
 };
 
 struct TextureVertex {
@@ -48,6 +49,12 @@ struct Sides
 	int right;
 };
 
+struct MirrorState
+{
+	int x;
+	int y;
+};
+
 class VxlUtil {
 public:
 	static void initPipeline(VxlD3DContext context);
@@ -58,6 +65,7 @@ public:
 	static VoxelMesh* CreateSpriteMarker();
 	static void updateMatricesWithCamera(VxlCamera * camera);
 	static void updateWorldMatrix(float, float, float);
+	static void updateMirroring(bool horizontal, bool vertical);
 	static XMMATRIX getProjectionMatrix(const float near_plane, const float far_plane, const float fov_horiz, const float fov_vert);
 	static void setShader(ShaderType type);
 	static void renderMesh(VoxelMesh *voxelMesh);
@@ -74,6 +82,7 @@ private:
 	static ID3D11Buffer *worldMatrixBuffer;
 	static ID3D11Buffer *viewMatrixBuffer;
 	static ID3D11Buffer *projectionMatrixBuffer;
+	static ID3D11Buffer *mirrorBuffer;
 	static MatrixBuffer *worldMatrixPtr;
 	static MatrixBuffer *viewMatrixPtr;
 	static MatrixBuffer *projectionMatrixPtr;
@@ -82,4 +91,5 @@ private:
 	static ID3D11ShaderResourceView* textureView;
 	static ShaderType activeShader;
 	static D3D11_SUBRESOURCE_DATA subData;
+	static MirrorState mirrorState;
 };
