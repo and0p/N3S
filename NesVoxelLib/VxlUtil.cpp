@@ -433,7 +433,7 @@ void VxlUtil::renderMesh(VoxelMesh *voxelMesh) {
 	// Switch based on type
 	if (type == color)
 	{
-		UINT stride = sizeof(ColorVertex);
+		UINT stride = sizeof(ColorVertex); // TODO optimize
 		UINT offset = 0;
 		context->IASetVertexBuffers(0, 1, &voxelMesh->buffer, &stride, &offset);
 		// draw the vertex buffer to the back buffer

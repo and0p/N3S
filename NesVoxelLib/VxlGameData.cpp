@@ -40,14 +40,35 @@ void VoxelSprite::render(int x, int y, bool mirrorH, bool mirrorV)
 		float posX, posY;
 		posX = -1.0f + (pixelSizeW * x);
 		posY = 1.0f - (pixelSizeH * y);
-		if(mirrorH || mirrorV)
-			// Turn off backface culling
+		VxlUtil::updateMirroring(mirrorH, mirrorV);
 		if(mirrorH)
 			posX += (pixelSizeW * 8);
 		if (mirrorV)
 			posY += (pixelSizeH * 8);
 		VxlUtil::updateWorldMatrix(posX, posY, 0);
 		VxlUtil::renderMesh(mesh);
+	}
+}
+
+void VoxelSprite::renderPartial(int x, int y, Sides offset, bool mirrorH, bool mirrorV)
+{
+	for (int posY = offset.top; posY < 8 - offset.bottom; posY++)
+	{
+		for (int posX = offset.left; posX < 8 - offset.right; posX++)
+		{
+			VxlUtil::updateWorldMatrix(-1.0f + (x + posX - offset.left) * pixelSizeW, 1.0f - (y + posY - offset.top) * pixelSizeH, 0);
+			// Grab different zMeshes based on mirroring
+			int meshX, meshY;
+			if (mirrorH)
+				meshX = 7 - posX;
+			else
+				meshX = posX;
+			if (mirrorV)
+				meshY = 7 - posY;
+			else
+				meshY = posY;
+			VxlUtil::renderMesh(&zMeshes[(meshY * 8) + meshX]);
+		}
 	}
 }
 

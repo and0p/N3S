@@ -62,7 +62,12 @@ OamSprite VxlPPUSnapshot::buildSprite(unsigned char* ptr)
 	sprite.y = *ptr;
 	ptr += 1;
 	sprite.tile = *ptr;
-	ptr += 2;
+	ptr += 1;
+	sprite.hFlip = (*ptr >> 6) & 1;
+	sprite.vFlip = (*ptr >> 7) & 1;
+	sprite.palette = (*ptr & 3) + 4;
+	sprite.priority = (*ptr >> 5) & 1;
+	ptr += 1;
 	sprite.x = *ptr;
 	return sprite;
 }
