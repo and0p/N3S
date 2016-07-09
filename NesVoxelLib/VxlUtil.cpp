@@ -7,7 +7,6 @@
 #include "VxlUtil.h"
 
 using namespace std;
-
 Microsoft::WRL::ComPtr<ID3D11Device>            VxlUtil::device;
 Microsoft::WRL::ComPtr<ID3D11Device1>           VxlUtil::device1;
 Microsoft::WRL::ComPtr<ID3D11DeviceContext>     VxlUtil::context;
@@ -24,6 +23,7 @@ ID3D11ShaderResourceView *VxlUtil::textureView;
 ShaderType VxlUtil::activeShader;
 D3D11_SUBRESOURCE_DATA VxlUtil::subData;
 MirrorState VxlUtil::mirrorState;
+PPUHueStandardCollection VxlUtil::ppuHueStandardCollection;
 
 void VxlUtil::initPipeline(VxlD3DContext c)
 {

@@ -5,6 +5,7 @@
 #include <vector>
 #include "VxlCamera.h"
 #include "VxlD3DContext.h"
+#include "VxlPalette.h"
 
 static float pixelSizeW = (2.0f / 256.0f);
 static float pixelSizeH = (2.0f / 240.0f);
@@ -70,6 +71,7 @@ public:
 	static void setShader(ShaderType type);
 	static void renderMesh(VoxelMesh *voxelMesh);
 	static void updateGameTexture(const void *data);
+	static PPUHueStandardCollection ppuHueStandardCollection;
 private:
 	static Microsoft::WRL::ComPtr<ID3D11Device>            device;
 	static Microsoft::WRL::ComPtr<ID3D11Device1>           device1;
