@@ -53,6 +53,7 @@ void VoxelSprite::render(int x, int y, int palette, bool mirrorH, bool mirrorV)
 
 void VoxelSprite::renderPartial(int x, int y, int palette, Sides offset, bool mirrorH, bool mirrorV)
 {
+	VxlUtil::selectPalette(palette);
 	for (int posY = offset.top; posY < 8 - offset.bottom; posY++)
 	{
 		for (int posX = offset.left; posX < 8 - offset.right; posX++)

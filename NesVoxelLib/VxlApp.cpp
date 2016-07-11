@@ -147,17 +147,20 @@ void VxlApp::renderScrollSection(ScrollSection section)
 void VxlApp::renderRow(int y, int height, int xOffset, int nametableX, int nametableY, int nameTable)
 {
 	int x = 0;
+	NameTableTile nameTableTile;
+	int tile;
 	// Branch based on whether or not there is any X offset / partial sprite
 	if (xOffset > 0)
 	{
 		int i = 0;
 		// Render partial first sprite
-		int tile = snapshot->background.getTile(nametableX + i, nametableY, nameTable).tile;
+		nameTableTile = snapshot->background.getTile(nametableX + i, nametableY, nameTable);
+		tile = nameTableTile.tile;
 		if (tile < 0)
 			tile = 512 + tile;
 		else
 			tile += 256;
-		gameData->sprites[tile].renderPartial(x, y, 0, { 0, xOffset, 0, 0 }, false, false);
+		gameData->sprites[tile].renderPartial(x, y, nameTableTile.palette, { 0, xOffset, 0, 0 }, false, false);
 		x += 8 - xOffset;
 		i++;
 		// Render middle sprites
@@ -169,40 +172,43 @@ void VxlApp::renderRow(int y, int height, int xOffset, int nametableX, int namet
 			}
 			else
 			{
-				int tile = snapshot->background.getTile(nametableX + i, nametableY, nameTable).tile;
+				nameTableTile = snapshot->background.getTile(nametableX + i, nametableY, nameTable);
+				tile = nameTableTile.tile;
 				if (tile < 0)
 					tile = 512 + tile;
 				else
 					tile += 256;
-				gameData->sprites[tile].render(x, y, 0, false, false);
+				gameData->sprites[tile].render(x, y, nameTableTile.palette, false, false);
 			}
 			x += 8;
 		}
 		// Render parital last sprite
-		tile = snapshot->background.getTile(nametableX + i, nametableY, nameTable).tile;
+		nameTableTile = snapshot->background.getTile(nametableX + i, nametableY, nameTable);
+		tile = nameTableTile.tile;
 		if (tile < 0)
 			tile = 512 + tile;
 		else
 			tile += 256;
-		gameData->sprites[tile].renderPartial(x, y, 0, { 0, 0, 0, 8 - xOffset }, false, false);
+		gameData->sprites[tile].renderPartial(x, y, nameTableTile.palette, { 0, 0, 0, 8 - xOffset }, false, false);
 	}
 	else
 	{
 		// Render all full sprites
 		for (int i = 0; i < 32; i++)
 		{
+			NameTableTile nameTableTile = snapshot->background.getTile(nametableX + i, nametableY, nameTable);
+			tile = nameTableTile.tile;
 			if (height < 8)
 			{
 				// Render partial sprite
 			}
 			else
 			{
-				int tile = snapshot->background.getTile(nametableX + i, nametableY, nameTable).tile;
 				if (tile < 0)
 					tile = 512 + tile;
 				else
 					tile += 256;
-				gameData->sprites[tile].render(x, y, 0, false, false);
+				gameData->sprites[tile].render(x, y, nameTableTile.palette, false, false);
 			}
 			x += 8;
 		}

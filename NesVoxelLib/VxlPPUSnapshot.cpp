@@ -141,11 +141,39 @@ NameTableTile Background::getTile(int x, int y, int nametable)
 	return quadrants[quadrant].tiles[(y * 32) + x];
 }
 
+void updatePaletteFor16x16(int index, int palette, NameTableQuadrant *quadrant)
+{
+	quadrant->tiles[index].palette = palette;
+	quadrant->tiles[index + 1].palette = palette;
+	quadrant->tiles[index + 32].palette = palette;
+	quadrant->tiles[index + 33].palette = palette;
+}
+
 void Background::addQuadrant(char * data)
 {
 	NameTableQuadrant quadrant = NameTableQuadrant();
-	for (int i = 0; i < 960; i++) {
+	// Get tiles from memory
+	for (int i = 0; i < 960; i++)
+	{
 		quadrant.tiles[i].tile = *(data + i);
+	}
+	// Get tile palettes from memory
+	for (int i = 0; i < 64; i++)
+	{
+		int indexColumn = (i * 4) % 32;
+		int indexRow = floor(i / 8);
+		int index = indexColumn + (indexRow * 128);
+		char palette = *(data + 960 + i);
+		int testP = (palette) & 3;
+		// Insert palette into the 4 (2x2) tiles in the section the attribute table is addressing
+		updatePaletteFor16x16(index, palette & 3, &quadrant);
+		updatePaletteFor16x16(index + 2, (palette >> 2) & 3, &quadrant);
+		// Skip insert second sub-row if bottom row, which is only 1 high
+		if (indexRow != 7)
+		{
+			updatePaletteFor16x16(index + 64, (palette >> 4) & 3, &quadrant);
+			updatePaletteFor16x16(index + 66, (palette >> 6) & 3, &quadrant);
+		}
 	}
 	quadrants.push_back(quadrant);
 }
