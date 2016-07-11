@@ -14,7 +14,6 @@ VxlCamera::VxlCamera()
 	m_rotationZ = 0.0f;
 }
 
-
 VxlCamera::VxlCamera(const VxlCamera& other)
 {
 }
@@ -31,7 +30,6 @@ void VxlCamera::SetPosition(float x, float y, float z)
 	m_positionZ = z;
 	return;
 }
-
 
 void VxlCamera::SetRotation(float x, float y, float z)
 {

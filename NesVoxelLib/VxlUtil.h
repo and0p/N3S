@@ -67,6 +67,8 @@ public:
 	static void updateMatricesWithCamera(VxlCamera * camera);
 	static void updateWorldMatrix(float, float, float);
 	static void updateMirroring(bool horizontal, bool vertical);
+	static void updatePalette(float palette[72]);
+	static void selectPalette(int palette);
 	static XMMATRIX getProjectionMatrix(const float near_plane, const float far_plane, const float fov_horiz, const float fov_vert);
 	static void setShader(ShaderType type);
 	static void renderMesh(VoxelMesh *voxelMesh);
@@ -85,6 +87,8 @@ private:
 	static ID3D11Buffer *viewMatrixBuffer;
 	static ID3D11Buffer *projectionMatrixBuffer;
 	static ID3D11Buffer *mirrorBuffer;
+	static ID3D11Buffer *paletteBuffer;
+	static ID3D11Buffer *paletteSelectionBuffer;
 	static MatrixBuffer *worldMatrixPtr;
 	static MatrixBuffer *viewMatrixPtr;
 	static MatrixBuffer *projectionMatrixPtr;

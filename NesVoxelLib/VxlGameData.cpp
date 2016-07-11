@@ -249,24 +249,24 @@ void VoxelSprite::buildSide(std::vector<ColorVertex> &vertices, int x, int y, in
 	// Set all colors to greyscale
 	if (color == 1)
 	{
-		v4.Col = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
-		v1.Col = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
-		v2.Col = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
-		v3.Col = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
+		v4.Col = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+		v1.Col = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+		v2.Col = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+		v3.Col = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
 	}
 	else if (color == 2)
 	{
-		v1.Col = XMFLOAT4(0.6f, 0.6f, 0.6f, 1.0f);
-		v2.Col = XMFLOAT4(0.6f, 0.6f, 0.6f, 1.0f);
-		v3.Col = XMFLOAT4(0.6f, 0.6f, 0.6f, 1.0f);
-		v4.Col = XMFLOAT4(0.6f, 0.6f, 0.6f, 1.0f);
+		v1.Col = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
+		v2.Col = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
+		v3.Col = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
+		v4.Col = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
 	}
 	else if (color == 3)
 	{
-		v1.Col = XMFLOAT4(0.9f, 0.9f, 0.9f, 1.0f);
-		v2.Col = XMFLOAT4(0.9f, 0.9f, 0.9f, 1.0f);
-		v3.Col = XMFLOAT4(0.9f, 0.9f, 0.9f, 1.0f);
-		v4.Col = XMFLOAT4(0.9f, 0.9f, 0.9f, 1.0f);
+		v1.Col = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+		v2.Col = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+		v3.Col = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+		v4.Col = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
 	}
 	
 	// Switch based on side

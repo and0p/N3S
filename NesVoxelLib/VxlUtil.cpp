@@ -16,6 +16,8 @@ ID3D11Buffer *VxlUtil::worldMatrixBuffer;
 ID3D11Buffer *VxlUtil::viewMatrixBuffer;
 ID3D11Buffer *VxlUtil::projectionMatrixBuffer;
 ID3D11Buffer *VxlUtil::mirrorBuffer;
+ID3D11Buffer *VxlUtil::paletteBuffer;
+ID3D11Buffer *VxlUtil::paletteSelectionBuffer;
 ShaderSet VxlUtil::shaderSets[2];
 ID3D11InputLayout *VxlUtil::inputLayouts[2];
 ID3D11Texture2D *VxlUtil::texture2d;
@@ -54,6 +56,28 @@ void VxlUtil::initPipeline(VxlD3DContext c)
 	mirrorBufferDesc.StructureByteStride = 0;
 
 	device1->CreateBuffer(&mirrorBufferDesc, NULL, &mirrorBuffer);
+
+	// Create palette buffer desc
+	D3D11_BUFFER_DESC paletteBufferDesc;
+	paletteBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	paletteBufferDesc.ByteWidth = sizeof(float) * 96;
+	paletteBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	paletteBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	paletteBufferDesc.MiscFlags = 0;
+	paletteBufferDesc.StructureByteStride = 0;
+
+	device1->CreateBuffer(&paletteBufferDesc, NULL, &paletteBuffer);
+
+	// Create palette selection buffer desc
+	D3D11_BUFFER_DESC paletteSelectionBufferDesc;
+	paletteSelectionBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	paletteSelectionBufferDesc.ByteWidth = 16;
+	paletteSelectionBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	paletteSelectionBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	paletteSelectionBufferDesc.MiscFlags = 0;
+	paletteSelectionBufferDesc.StructureByteStride = 0;
+
+	device1->CreateBuffer(&paletteSelectionBufferDesc, NULL, &paletteSelectionBuffer);
 
 	initShaders();
 	setShader(color);
@@ -98,6 +122,20 @@ void VxlUtil::initPipeline(VxlD3DContext c)
 
 	mirrorState = { 0, 0 };
 	updateMirroring(false, false);
+
+	selectPalette(0);
+	float paletteArray[72] =
+	{
+		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f
+	};
+	updatePalette(paletteArray);
 }
 
 void VxlUtil::initShaders() {
@@ -353,6 +391,49 @@ void VxlUtil::updateMirroring(bool horizontal, bool vertical) {
 		context1->VSSetConstantBuffers(3, 1, &mirrorBuffer);
 	}
 
+}
+
+void VxlUtil::updatePalette(float palette[72])
+{
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	float* dataPtr;
+	// Lock the constant buffer so it can be written to.
+	context1->Map(paletteBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	// Get a pointer to the data in the constant buffer.
+	dataPtr = (float*)mappedResource.pData;
+	// Copy the values into the constant buffer.
+	int count = 0;
+	for (int i = 0; i < 96; i++)
+	{
+		if ((i + 1) % 4 != 0)
+		{
+			*dataPtr = palette[count];
+			count++;
+		}
+		else
+			*dataPtr = 0.0f;
+		dataPtr++;
+	}
+	// Unlock the constant buffer.
+	context1->Unmap(paletteBuffer, 0);
+	// Finally set the constant buffer in the pixel shader with the updated values.
+	context1->PSSetConstantBuffers(0, 1, &paletteBuffer);
+}
+
+void VxlUtil::selectPalette(int palette)
+{
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	int* dataPtr;
+	// Lock the constant buffer so it can be written to.
+	context1->Map(paletteSelectionBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	// Get a pointer to the data in the constant buffer.
+	dataPtr = (int*)mappedResource.pData;
+	// Copy the values into the constant buffer.
+	*dataPtr = palette;
+	// Unlock the constant buffer.
+	context1->Unmap(paletteSelectionBuffer, 0);
+	// Finally set the constant buffer in the pixel shader with the updated values.
+	context1->PSSetConstantBuffers(1, 1, &paletteSelectionBuffer);
 }
 
 void VxlUtil::updateMatricesWithCamera(VxlCamera * camera) {
