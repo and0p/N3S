@@ -34,34 +34,12 @@ void VxlApp::render()
 	camera.SetPosition(0.65f, +0.2f, -2.0f);
 	camera.SetRotation(-15.0f, -0.3f, 0);
 	camera.Render();
-	//camera.SetPosition(-1.8f, -0.5f, -0.5f);
-	//camera.SetRotation(+60.0f, 0.0f, 0);
-	//camera.Render();
 	VxlUtil::updateMatricesWithCamera(&camera);
 	VxlUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
 	VxlUtil::updateMirroring(false, false);
+	updatePalette();
 	renderSprites();
 	renderNameTables();
-	//for (int y = 0; y < 30; y++)
-	//{
-	//	for (int x = 0; x < 32; x++)
-	//	{
-	//		float posX, posY;
-	//		posX = -1.0f + (pixelSizeW * x * 8);
-	//		posX -= (pixelSizeW * snapshot->ppuScroll);
-	//		posY = 1.0f - (pixelSizeH * y * 8);
-	//		VxlUtil::updateWorldMatrix(posX, posY, -0.2f);
-	//		int tile = snapshot->background.getTile(x, y, 0).tile;
-	//		if (tile < 0)
-	//			tile = 512 + tile;
-	//		else
-	//			tile += 256;
-	//		if (gameData->sprites[tile].meshExists)
-	//		{
-	//			VxlUtil::renderMesh(gameData->sprites[tile].mesh);
-	//		}
-	//	}
-	//}
 }
 
 void VxlApp::renderSprites()
@@ -80,12 +58,28 @@ void VxlApp::renderSprites()
 					offset.right = 8 - (256 - x);
 				if (y >= 232)
 					offset.bottom = 8 - (240 - y);
-				gameData->sprites[tile].renderPartial(x, y, offset, sprite.hFlip, sprite.vFlip);
+				gameData->sprites[tile].renderPartial(x, y, sprite.palette, offset, sprite.hFlip, sprite.vFlip);
 			}
 			else
-				gameData->sprites[tile].render(x, y, sprite.hFlip, sprite.vFlip);
+				gameData->sprites[tile].render(x, y, sprite.palette, sprite.hFlip, sprite.vFlip);
 		}
 	}
+}
+
+void VxlApp::updatePalette()
+{
+	float palette[72];
+	for (int p = 0; p < 8; p++)
+	{
+		for (int h = 0; h < 3; h++)
+		{
+			palette[(p * 9) + (h * 3)] = VxlUtil::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).red;
+			palette[(p * 9) + (h * 3) + 1] = VxlUtil::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).green;
+			palette[(p * 9) + (h * 3) + 2] = VxlUtil::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).blue;
+		}
+	}
+	Hue hue = VxlUtil::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[0].colors[2]);
+	VxlUtil::updatePalette(palette);
 }
 
 void VxlApp::renderNameTables()
@@ -163,7 +157,7 @@ void VxlApp::renderRow(int y, int height, int xOffset, int nametableX, int namet
 			tile = 512 + tile;
 		else
 			tile += 256;
-		gameData->sprites[tile].renderPartial(x, y, { 0, xOffset, 0, 0 }, false, false);
+		gameData->sprites[tile].renderPartial(x, y, 0, { 0, xOffset, 0, 0 }, false, false);
 		x += 8 - xOffset;
 		i++;
 		// Render middle sprites
@@ -180,7 +174,7 @@ void VxlApp::renderRow(int y, int height, int xOffset, int nametableX, int namet
 					tile = 512 + tile;
 				else
 					tile += 256;
-				gameData->sprites[tile].render(x, y, false, false);
+				gameData->sprites[tile].render(x, y, 0, false, false);
 			}
 			x += 8;
 		}
@@ -190,7 +184,7 @@ void VxlApp::renderRow(int y, int height, int xOffset, int nametableX, int namet
 			tile = 512 + tile;
 		else
 			tile += 256;
-		gameData->sprites[tile].renderPartial(x, y, { 0, 0, 0, 8 - xOffset }, false, false);
+		gameData->sprites[tile].renderPartial(x, y, 0, { 0, 0, 0, 8 - xOffset }, false, false);
 	}
 	else
 	{
@@ -208,7 +202,7 @@ void VxlApp::renderRow(int y, int height, int xOffset, int nametableX, int namet
 					tile = 512 + tile;
 				else
 					tile += 256;
-				gameData->sprites[tile].render(x, y, false, false);
+				gameData->sprites[tile].render(x, y, 0, false, false);
 			}
 			x += 8;
 		}

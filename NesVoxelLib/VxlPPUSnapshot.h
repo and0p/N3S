@@ -23,6 +23,14 @@ struct NameTableQuadrant {
 	NameTableTile tiles[960];
 };
 
+struct IndividualPalette {
+	int colors[3];
+};
+
+struct FullPalette {
+	IndividualPalette palettes[8];
+};
+
 class Background {
 public:
 	static enum MirrorType { vertical, horizontal, single, full, diagonal };
@@ -68,6 +76,7 @@ public:
 	~VxlPPUSnapshot();
 	std::vector<OamSprite> sprites;
 	Background background;
+	FullPalette palette;
 	std::vector<ScrollSection> scrollSections;
 	int ppuScroll = 0;
 private:

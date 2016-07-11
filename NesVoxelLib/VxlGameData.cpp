@@ -33,10 +33,11 @@ void VoxelSprite::buildFromBitmapSprite(BitmapSprite bitmap)
 		buildZMeshes();
 }
 
-void VoxelSprite::render(int x, int y, bool mirrorH, bool mirrorV)
+void VoxelSprite::render(int x, int y, int palette, bool mirrorH, bool mirrorV)
 {
 	if (meshExists)
 	{
+		VxlUtil::selectPalette(palette);
 		float posX, posY;
 		posX = -1.0f + (pixelSizeW * x);
 		posY = 1.0f - (pixelSizeH * y);
@@ -50,7 +51,7 @@ void VoxelSprite::render(int x, int y, bool mirrorH, bool mirrorV)
 	}
 }
 
-void VoxelSprite::renderPartial(int x, int y, Sides offset, bool mirrorH, bool mirrorV)
+void VoxelSprite::renderPartial(int x, int y, int palette, Sides offset, bool mirrorH, bool mirrorV)
 {
 	for (int posY = offset.top; posY < 8 - offset.bottom; posY++)
 	{

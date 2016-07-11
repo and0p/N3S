@@ -16,6 +16,7 @@ public:
 	void load();
 	void update();
 	void render();
+	void updatePalette();
 	void renderSprites();
 	void renderNameTables();
 	void renderScrollSection(ScrollSection section);

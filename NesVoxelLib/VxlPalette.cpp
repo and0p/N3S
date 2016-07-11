@@ -8,7 +8,7 @@ float getFloatColorValue(int color)
 	else if (color >= 255)
 		return 1.0f;
 	else
-		return color / 256;
+		return color / 256.0f;
 }
 
 PPUHueStandardCollection::PPUHueStandardCollection()
@@ -20,7 +20,7 @@ PPUHueStandardCollection::PPUHueStandardCollection()
 		ppuHueStandards[v2C02].hueSets[0].hues[h].green = getFloatColorValue(hueArray[h * 3 + 1]);
 		ppuHueStandards[v2C02].hueSets[0].hues[h].blue = getFloatColorValue(hueArray[h * 3 + 2]);
 	}
-	int test = 0;
+	int hi = 3;
 }
 
 Hue PPUHueStandardCollection::getHue(PPUType type, int hueSet, int number)

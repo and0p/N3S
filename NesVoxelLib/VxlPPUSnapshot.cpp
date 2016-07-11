@@ -17,39 +17,49 @@
 
 VxlPPUSnapshot::VxlPPUSnapshot(VxlRawPPU * rawPPU)
 {
-		for (int i = 0; i < 64; i++)
+	// Build sprites
+	for (int i = 0; i < 64; i++)
+	{
+		unsigned char *spritePtr = (unsigned char*)(&rawPPU->oam[0] + (i*4));
+		sprites.push_back(buildSprite(spritePtr));
+	}
+	// Grab background quadrants
+	background.addQuadrant((char*)&rawPPU->nameTables[0]);
+	background.addQuadrant((char*)&rawPPU->nameTables[1]);
+	background.addQuadrant((char*)&rawPPU->nameTables[2]);
+	background.addQuadrant((char*)&rawPPU->nameTables[3]);
+	// Copy palette
+	for (int p = 0; p < 8; p++)
+	{
+		for (int c = 0; c < 3; c++)
 		{
-			unsigned char *spritePtr = (unsigned char*)(&rawPPU->oam[0] + (i*4));
-			sprites.push_back(buildSprite(spritePtr));
+			palette.palettes[p].colors[c] = (int)rawPPU->palette[(p*4) + 1 + c];
 		}
-		background.addQuadrant((char*)&rawPPU->nameTables[0]);
-		background.addQuadrant((char*)&rawPPU->nameTables[1]);
-		background.addQuadrant((char*)&rawPPU->nameTables[2]);
-		background.addQuadrant((char*)&rawPPU->nameTables[3]);
-		// Create "sections" of screen where scroll has changed
-		for (auto kv : rawPPU->scrollStates)
+	}
+	// Create "sections" of screen where scroll has changed
+	for (auto kv : rawPPU->scrollStates)
+	{
+		ScrollSection s = ScrollSection();
+		s.top = kv.first;
+		s.x = kv.second.x;
+		s.y = kv.second.y;
+		s.nameTable = kv.second.highOrderBit;
+		scrollSections.push_back(s);
+	}
+	// Make sure first and last scroll sections take up the full screen
+	if (scrollSections.size() > 0)
+	{
+		scrollSections.front().top = 0;
+		scrollSections.back().bottom = 239;
+		// Change the bottom of all scroll sections to be top of next if needed
+		if (scrollSections.size() > 1)
 		{
-			ScrollSection s = ScrollSection();
-			s.top = kv.first;
-			s.x = kv.second.x;
-			s.y = kv.second.y;
-			s.nameTable = kv.second.highOrderBit;
-			scrollSections.push_back(s);
-		}
-		// Make sure first and last scroll sections take up the full screen
-		if (scrollSections.size() > 0)
-		{
-			scrollSections.front().top = 0;
-			scrollSections.back().bottom = 239;
-			// Change the bottom of all scroll sections to be top of next if needed
-			if (scrollSections.size() > 1)
+			for (int i = 0; i < scrollSections.size()-1; i++)
 			{
-				for (int i = 0; i < scrollSections.size()-1; i++)
-				{
-					scrollSections[i].bottom = scrollSections[i + 1].top - 1;
-				}
+				scrollSections[i].bottom = scrollSections[i + 1].top - 1;
 			}
 		}
+	}
 }
 
 VxlPPUSnapshot::~VxlPPUSnapshot()

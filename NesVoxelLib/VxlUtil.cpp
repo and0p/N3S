@@ -26,6 +26,7 @@ ShaderType VxlUtil::activeShader;
 D3D11_SUBRESOURCE_DATA VxlUtil::subData;
 MirrorState VxlUtil::mirrorState;
 PPUHueStandardCollection VxlUtil::ppuHueStandardCollection;
+int VxlUtil::selectedPalette;
 
 void VxlUtil::initPipeline(VxlD3DContext c)
 {
@@ -390,7 +391,6 @@ void VxlUtil::updateMirroring(bool horizontal, bool vertical) {
 		// Finally set the constant buffer in the vertex shader with the updated values.
 		context1->VSSetConstantBuffers(3, 1, &mirrorBuffer);
 	}
-
 }
 
 void VxlUtil::updatePalette(float palette[72])
@@ -422,18 +422,22 @@ void VxlUtil::updatePalette(float palette[72])
 
 void VxlUtil::selectPalette(int palette)
 {
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	int* dataPtr;
-	// Lock the constant buffer so it can be written to.
-	context1->Map(paletteSelectionBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	// Get a pointer to the data in the constant buffer.
-	dataPtr = (int*)mappedResource.pData;
-	// Copy the values into the constant buffer.
-	*dataPtr = palette;
-	// Unlock the constant buffer.
-	context1->Unmap(paletteSelectionBuffer, 0);
-	// Finally set the constant buffer in the pixel shader with the updated values.
-	context1->PSSetConstantBuffers(1, 1, &paletteSelectionBuffer);
+	if (palette != selectedPalette)
+	{
+		selectedPalette = palette;
+		D3D11_MAPPED_SUBRESOURCE mappedResource;
+		int* dataPtr;
+		// Lock the constant buffer so it can be written to.
+		context1->Map(paletteSelectionBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+		// Get a pointer to the data in the constant buffer.
+		dataPtr = (int*)mappedResource.pData;
+		// Copy the values into the constant buffer.
+		*dataPtr = palette;
+		// Unlock the constant buffer.
+		context1->Unmap(paletteSelectionBuffer, 0);
+		// Finally set the constant buffer in the pixel shader with the updated values.
+		context1->PSSetConstantBuffers(1, 1, &paletteSelectionBuffer);
+	}
 }
 
 void VxlUtil::updateMatricesWithCamera(VxlCamera * camera) {

@@ -98,4 +98,5 @@ private:
 	static ShaderType activeShader;
 	static D3D11_SUBRESOURCE_DATA subData;
 	static MirrorState mirrorState;
+	static int selectedPalette;
 };
