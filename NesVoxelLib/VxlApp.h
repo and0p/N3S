@@ -8,6 +8,7 @@
 #include "VxlCamera.h"
 #include "libretro.h"
 #include "VxlInput.h"
+#include "VxlPatternTable.h"
 #include <memory>
 
 class VxlApp {
@@ -22,11 +23,12 @@ public:
 	VxlCamera camera;
 	std::shared_ptr<VoxelGameData> gameData;
 private:
+	std::shared_ptr<VxlPPUSnapshot> snapshot;
+	InputState inputState;
+	VxlVirtualPatternTable virtualPatternTable;
 	void updatePalette();
 	void renderSprites();
 	void renderNameTables();
 	void renderScrollSection(ScrollSection section);
 	void renderRow(int y, int height, int xOffset, int nametableX, int nametableY, int nameTable);
-	std::shared_ptr<VxlPPUSnapshot> snapshot;
-	InputState inputState;
 };

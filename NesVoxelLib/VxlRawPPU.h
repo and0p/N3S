@@ -4,7 +4,7 @@
 #include <map>
 
 struct PatternTable {
-	char data[4096];
+	char data[8192];
 };
 
 struct NameTable {
@@ -26,7 +26,7 @@ public:
 	char status;
 	char palette[32];
 	char oam[256];
-	PatternTable patternTables[2];
+	PatternTable patternTable;
 	NameTable nameTables[4];
 	std::map<int, ScrollState> scrollStates;
 	int mostRecentScanLineModified = 0;
@@ -44,23 +44,27 @@ inline void VxlRawPPU::writeScrollValue(int scanline, ScrollDataType type, int d
 	if (scanline < 0 || scanline > 240)
 		scanline = 0;
 	// See if we have a ScrollState for this scanline, if not create one
-	if (scrollStates.count(scanline) == 0)
+	if (scrollStates.count(scanline) == 0 && type != high)
 	{
 		scrollStates[scanline] = ScrollState();
-		// Grab the most recent high-order bit, in case the game doesn't set it at every scroll
-		scrollStates[scanline].highOrderBit = scrollStates[mostRecentScanLineModified].highOrderBit;
+		// If Y not specified, assume that it's been clocking normally and add scanline difference to last one
+		if (type != y)
+		{
+			scrollStates[scanline].y = scrollStates[mostRecentScanLineModified].y + (scanline - mostRecentScanLineModified);
+		}
+		mostRecentScanLineModified = scanline;
 	}
-	mostRecentScanLineModified = scanline;
 	switch (type)
 	{
 	case x:
-		scrollStates[scanline].x = data;
+		scrollStates[mostRecentScanLineModified].x = data;
 		break;
 	case y:
-		scrollStates[scanline].y = data;
+		// scrollStates[mostRecentScanLineModified].y = data;
 		break;
 	case high:
-		scrollStates[scanline].highOrderBit = data;
+		if (scanline != 0)
+			scrollStates[mostRecentScanLineModified].highOrderBit = data;
 		break;
 	}
 }
@@ -73,7 +77,10 @@ inline void VxlRawPPU::clearScrollValue(int scanline)
 // Reset the scroll history, but re-insert the most recent change
 inline void VxlRawPPU::reset()
 {
-	ScrollState lastScrollState = scrollStates[mostRecentScanLineModified];
+	//ScrollState lastScrollState = scrollStates[mostRecentScanLineModified];
 	scrollStates.clear();
-	scrollStates[0] = lastScrollState;
+	//scrollStates[0] = lastScrollState;
+	//scrollStates[0].y = 0;
+	scrollStates[0] = ScrollState();
+	mostRecentScanLineModified = 0;
 }

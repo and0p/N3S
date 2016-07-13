@@ -23,6 +23,8 @@ VxlPPUSnapshot::VxlPPUSnapshot(VxlRawPPU * rawPPU)
 		unsigned char *spritePtr = (unsigned char*)(&rawPPU->oam[0] + (i*4));
 		sprites.push_back(buildSprite(spritePtr));
 	}
+	// Grab pattern table
+	patternTable = &rawPPU->patternTable.data[0];
 	// Grab background quadrants
 	background.addQuadrant((char*)&rawPPU->nameTables[0]);
 	background.addQuadrant((char*)&rawPPU->nameTables[1]);

@@ -3,7 +3,6 @@
 
 VxlApp::VxlApp()
 {
-	
 	gameData = std::shared_ptr<VoxelGameData>(new VoxelGameData(512, 1));
 	camera = VxlCamera();
 }
@@ -20,6 +19,7 @@ void VxlApp::load()
 	gameData->grabBitmapSprites(info->data, 32784);
 	gameData->createSpritesFromBitmaps();
 	gameData->buildAllMeshes();
+	virtualPatternTable.load(512, 2, (char*)(info->data) + 32784);
 }
 
 void VxlApp::update()
@@ -27,6 +27,7 @@ void VxlApp::update()
 	NesEmulator::ExecuteFrame();
 	inputState.refreshInput();
 	snapshot.reset(new VxlPPUSnapshot((VxlRawPPU*)NesEmulator::getVRam()));
+	virtualPatternTable.update(snapshot->patternTable);
 }
 
 void VxlApp::render()
@@ -58,7 +59,7 @@ void VxlApp::renderSprites()
 		OamSprite sprite = snapshot->sprites[i];
 		int x = sprite.x;
 		int y = sprite.y;
-		int tile = sprite.tile;
+		int tile = virtualPatternTable.getTrueTileIndex(sprite.tile);
 		if (y > 0 && y < 240) {
 			// Use partial rendering as needed
 			if (x >= 248 || y >= 232)

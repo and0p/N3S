@@ -78,6 +78,7 @@ public:
 	int backgroundColor;
 	Background background;
 	FullPalette palette;
+	char *patternTable;
 	std::vector<ScrollSection> scrollSections;
 	int ppuScroll = 0;
 private:
