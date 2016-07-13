@@ -11,6 +11,7 @@
 #include <errno.h>
 
 #include "NesEmulator.h"
+#include "VxlInput.h"
 
 static const void *pixelData;
 static retro_game_info *info;
@@ -138,14 +139,13 @@ struct keymap {
 struct keymap g_binds[] = {
 	{ 0, RETRO_DEVICE_ID_JOYPAD_A },
 	{ 1, RETRO_DEVICE_ID_JOYPAD_B },
-	{ 2, RETRO_DEVICE_ID_JOYPAD_Y },
-	{ 3, RETRO_DEVICE_ID_JOYPAD_X },
+	{ 2, RETRO_DEVICE_ID_JOYPAD_SELECT },
+	{ 3, RETRO_DEVICE_ID_JOYPAD_START },
 	{ 4, RETRO_DEVICE_ID_JOYPAD_UP },
 	{ 5, RETRO_DEVICE_ID_JOYPAD_DOWN },
 	{ 6, RETRO_DEVICE_ID_JOYPAD_LEFT },
 	{ 7, RETRO_DEVICE_ID_JOYPAD_RIGHT },
-	{ 8, RETRO_DEVICE_ID_JOYPAD_START },
-	{ 9, RETRO_DEVICE_ID_JOYPAD_SELECT },
+
 
 	{ 0, 0 }
 };

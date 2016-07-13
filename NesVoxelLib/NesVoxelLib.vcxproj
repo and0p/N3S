@@ -137,7 +137,9 @@
     <ClInclude Include="VxlGameData.h" />
     <ClInclude Include="VxlD3DContext.h" />
     <ClInclude Include="VxlApp.h" />
+    <ClInclude Include="VxlInput.h" />
     <ClInclude Include="VxlPalette.h" />
+    <ClInclude Include="VxlPatternTable.h" />
     <ClInclude Include="VxlPPUSnapshot.h" />
     <ClInclude Include="VxlUtil.h" />
     <ClInclude Include="VxlCamera.h" />
@@ -153,7 +155,9 @@
     </ClCompile>
     <ClCompile Include="VxlGameData.cpp" />
     <ClCompile Include="VxlApp.cpp" />
+    <ClCompile Include="VxlInput.cpp" />
     <ClCompile Include="VxlPalette.cpp" />
+    <ClCompile Include="VxlPatternTable.cpp" />
     <ClCompile Include="VxlPPUSnapshot.cpp" />
     <ClCompile Include="VxlUtil.cpp" />
     <ClCompile Include="VxlCamera.cpp" />

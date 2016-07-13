@@ -58,6 +58,12 @@
     <ClInclude Include="VxlPalette.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="VxlInput.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VxlPatternTable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -82,6 +88,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="VxlPalette.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VxlInput.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VxlPatternTable.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

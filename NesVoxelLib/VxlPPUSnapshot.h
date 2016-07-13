@@ -75,6 +75,7 @@ public:
 	VxlPPUSnapshot(VxlRawPPU *rawPPU);
 	~VxlPPUSnapshot();
 	std::vector<OamSprite> sprites;
+	int backgroundColor;
 	Background background;
 	FullPalette palette;
 	std::vector<ScrollSection> scrollSections;

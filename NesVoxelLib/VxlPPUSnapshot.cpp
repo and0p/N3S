@@ -36,6 +36,8 @@ VxlPPUSnapshot::VxlPPUSnapshot(VxlRawPPU * rawPPU)
 			palette.palettes[p].colors[c] = (int)rawPPU->palette[(p*4) + 1 + c];
 		}
 	}
+	// Copy background color
+	backgroundColor = (int)rawPPU->palette[0];
 	// Create "sections" of screen where scroll has changed
 	for (auto kv : rawPPU->scrollStates)
 	{

@@ -25,21 +25,31 @@ void VxlApp::load()
 void VxlApp::update()
 {
 	NesEmulator::ExecuteFrame();
+	inputState.refreshInput();
 	snapshot.reset(new VxlPPUSnapshot((VxlRawPPU*)NesEmulator::getVRam()));
 }
 
 void VxlApp::render()
 {
 	VxlUtil::updateGameTexture(NesEmulator::getPixelData());
-	camera.SetPosition(0.65f, +0.2f, -2.0f);
-	camera.SetRotation(-15.0f, -0.3f, 0);
+	camera.SetPosition(-0.55f, 0.0f, -2.2f);
+	camera.SetRotation(11.0f, 0, 0);
 	camera.Render();
 	VxlUtil::updateMatricesWithCamera(&camera);
 	VxlUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
 	VxlUtil::updateMirroring(false, false);
 	updatePalette();
-	renderSprites();
+	if (inputState.gamePads[0].buttonStates[xa] != true) {
+		renderSprites();
+	}
+	//renderSprites();
 	renderNameTables();
+}
+
+XMVECTORF32 VxlApp::getBackgroundColor()
+{
+	Hue hue = VxlUtil::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->backgroundColor);
+	return{ hue.red, hue.green, hue.blue, 1.0f };
 }
 
 void VxlApp::renderSprites()
