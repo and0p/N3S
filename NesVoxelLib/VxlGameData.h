@@ -14,7 +14,6 @@ enum VoxelSide { left, right, top, bottom, front, back };
 
 struct Voxel {
 	int color;
-	bool smooth;
 };
 
 class BitmapSprite {
@@ -44,7 +43,7 @@ public:
 	bool matchDown;
 	bool matchLeft;
 	bool matchRight;
-	VoxelMesh *mesh;
+	VoxelMesh mesh;
 	VoxelMesh zMeshes[64];
 	bool buildMesh();
 	void buildZMeshes();
@@ -57,20 +56,21 @@ public:
 	void renderPartial(int x, int y, int palette, Sides offset, bool mirrorH, bool mirrorV);
 private:
 	Voxel getVoxel(int, int, int);
-	static void buildSide(std::vector<ColorVertex> &vertices, int x, int y, int z, int color, VoxelSide side);
+	static void buildSide(std::vector<ColorVertex> * vertices, int x, int y, int z, int color, VoxelSide side);
 	void clear();
 };
 
 class VoxelGameData {
 public:
-	VoxelGameData(int totalSprites, int ppuBankSize);
-	int ppuBankSize;
+	VoxelGameData(int prgSizeInKB, int chrSizeInKB);
+	int chrMemorySize;
+	int chrMemoryOffset;
 	int totalSprites;
 	std::vector<VoxelSprite> sprites;
 	std::vector<BitmapSprite> bitmaps;
 	void createSpritesFromBitmaps();
 	void buildAllMeshes();
-	void grabBitmapSprites(const void * gameData, int offsetBytes);
+	void grabBitmapSprites(const void * gameData);
 	static VoxelMesh getSharedMesh(int zArray[32]);
 	static void releaseSharedMesh(std::string hash);
 private:

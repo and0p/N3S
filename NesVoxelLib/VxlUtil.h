@@ -60,7 +60,7 @@ class VxlUtil {
 public:
 	static void initPipeline(VxlD3DContext context);
 	static ID3D11Buffer* createBufferFromColorVertices(ColorVertex vertices[], int arraySize);
-	static ID3D11Buffer* createBufferFromColorVerticesV(std::vector<ColorVertex> &vertices, int arraySize);
+	static ID3D11Buffer* createBufferFromColorVerticesV(std::vector<ColorVertex> * vertices, int arraySize);
 	static ID3D11Buffer* createBufferFromTextureVertices(TextureVertex vertices[], int arraySize);
 	static VoxelMesh* CreateRectangle(ShaderType type);
 	static VoxelMesh* CreateSpriteMarker();

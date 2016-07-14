@@ -275,9 +275,9 @@ libc_error:
 	exit(0);
 }
 
-void NesEmulator::Initialize(void) {
+void NesEmulator::Initialize(char * romPath) {
 	core_load();
-	core_load_game("c:\\mario.nes");
+	core_load_game(romPath);
 }
 
 void NesEmulator::ExecuteFrame() {

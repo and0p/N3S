@@ -24,14 +24,12 @@ void VxlVirtualPatternTable::load(int count, int divisor, char * data)
 		{
 			int trueIndex = sectionSize * i;
 			std::string hash = getPatternSectionHash(dataPointer + (trueIndex * 16));
-			// Check for collisions
-			if (map.count(hash) > 0)
+			// Check for collisions, but give up if we're already sampling a lot of data
+			if (map.count(hash) > 0 && hashComplexity <= 16)
 				hashCollisionThisIteration = true;
 			map[hash] = trueIndex;
 		}
 		// If we have a collision after 8 levels of complexity, just ignore
-		if (hashComplexity > 8)
-			hashCollisionThisIteration = false;
 		if(hashCollisionThisIteration)
 			hashComplexity += 1;
 		hashCollision = hashCollisionThisIteration;
@@ -44,7 +42,10 @@ void VxlVirtualPatternTable::update(char * patternTable)
 	for (int i = 0; i < tableDivisor; i++)
 	{
 		std::string hash = getPatternSectionHash(patternTable + (i * sectionByteWidth));
-		trueSectionIndices[i] = map.at(hash);
+		if (map.count(hash) < 1)
+			trueSectionIndices[i] = 0;
+		else
+			trueSectionIndices[i] = map.at(hash);
 	}
 }
 

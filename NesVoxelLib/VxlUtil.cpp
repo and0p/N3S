@@ -297,9 +297,9 @@ ID3D11Buffer* VxlUtil::createBufferFromColorVertices(ColorVertex vertices[], int
 	return pVBuffer;
 }
 
-ID3D11Buffer* VxlUtil::createBufferFromColorVerticesV(std::vector<ColorVertex> &vertices, int arraySize)
+ID3D11Buffer* VxlUtil::createBufferFromColorVerticesV(std::vector<ColorVertex>  * vertices, int arraySize)
 {
-	if (vertices.size() == 0) {
+	if (vertices->size() == 0) {
 		return nullptr;
 	}
 	// create the vertex buffer
@@ -317,7 +317,7 @@ ID3D11Buffer* VxlUtil::createBufferFromColorVerticesV(std::vector<ColorVertex> &
 														// copy the vertices into the buffer
 	D3D11_MAPPED_SUBRESOURCE ms;
 	HRESULT result = context1->Map(pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);    // map the buffer
-	memcpy(ms.pData, vertices.data(), bd.ByteWidth);							// copy the data
+	memcpy(ms.pData, vertices->data(), bd.ByteWidth);							// copy the data
 	context1->Unmap(pVBuffer, NULL);                                         // unmap the buffer
 	return pVBuffer;
 }
@@ -328,7 +328,7 @@ ID3D11Buffer* VxlUtil::createBufferFromTextureVertices(TextureVertex vertices[],
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));
 
-	bd.Usage = D3D11_USAGE_DYNAMIC;                // write access access by CPU and GPU
+	bd.Usage = D3D11_USAGE_DEFAULT;                // write access access by CPU and GPU
 	bd.ByteWidth = sizeof(TextureVertex) * arraySize;             // size is the VERTEX struct * 3in
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;       // use as a vertex buffer
 	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;    // allow CPU to write in buffer

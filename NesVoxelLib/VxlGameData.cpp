@@ -3,7 +3,6 @@
 
 VoxelSprite::VoxelSprite()
 {
-	//randomizeSprite();
 	meshExists = false;
 	clear();
 }
@@ -47,7 +46,7 @@ void VoxelSprite::render(int x, int y, int palette, bool mirrorH, bool mirrorV)
 		if (mirrorV)
 			posY += (pixelSizeH * 8);
 		VxlUtil::updateWorldMatrix(posX, posY, 0);
-		VxlUtil::renderMesh(mesh);
+		VxlUtil::renderMesh(&mesh);
 	}
 }
 
@@ -81,7 +80,7 @@ Voxel VoxelSprite::getVoxel(int x, int y, int z)
 		return voxels[voxelSlot];
 	}
 	else {
-		return { 0,0 };
+		return { 0 };
 	}
 }
 
@@ -90,7 +89,6 @@ void VoxelSprite::clear()
 	for (int i = 0; i < 2048; i++) 
 	{
 		voxels[i].color = 0;
-		voxels[i].smooth = 0;
 	}
 }
 
@@ -106,10 +104,6 @@ void VoxelSprite::randomizeSprite() {
 				setVoxel(x, y, z, 0);
 			}
 		}
-	}
-	for (int i = 0; i < spriteSize; i++)
-	{
-		voxels[i].smooth = false;
 	}
 	setVoxel(0, 0, 0, 1);
 	setVoxel(0, 1, 0, 1);
@@ -127,8 +121,8 @@ void VoxelSprite::randomizeSprite() {
 
 bool VoxelSprite::buildMesh()
 {
-	mesh = new VoxelMesh;
-	std::shared_ptr<std::vector<ColorVertex>> vertices(new std::vector<ColorVertex>);
+	mesh = VoxelMesh();
+	std::vector<ColorVertex> vertices;
 	int sideCount = 0;
 	for (int z = 0; z < spriteDepth; z++)
 	{
@@ -143,39 +137,39 @@ bool VoxelSprite::buildMesh()
 					// Check each adjacent voxel/edge and draw a square as needed
 					// TODO: Also add > evaluation for semi-transparent voxels in the future
 					if (x == 0 || getVoxel(x - 1, y, z).color == 0) {
-						buildSide(*vertices, x, y, z, color, left);
+						buildSide(&vertices, x, y, z, color, left);
 						sideCount++;
 					}
 					if (x == spriteWidth - 1 || getVoxel(x + 1, y, z).color == 0) {
-						buildSide(*vertices, x, y, z, color, right);
+						buildSide(&vertices, x, y, z, color, right);
 						sideCount++;
 					}
 					if (y == 0 || getVoxel(x, y - 1, z).color == 0) {
-						buildSide(*vertices, x, y, z, color, top);
+						buildSide(&vertices, x, y, z, color, top);
 						sideCount++;
 					}
 					if (y == spriteHeight - 1 || getVoxel(x, y + 1, z).color == 0) {
-						buildSide(*vertices, x, y, z, color, bottom);
+						buildSide(&vertices, x, y, z, color, bottom);
 						sideCount++;
 					}
 					if (z == 0 || getVoxel(x - 1, y, z - 1).color == 0) {
-						buildSide(*vertices, x, y, z, color, front);
+						buildSide(&vertices, x, y, z, color, front);
 						sideCount++;
 					}
 					if (z == spriteDepth - 1 || getVoxel(x, y, z + 1).color == 0) {
-						buildSide(*vertices, x, y, z, color, back);
+						buildSide(&vertices, x, y, z, color, back);
 						sideCount++;
 					}
 				}
 			}
 		}
 	}
-	mesh->size = sideCount * 6;
-	mesh->type = color;
+	mesh.size = sideCount * 6;
+	mesh.type = color;
 	// Return true if there is an actual mesh to render
-	if (vertices->size() > 0)
+	if (vertices.size() > 0)
 	{
-		mesh->buffer = VxlUtil::createBufferFromColorVerticesV(*vertices, mesh->size);
+		mesh.buffer = VxlUtil::createBufferFromColorVerticesV(&vertices, mesh.size);
 		meshExists = true;
 		return true;
 	}
@@ -207,7 +201,7 @@ void VoxelSprite::buildZMeshes()
 VoxelMesh VoxelSprite::buildZMesh(int zArray[32])
 {
 	VoxelMesh mesh = VoxelMesh();
-	std::shared_ptr<std::vector<ColorVertex>> vertices(new std::vector<ColorVertex>);
+	std::vector<ColorVertex> vertices;
 	int sideCount = 0;
 	for (int z = 0; z < spriteDepth; z++)
 	{
@@ -216,20 +210,20 @@ VoxelMesh VoxelSprite::buildZMesh(int zArray[32])
 		if (color > 0)
 		{
 			// Draw left, right, top, and bottom edges, which should be visible on Z-Meshes no matter what
-			buildSide(*vertices, 0, 0, z, color, left);
-			buildSide(*vertices, 0, 0, z, color, right);
-			buildSide(*vertices, 0, 0, z, color, top);
-			buildSide(*vertices, 0, 0, z, color, bottom);
+			buildSide(&vertices, 0, 0, z, color, left);
+			buildSide(&vertices, 0, 0, z, color, right);
+			buildSide(&vertices, 0, 0, z, color, top);
+			buildSide(&vertices, 0, 0, z, color, bottom);
 			sideCount += 4;
 			// See if front and/or back are exposed, and add sides if so
 			if (z == 0 || zArray[z - 1] == 0)
 			{
-				buildSide(*vertices, 0, 0, z, color, front);
+				buildSide(&vertices, 0, 0, z, color, front);
 				sideCount++;
 			}
 			if (z == 31 || zArray[z + 1] == 0)
 			{
-				buildSide(*vertices, 0, 0, z, color, back);
+				buildSide(&vertices, 0, 0, z, color, back);
 				sideCount++;
 			}
 			// TODO: Also add > evaluation for semi-transparent voxels in the future
@@ -237,11 +231,11 @@ VoxelMesh VoxelSprite::buildZMesh(int zArray[32])
 	}
 	mesh.size = sideCount * 6;
 	mesh.type = color;
-	mesh.buffer = VxlUtil::createBufferFromColorVerticesV(*vertices, mesh.size);
+	mesh.buffer = VxlUtil::createBufferFromColorVerticesV(&vertices, mesh.size);
 	return mesh;
 }
 
-void VoxelSprite::buildSide(std::vector<ColorVertex> &vertices, int x, int y, int z, int color, VoxelSide side) {
+void VoxelSprite::buildSide(std::vector<ColorVertex> * vertices, int x, int y, int z, int color, VoxelSide side) {
 	// Translate voxel-space xyz into model-space based on pixel size in 3d space, phew
 	float xf = x * pixelSizeW;
 	float yf = y * -pixelSizeH;
@@ -334,23 +328,26 @@ void VoxelSprite::buildSide(std::vector<ColorVertex> &vertices, int x, int y, in
 		v4.Nor = XMFLOAT4(0, 0, -1, 0);
 		break;
 	}
-	vertices.push_back(v1);
-	vertices.push_back(v2);
-	vertices.push_back(v4);
-	vertices.push_back(v2);
-	vertices.push_back(v3);
-	vertices.push_back(v4);
+	vertices->push_back(v1);
+	vertices->push_back(v2);
+	vertices->push_back(v4);
+	vertices->push_back(v2);
+	vertices->push_back(v3);
+	vertices->push_back(v4);
 }
 
-VoxelGameData::VoxelGameData(int totalSprites, int ppuBankSize): totalSprites(totalSprites), ppuBankSize(ppuBankSize)
+VoxelGameData::VoxelGameData(int prgSize, int chrSize)
 {
+	chrMemoryOffset = prgSize + 16;
+	chrMemorySize = chrSize;
+	totalSprites = chrSize / 16;
 	// Initialize sprite list
 	sprites.reserve(totalSprites);
 	bitmaps.reserve(totalSprites);
 	// Build all sprites, no meshes yet
 	for (int i = 0; i < totalSprites; i++) {
 		sprites.push_back(VoxelSprite());
-		//bitmaps.push_back(BitmapSprite());
+		// bitmaps.push_back(BitmapSprite());
 	}
 }
 
@@ -365,18 +362,16 @@ void VoxelGameData::createSpritesFromBitmaps()
 
 void VoxelGameData::buildAllMeshes() {
 	for (int i = 0; i < sprites.size(); i++) {
-		if (sprites.size() > 0) {
 			sprites[i].buildMesh();
-		}
 	}
 }
 
-void VoxelGameData::grabBitmapSprites(const void * gameData, int offsetBytes)
+void VoxelGameData::grabBitmapSprites(const void * gameData)
 {
 	char *charData = ((char*)gameData);
 	for (int i = 0; i < totalSprites; i++)
 	{
-		bitmaps.push_back(BitmapSprite(charData + offsetBytes + (i * 16)));
+		bitmaps.push_back(BitmapSprite(charData + chrMemoryOffset + (i * 16)));
 	}
 }
 

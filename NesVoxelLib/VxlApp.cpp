@@ -3,7 +3,7 @@
 
 VxlApp::VxlApp()
 {
-	gameData = std::shared_ptr<VoxelGameData>(new VoxelGameData(512, 1));
+	gameData = std::shared_ptr<VoxelGameData>(new VoxelGameData(256 * 1024, 128 * 1024));
 	camera = VxlCamera();
 }
 
@@ -14,12 +14,13 @@ void VxlApp::assignD3DContext(VxlD3DContext context)
 
 void VxlApp::load()
 {
-	NesEmulator::Initialize();
+	char romPath[] = "c:\\megaman3.nes\0";
+	NesEmulator::Initialize(&romPath[0]);
 	info = NesEmulator::getGameInfo();
-	gameData->grabBitmapSprites(info->data, 32784);
+	virtualPatternTable.load(gameData->chrMemorySize / 16, 16, (char*)(info->data) + gameData->chrMemoryOffset);
+	gameData->grabBitmapSprites(info->data);
 	gameData->createSpritesFromBitmaps();
-	gameData->buildAllMeshes();
-	virtualPatternTable.load(512, 2, (char*)(info->data) + 32784);
+	// gameData->buildAllMeshes();
 }
 
 void VxlApp::update()
@@ -171,7 +172,7 @@ void VxlApp::renderRow(int y, int height, int xOffset, int nametableX, int namet
 			tile = 512 + tile;
 		else
 			tile += 256;
-		gameData->sprites[tile].renderPartial(x, y, nameTableTile.palette, { 0, xOffset, 0, 0 }, false, false);
+		gameData->sprites[virtualPatternTable.getTrueTileIndex(tile)].renderPartial(x, y, nameTableTile.palette, { 0, xOffset, 0, 0 }, false, false);
 		x += 8 - xOffset;
 		i++;
 		// Render middle sprites
@@ -189,7 +190,7 @@ void VxlApp::renderRow(int y, int height, int xOffset, int nametableX, int namet
 					tile = 512 + tile;
 				else
 					tile += 256;
-				gameData->sprites[tile].render(x, y, nameTableTile.palette, false, false);
+				gameData->sprites[virtualPatternTable.getTrueTileIndex(tile)].render(x, y, nameTableTile.palette, false, false);
 			}
 			x += 8;
 		}
@@ -200,7 +201,7 @@ void VxlApp::renderRow(int y, int height, int xOffset, int nametableX, int namet
 			tile = 512 + tile;
 		else
 			tile += 256;
-		gameData->sprites[tile].renderPartial(x, y, nameTableTile.palette, { 0, 0, 0, 8 - xOffset }, false, false);
+		gameData->sprites[virtualPatternTable.getTrueTileIndex(tile)].renderPartial(x, y, nameTableTile.palette, { 0, 0, 0, 8 - xOffset }, false, false);
 	}
 	else
 	{
@@ -219,7 +220,7 @@ void VxlApp::renderRow(int y, int height, int xOffset, int nametableX, int namet
 					tile = 512 + tile;
 				else
 					tile += 256;
-				gameData->sprites[tile].render(x, y, nameTableTile.palette, false, false);
+				gameData->sprites[virtualPatternTable.getTrueTileIndex(tile)].render(x, y, nameTableTile.palette, false, false);
 			}
 			x += 8;
 		}
