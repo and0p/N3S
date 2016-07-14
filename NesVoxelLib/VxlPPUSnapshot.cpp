@@ -17,6 +17,18 @@
 
 VxlPPUSnapshot::VxlPPUSnapshot(VxlRawPPU * rawPPU)
 {
+	// Copy register options
+	ctrl.spriteNameTable = (rawPPU->ctrl >> 3) & 1;
+	ctrl.backgroundNameTable = (rawPPU->ctrl >> 4) & 1;
+	ctrl.spriteSize16x8 = (rawPPU->ctrl >> 5) & 1;
+	mask.greyscale = rawPPU->mask & 1;
+	mask.renderBackgroundLeft8 = (rawPPU->mask >> 1) & 1;
+	mask.renderSpritesLeft8 = (rawPPU->mask >> 2) & 1;
+	mask.renderBackground = (rawPPU->mask >> 3) & 1;
+	mask.renderSprites = (rawPPU->mask >> 4) & 1;
+	mask.emphasizeRed = (rawPPU->mask >> 5) & 1;
+	mask.emphasizeGreen = (rawPPU->mask >> 6) & 1;
+	mask.emphasizeBlue = (rawPPU->mask >> 7) & 1;
 	// Build sprites
 	for (int i = 0; i < 64; i++)
 	{

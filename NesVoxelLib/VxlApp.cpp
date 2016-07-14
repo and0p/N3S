@@ -42,9 +42,9 @@ void VxlApp::render()
 	VxlUtil::updateMirroring(false, false);
 	updatePalette();
 	if (inputState.gamePads[0].buttonStates[xa] != true) {
-		renderSprites();
+		// renderSprites();
 	}
-	//renderSprites();
+	renderSprites();
 	renderNameTables();
 }
 

@@ -3,6 +3,23 @@
 #include <vector>
 #include "VxlRawPPU.h"
 
+struct Ctrl {
+	bool spriteNameTable;
+	bool backgroundNameTable;
+	bool spriteSize16x8;
+};
+
+struct Mask {
+	bool greyscale;
+	bool renderSprites;
+	bool renderBackground;
+	bool renderSpritesLeft8;
+	bool renderBackgroundLeft8;
+	bool emphasizeRed;				// Red and green swaped on PAL and Dendy
+	bool emphasizeGreen;
+	bool emphasizeBlue;
+};
+
 struct OamSprite {
 	unsigned char x;
 	unsigned char y;
@@ -78,6 +95,8 @@ public:
 	int backgroundColor;
 	Background background;
 	FullPalette palette;
+	Ctrl ctrl;
+	Mask mask;
 	char *patternTable;
 	std::vector<ScrollSection> scrollSections;
 	int ppuScroll = 0;
