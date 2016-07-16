@@ -26,6 +26,7 @@ public:
 	char status;
 	char palette[32];
 	char oam[256];
+	int mirroring;
 	PatternTable patternTable;
 	NameTable nameTables[4];
 	std::map<int, ScrollState> scrollStates;

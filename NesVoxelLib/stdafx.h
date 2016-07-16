@@ -31,6 +31,8 @@
 #include <memory>
 #include <stdexcept>
 
+bool getBit(char data, int bit);
+
 namespace DX
 {
 	inline void ThrowIfFailed(HRESULT hr)

@@ -100,3 +100,4 @@ private:
 	static MirrorState mirrorState;
 	static int selectedPalette;
 };
+

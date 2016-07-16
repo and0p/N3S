@@ -15,8 +15,8 @@ struct Mask {
 	bool renderBackground;
 	bool renderSpritesLeft8;
 	bool renderBackgroundLeft8;
-	bool emphasizeRed;				// Red and green swaped on PAL and Dendy
-	bool emphasizeGreen;
+	bool emphasizeRed;				// Red and green swapped on PAL and Dendy
+	bool emphasizeGreen;			// Red and green swapped on PAL and Dendy
 	bool emphasizeBlue;
 };
 
@@ -24,7 +24,7 @@ struct OamSprite {
 	unsigned char x;
 	unsigned char y;
 	bool spriteBank;
-	unsigned char tile;
+	unsigned int tile;
 	bool hFlip;
 	bool vFlip;
 	bool priority;
@@ -48,9 +48,10 @@ struct FullPalette {
 	IndividualPalette palettes[8];
 };
 
+static enum MirrorType { vertical, horizontal, single, full, diagonal };
+
 class Background {
 public:
-	static enum MirrorType { vertical, horizontal, single, full, diagonal };
 	int mirrorLayouts[5][4] = { 
 		{ 0, 1, 0, 1},
 		{ 0, 0, 1, 1 },
@@ -74,7 +75,7 @@ public:
 	};
 	MirrorType mirrorType = vertical;
 	NameTableTile getTile(int x, int y, int nametable);
-	void addQuadrant(char * data);
+	void addQuadrant(char * data, bool nameTableSelection);
 private:
 	std::vector<NameTableQuadrant> quadrants;
 };

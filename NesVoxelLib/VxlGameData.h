@@ -11,6 +11,17 @@ const int spriteDepth = 32;
 const int spriteSize = 8 * 8 * 32;
 
 enum VoxelSide { left, right, top, bottom, front, back };
+enum TVSystem { NTSC, PAL };
+
+struct CartridgeInfo
+{
+	int prgSize;
+	int chrSize;
+	int mapper;
+	bool trainer;
+	bool playChoice10;
+	bool PAL;
+};
 
 struct Voxel {
 	int color;
@@ -62,9 +73,8 @@ private:
 
 class VoxelGameData {
 public:
-	VoxelGameData(int prgSizeInKB, int chrSizeInKB);
-	int chrMemorySize;
-	int chrMemoryOffset;
+	VoxelGameData(char * data);
+	char * chrData;
 	int totalSprites;
 	std::vector<VoxelSprite> sprites;
 	std::vector<BitmapSprite> bitmaps;
@@ -73,6 +83,9 @@ public:
 	void grabBitmapSprites(const void * gameData);
 	static VoxelMesh getSharedMesh(int zArray[32]);
 	static void releaseSharedMesh(std::string hash);
+	CartridgeInfo cartridgeInfo;
 private:
 	static std::unordered_map<std::string, SharedMesh> sharedMeshes;
 };
+
+CartridgeInfo getCartidgeInfo(char * data);

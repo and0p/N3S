@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "VxlPPUSnapshot.h"
+#include "VxlUtil.h"
 
 //VxlPPUSnapshot::VxlPPUSnapshot(const void *vram): nameTables(new std::vector<NameTable>)
 //{
@@ -18,17 +19,17 @@
 VxlPPUSnapshot::VxlPPUSnapshot(VxlRawPPU * rawPPU)
 {
 	// Copy register options
-	ctrl.spriteNameTable = (rawPPU->ctrl >> 3) & 1;
-	ctrl.backgroundNameTable = (rawPPU->ctrl >> 4) & 1;
-	ctrl.spriteSize16x8 = (rawPPU->ctrl >> 5) & 1;
-	mask.greyscale = rawPPU->mask & 1;
-	mask.renderBackgroundLeft8 = (rawPPU->mask >> 1) & 1;
-	mask.renderSpritesLeft8 = (rawPPU->mask >> 2) & 1;
-	mask.renderBackground = (rawPPU->mask >> 3) & 1;
-	mask.renderSprites = (rawPPU->mask >> 4) & 1;
-	mask.emphasizeRed = (rawPPU->mask >> 5) & 1;
-	mask.emphasizeGreen = (rawPPU->mask >> 6) & 1;
-	mask.emphasizeBlue = (rawPPU->mask >> 7) & 1;
+	ctrl.spriteNameTable = getBit(rawPPU->ctrl, 3);
+	ctrl.backgroundNameTable = getBit(rawPPU->ctrl, 4);
+	ctrl.spriteSize16x8 = getBit(rawPPU->ctrl, 5);
+	mask.greyscale = getBit(rawPPU->mask, 0);
+	mask.renderBackgroundLeft8 = getBit(rawPPU->mask, 1);
+	mask.renderSpritesLeft8 = getBit(rawPPU->mask, 2);
+	mask.renderBackground = getBit(rawPPU->mask, 3);
+	mask.renderSprites = getBit(rawPPU->mask, 4);
+	mask.emphasizeRed = getBit(rawPPU->mask, 5);
+	mask.emphasizeGreen = getBit(rawPPU->mask, 6);
+	mask.emphasizeBlue = getBit(rawPPU->mask, 7);
 	// Build sprites
 	for (int i = 0; i < 64; i++)
 	{
@@ -38,10 +39,26 @@ VxlPPUSnapshot::VxlPPUSnapshot(VxlRawPPU * rawPPU)
 	// Grab pattern table
 	patternTable = &rawPPU->patternTable.data[0];
 	// Grab background quadrants
-	background.addQuadrant((char*)&rawPPU->nameTables[0]);
-	background.addQuadrant((char*)&rawPPU->nameTables[1]);
-	background.addQuadrant((char*)&rawPPU->nameTables[2]);
-	background.addQuadrant((char*)&rawPPU->nameTables[3]);
+	background.addQuadrant((char*)&rawPPU->nameTables[0], ctrl.backgroundNameTable);
+	background.addQuadrant((char*)&rawPPU->nameTables[1], ctrl.backgroundNameTable);
+	background.addQuadrant((char*)&rawPPU->nameTables[2], ctrl.backgroundNameTable);
+	background.addQuadrant((char*)&rawPPU->nameTables[3], ctrl.backgroundNameTable);
+	// Set mirroring type
+	switch (rawPPU->mirroring)
+	{
+	case 12:
+		background.mirrorType = horizontal;
+		break;
+	case 10:
+		background.mirrorType = vertical;
+		break;
+	case 0:
+		background.mirrorType = vertical;
+		break;
+	case 1:
+		background.mirrorType = vertical;
+		break;
+	}
 	// Copy palette
 	for (int p = 0; p < 8; p++)
 	{
@@ -87,7 +104,7 @@ OamSprite VxlPPUSnapshot::buildSprite(unsigned char* ptr)
 	OamSprite sprite;
 	sprite.y = *ptr;
 	ptr += 1;
-	sprite.tile = *ptr;
+	sprite.tile = *ptr + (ctrl.spriteNameTable * 256);
 	ptr += 1;
 	sprite.hFlip = (*ptr >> 6) & 1;
 	sprite.vFlip = (*ptr >> 7) & 1;
@@ -165,13 +182,18 @@ void updatePaletteFor16x16(int index, int palette, NameTableQuadrant *quadrant)
 	quadrant->tiles[index + 33].palette = palette;
 }
 
-void Background::addQuadrant(char * data)
+void Background::addQuadrant(char * data, bool nameTableSelection)
 {
 	NameTableQuadrant quadrant = NameTableQuadrant();
 	// Get tiles from memory
 	for (int i = 0; i < 960; i++)
 	{
-		quadrant.tiles[i].tile = *(data + i);
+		int tile = *(data + i);
+		if (tile < 0)
+			tile += 256;
+		if (nameTableSelection)
+			tile += 256;
+		quadrant.tiles[i].tile = tile;
 	}
 	// Get tile palettes from memory
 	for (int i = 0; i < 64; i++)

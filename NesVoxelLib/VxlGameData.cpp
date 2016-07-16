@@ -1,6 +1,14 @@
 #include "stdafx.h"
 #include "VxlGameData.h"
 
+CartridgeInfo getCartidgeInfo(char * data)
+{
+	CartridgeInfo c = CartridgeInfo();
+	c.prgSize = *(data + 4);
+	c.chrSize = *(data + 5);
+	return c;
+}
+
 VoxelSprite::VoxelSprite()
 {
 	meshExists = false;
@@ -336,11 +344,11 @@ void VoxelSprite::buildSide(std::vector<ColorVertex> * vertices, int x, int y, i
 	vertices->push_back(v4);
 }
 
-VoxelGameData::VoxelGameData(int prgSize, int chrSize)
+VoxelGameData::VoxelGameData(char * data)
 {
-	chrMemoryOffset = prgSize + 16;
-	chrMemorySize = chrSize;
-	totalSprites = chrSize / 16;
+	cartridgeInfo = getCartidgeInfo(data);
+	totalSprites = cartridgeInfo.chrSize * 512;
+	chrData = data + 16 + (cartridgeInfo.prgSize * 16384);
 	// Initialize sprite list
 	sprites.reserve(totalSprites);
 	bitmaps.reserve(totalSprites);
@@ -368,10 +376,9 @@ void VoxelGameData::buildAllMeshes() {
 
 void VoxelGameData::grabBitmapSprites(const void * gameData)
 {
-	char *charData = ((char*)gameData);
 	for (int i = 0; i < totalSprites; i++)
 	{
-		bitmaps.push_back(BitmapSprite(charData + chrMemoryOffset + (i * 16)));
+		bitmaps.push_back(BitmapSprite(chrData + (i * 16)));
 	}
 }
 
