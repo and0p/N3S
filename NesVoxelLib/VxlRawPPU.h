@@ -25,6 +25,7 @@ public:
 	ScrollAddress t;
 	ScrollAddress v;
 	void poke(int reg, bool toggle, int data);
+	bool tToV;
 	void changeVScroll(int y);
 	int getTrueX();
 	int getTrueY();
@@ -48,7 +49,7 @@ inline void ScrollSnapshot::poke(int reg, bool toggle, int data)
 		}
 		else
 		{
-			t.fineY = data & 3;
+			t.fineY = data & 7;
 			t.coarseY = data >> 3;
 		}
 		break;
@@ -57,11 +58,11 @@ inline void ScrollSnapshot::poke(int reg, bool toggle, int data)
 		{
 			// Low 2 bits overwrites high 2 bits of coarse Y
 			int coarseYHigh = data & 3;
-			coarseYHigh << 3;
-			t.coarseY = coarseYHigh + (t.coarseY & 3);
+			coarseYHigh = coarseYHigh << 3;
+			t.coarseY = coarseYHigh + (t.coarseY & 7);
 			// Bits 2 & 3 become nametable
 			t.nametable = (data >> 2) & 3;
-			// Bits 3 & 4 becomes fine Y, bit 2 of fine Y is set to 0 by operation
+			// Bits 4 & 5 becomes fine Y, bit 2 of fine Y is set to 0 by operation
 			t.fineY = (data >> 4) & 3;
 		}
 		else
@@ -69,14 +70,16 @@ inline void ScrollSnapshot::poke(int reg, bool toggle, int data)
 			// Coarse X becomes bits 0-4
 			t.coarseX = data & 31;
 			// Low 3 bits of coarse Y becomes high 3 bits of data
-			int high2Y = t.coarseY >> 3;
-			high2Y << 3;
-			t.coarseY = (data >> 5) + high2Y;
-			// Push t to v!
-			v = t;
+			int high2Y = t.coarseY & 24;
+			t.coarseY = (data >> 5 & 7) + high2Y;
+			// Set flag to push T to V at end of scanline
+			tToV = true;
 		}
 		break;
 	}
+	// if T-to-V is set, push every change
+	if (tToV)
+		v = t;
 }
 
 inline void ScrollSnapshot::changeVScroll(int y)
@@ -109,6 +112,7 @@ public:
 	NameTable nameTables[4];
 	std::map<int, ScrollSnapshot> scrollSnapshots;
 	void writeScrollValue(int scanline, int reg, bool toggle, int data);
+
 	void reset();
 private:
 	int mostRecentScanLineModified = 0;
@@ -117,6 +121,7 @@ private:
 inline void VxlRawPPU::writeScrollValue(int scanline, int reg, bool toggle, int data) {
 	// Increment the scanline, assuming these changes are applying to next line
 	scanline++;
+	int i = 0;
 	// Set scanline to 0 if we are outside of visible range, as it will all wrap back to rendering at 0
 	if (scanline < 0 || scanline > 240)
 		scanline = 0;
