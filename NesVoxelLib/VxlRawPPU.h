@@ -11,13 +11,91 @@ struct NameTable {
 	char data[1024];
 };
 
-struct ScrollState {
-	int x = 0;
-	int y = 0;
-	int highOrderBit = 0;
+struct ScrollAddress {
+	int coarseX = 0;
+	int coarseY = 0;
+	int fineX = 0;
+	int fineY = 0;
+	int nametable = 0;
 };
 
-enum ScrollDataType { x, y, high };
+class ScrollSnapshot
+{
+public:
+	ScrollAddress t;
+	ScrollAddress v;
+	void poke(int reg, bool toggle, int data);
+	void changeVScroll(int x, int y);
+	int getTrueX();
+	int getTrueY();
+};
+
+inline void ScrollSnapshot::poke(int reg, bool toggle, int data)
+{
+	switch (reg) {
+	case 2000:
+		t.nametable = data;
+		break;
+	case 2005:
+		if (!toggle)
+		{
+			t.fineX = data & 3;
+			t.coarseX = data >> 3;
+		}
+		else
+		{
+			t.fineY = data & 3;
+			t.coarseY = data >> 3;
+		}
+		break;
+	case 2006:
+		if (!toggle)
+		{
+			// Low 2 bits overwrites high 2 bits of coarse Y
+			int coarseYHigh = data & 2;
+			coarseYHigh << 3;
+			t.coarseY = coarseYHigh + (t.coarseY & 3);
+			// Bits 2 & 3 become nametable
+			t.nametable = (data >> 2) & 2;
+			// Bits 3 & 4 becomes fine Y, bit 2 of fine Y is set to 0 by operation
+			t.fineY = (data >> 4) & 2;
+		}
+		else
+		{
+			// Coarse X becomes bits 0-4
+			t.coarseX = data & 5;
+			// Low 3 bits of coarse Y becomes high 3 bits of data
+			int high2Y = t.coarseY >> 3;
+			high2Y << 3;
+			t.coarseY = (data >> 5) + high2Y;
+			// Push t to v!
+			v = t;
+		}
+		break;
+	}
+}
+
+inline void ScrollSnapshot::changeVScroll(int x, int y)
+{
+	int coarseXChange = floor(x / 8);
+	int coarseYChange = floor(y / 8);
+	int fineXChange = x % 8;
+	int fineYChange = y % 8;
+	v.coarseX += coarseXChange;
+	v.coarseY += coarseYChange;
+	v.fineX += fineXChange;
+	v.fineY += fineYChange;
+}
+
+inline int ScrollSnapshot::getTrueX()
+{
+	return (v.coarseX * 8) + v.fineX;
+}
+
+inline int ScrollSnapshot::getTrueY()
+{
+	return (v.coarseY * 8) + v.fineY;
+}
 
 struct VxlRawPPU {
 public:
@@ -29,59 +107,41 @@ public:
 	int mirroring;
 	PatternTable patternTable;
 	NameTable nameTables[4];
-	std::map<int, ScrollState> scrollStates;
-	int mostRecentScanLineModified = 0;
-	void writeScrollValue(int scanline, ScrollDataType type, int data);
+	std::map<int, ScrollSnapshot> scrollSnapshots;
+	void writeScrollValue(int scanline, int reg, int data, bool toggle);
 	void clearScrollValue(int scanline);
 	void reset();
 private:
+	int mostRecentScanLineModified = 0;
 };
 
-
-inline void VxlRawPPU::writeScrollValue(int scanline, ScrollDataType type, int data) {
+inline void VxlRawPPU::writeScrollValue(int scanline, int reg, int data, bool toggle) {
 	// Increment the scanline, assuming these changes are applying to next line
 	scanline++;
 	// Set scanline to 0 if we are outside of visible range, as it will all wrap back to rendering at 0
 	if (scanline < 0 || scanline > 240)
 		scanline = 0;
-	// See if we have a ScrollState for this scanline, if not create one
-	if (scrollStates.count(scanline) == 0 && type != high)
+	// Add a new snapshot for this scanline if it doesn't exist yet
+	if (scrollSnapshots.count(scanline) < 1)
 	{
-		scrollStates[scanline] = ScrollState();
-		// If Y not specified, assume that it's been clocking normally and add scanline difference to last one
-		if (type != y)
-		{
-			scrollStates[scanline].y = scrollStates[mostRecentScanLineModified].y + (scanline - mostRecentScanLineModified);
-		}
+		// Copy the last one
+		ScrollSnapshot newSnapshot = scrollSnapshots[mostRecentScanLineModified];
+		// Assume each scanline since has been incrementing the Y value
+		newSnapshot.changeVScroll(0, scanline - mostRecentScanLineModified);
+		// Set modified copy to current scanline and mark as most recent
+		scrollSnapshots[scanline] = newSnapshot;
 		mostRecentScanLineModified = scanline;
 	}
-	switch (type)
-	{
-	case x:
-		scrollStates[mostRecentScanLineModified].x = data;
-		break;
-	case y:
-		// scrollStates[mostRecentScanLineModified].y = data;
-		break;
-	case high:
-		if (scanline != 0)
-			scrollStates[mostRecentScanLineModified].highOrderBit = data;
-		break;
-	}
+	// Poke reg with data
+	scrollSnapshots[scanline].poke(reg, toggle, data);
 }
 
-inline void VxlRawPPU::clearScrollValue(int scanline)
-{
-	scrollStates[scanline] = ScrollState();
-}
-
-// Reset the scroll history, but re-insert the most recent change
+// Reset the scroll history, but re-insert the most recent snapshot and set v to t
 inline void VxlRawPPU::reset()
 {
-	//ScrollState lastScrollState = scrollStates[mostRecentScanLineModified];
-	scrollStates.clear();
-	//scrollStates[0] = lastScrollState;
-	//scrollStates[0].y = 0;
-	scrollStates[0] = ScrollState();
+	ScrollSnapshot rollover = scrollSnapshots[mostRecentScanLineModified];
+	scrollSnapshots.clear();
+	rollover.v = rollover.t;
+	scrollSnapshots[0] = rollover;
 	mostRecentScanLineModified = 0;
 }

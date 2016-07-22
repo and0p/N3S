@@ -70,13 +70,13 @@ VxlPPUSnapshot::VxlPPUSnapshot(VxlRawPPU * rawPPU)
 	// Copy background color
 	backgroundColor = (int)rawPPU->palette[0];
 	// Create "sections" of screen where scroll has changed
-	for (auto kv : rawPPU->scrollStates)
+	for (auto kv : rawPPU->scrollSnapshots)
 	{
 		ScrollSection s = ScrollSection();
 		s.top = kv.first;
-		s.x = kv.second.x;
-		s.y = kv.second.y;
-		s.nameTable = kv.second.highOrderBit;
+		s.x = kv.second.getTrueX();
+		s.y = kv.second.getTrueY();
+		s.nameTable = kv.second.v.nametable;
 		scrollSections.push_back(s);
 	}
 	// Make sure first and last scroll sections take up the full screen
@@ -164,14 +164,10 @@ NameTableTile Background::getTile(int x, int y, int nametable)
 	y %= mirrorSizes[mirrorType][1];
 	// Find which quadrant this ultimately falls into
 	int quadrant = getQuadrant(x, y);
-	if (quadrant != 0)
-	{
-		int hi = 0;
-	}
 	// Reset X&Y to local quadrant coordinates
 	x %= 32;
 	y %= 30;
-	return quadrants[quadrant].tiles[(y * 32) + x];
+	return quadrants[mirrorLayouts[mirrorType][quadrant]].tiles[(y * 32) + x];
 }
 
 void updatePaletteFor16x16(int index, int palette, NameTableQuadrant *quadrant)
