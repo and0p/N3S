@@ -25,7 +25,7 @@ public:
 	ScrollAddress t;
 	ScrollAddress v;
 	void poke(int reg, bool toggle, int data);
-	void changeVScroll(int x, int y);
+	void changeVScroll(int y);
 	int getTrueX();
 	int getTrueY();
 };
@@ -34,13 +34,17 @@ inline void ScrollSnapshot::poke(int reg, bool toggle, int data)
 {
 	switch (reg) {
 	case 2000:
-		t.nametable = data;
+		t.nametable = data & 3;
+		v.nametable = data & 3; // Still curious about this behavior
 		break;
 	case 2005:
 		if (!toggle)
 		{
-			t.fineX = data & 3;
+			t.fineX = data & 7;
 			t.coarseX = data >> 3;
+			// V technically also gets set by the time we're on the next scanline
+			v.fineX = data & 7;
+			v.coarseX = data >> 3;
 		}
 		else
 		{
@@ -52,18 +56,18 @@ inline void ScrollSnapshot::poke(int reg, bool toggle, int data)
 		if (!toggle)
 		{
 			// Low 2 bits overwrites high 2 bits of coarse Y
-			int coarseYHigh = data & 2;
+			int coarseYHigh = data & 3;
 			coarseYHigh << 3;
 			t.coarseY = coarseYHigh + (t.coarseY & 3);
 			// Bits 2 & 3 become nametable
-			t.nametable = (data >> 2) & 2;
+			t.nametable = (data >> 2) & 3;
 			// Bits 3 & 4 becomes fine Y, bit 2 of fine Y is set to 0 by operation
-			t.fineY = (data >> 4) & 2;
+			t.fineY = (data >> 4) & 3;
 		}
 		else
 		{
 			// Coarse X becomes bits 0-4
-			t.coarseX = data & 5;
+			t.coarseX = data & 31;
 			// Low 3 bits of coarse Y becomes high 3 bits of data
 			int high2Y = t.coarseY >> 3;
 			high2Y << 3;
@@ -75,15 +79,11 @@ inline void ScrollSnapshot::poke(int reg, bool toggle, int data)
 	}
 }
 
-inline void ScrollSnapshot::changeVScroll(int x, int y)
+inline void ScrollSnapshot::changeVScroll(int y)
 {
-	int coarseXChange = floor(x / 8);
 	int coarseYChange = floor(y / 8);
-	int fineXChange = x % 8;
 	int fineYChange = y % 8;
-	v.coarseX += coarseXChange;
 	v.coarseY += coarseYChange;
-	v.fineX += fineXChange;
 	v.fineY += fineYChange;
 }
 
@@ -108,14 +108,13 @@ public:
 	PatternTable patternTable;
 	NameTable nameTables[4];
 	std::map<int, ScrollSnapshot> scrollSnapshots;
-	void writeScrollValue(int scanline, int reg, int data, bool toggle);
-	void clearScrollValue(int scanline);
+	void writeScrollValue(int scanline, int reg, bool toggle, int data);
 	void reset();
 private:
 	int mostRecentScanLineModified = 0;
 };
 
-inline void VxlRawPPU::writeScrollValue(int scanline, int reg, int data, bool toggle) {
+inline void VxlRawPPU::writeScrollValue(int scanline, int reg, bool toggle, int data) {
 	// Increment the scanline, assuming these changes are applying to next line
 	scanline++;
 	// Set scanline to 0 if we are outside of visible range, as it will all wrap back to rendering at 0
@@ -127,7 +126,7 @@ inline void VxlRawPPU::writeScrollValue(int scanline, int reg, int data, bool to
 		// Copy the last one
 		ScrollSnapshot newSnapshot = scrollSnapshots[mostRecentScanLineModified];
 		// Assume each scanline since has been incrementing the Y value
-		newSnapshot.changeVScroll(0, scanline - mostRecentScanLineModified);
+		newSnapshot.changeVScroll(scanline - mostRecentScanLineModified);
 		// Set modified copy to current scanline and mark as most recent
 		scrollSnapshots[scanline] = newSnapshot;
 		mostRecentScanLineModified = scanline;

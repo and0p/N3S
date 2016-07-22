@@ -81,9 +81,9 @@ private:
 };
 
 struct ScrollSection {
-	int x;
-	int y;
-	int nameTable;
+	int x = 0;
+	int y = 0;
+	int nameTable = 0;
 	int top;
 	int bottom;
 };

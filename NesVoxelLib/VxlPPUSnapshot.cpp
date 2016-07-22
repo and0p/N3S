@@ -69,15 +69,38 @@ VxlPPUSnapshot::VxlPPUSnapshot(VxlRawPPU * rawPPU)
 	}
 	// Copy background color
 	backgroundColor = (int)rawPPU->palette[0];
+	// Create variables to track most recent scroll variables
+	int lastX = 0;
+	int lastY = 0;
+	int lastNametable = 0;
+	int lastScanline = 0;
+	bool sectionAdded = false;
 	// Create "sections" of screen where scroll has changed
 	for (auto kv : rawPPU->scrollSnapshots)
 	{
-		ScrollSection s = ScrollSection();
-		s.top = kv.first;
-		s.x = kv.second.getTrueX();
-		s.y = kv.second.getTrueY();
-		s.nameTable = kv.second.v.nametable;
-		scrollSections.push_back(s);
+		// Read current values
+		int currentX = kv.second.getTrueX();
+		int currentY = kv.second.getTrueY();
+		int currentNametable = kv.second.v.nametable;
+		// Measure if the change in Y matches change in scanline, which would indicate Y wasn't changed in way we'll see
+		int currentScanline = kv.first;
+		int scanlineDelta = currentScanline - lastScanline;
+		int yDelta = currentY - lastY;
+		// Push to list only if different from last snapshot and Y change hasn't matched scanline change
+		if (!sectionAdded || currentX != lastX || scanlineDelta != yDelta || currentNametable != lastNametable)
+		{
+			ScrollSection s = ScrollSection();
+			s.top = currentScanline;
+			s.x = currentX;
+			s.y = currentY;
+			s.nameTable = currentNametable;
+			scrollSections.push_back(s);
+			lastX = currentX;
+			lastY = currentY;
+			lastNametable = currentNametable;
+			lastScanline = currentScanline;
+			sectionAdded = true;
+		}
 	}
 	// Make sure first and last scroll sections take up the full screen
 	if (scrollSections.size() > 0)
