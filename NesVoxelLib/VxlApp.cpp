@@ -14,7 +14,7 @@ void VxlApp::assignD3DContext(VxlD3DContext context)
 
 void VxlApp::load()
 {
-	char romPath[] = "c:\\zelda2.nes\0";
+	char romPath[] = "c:\\mario.nes\0";
 	NesEmulator::Initialize(&romPath[0]);
 	info = NesEmulator::getGameInfo();
 	gameData = std::shared_ptr<VoxelGameData>(new VoxelGameData((char*)info->data));
@@ -65,12 +65,13 @@ void VxlApp::renderSprites()
 			// Use partial rendering as needed
 			if (x >= 248 || y >= 232)
 			{
-				Sides offset = Sides();
+				int width = 8;
+				int height = 8;
 				if (x >= 248)
-					offset.right = 8 - (256 - x);
+					width = 256 - x;
 				if (y >= 232)
-					offset.bottom = 8 - (240 - y);
-				gameData->sprites[tile].renderPartial(x, y, sprite.palette, offset, sprite.hFlip, sprite.vFlip);
+					height = 240 - y;
+				gameData->sprites[tile].renderPartial(x, y, sprite.palette, 0, width, 0, height, sprite.hFlip, sprite.vFlip);
 			}
 			else
 				gameData->sprites[tile].render(x, y, sprite.palette, sprite.hFlip, sprite.vFlip);
@@ -148,16 +149,13 @@ void VxlApp::renderRow(int y, int height, int xOffset, int yOffset, int nametabl
 	NameTableTile nameTableTile;
 	int tileX = floor(nametableX / 8);
 	int tileY = floor(nametableY / 8);
-	int bottomOffset = 8 - height - yOffset;
-	if (bottomOffset < 0)
-		bottomOffset = 0;
 	// Branch based on whether or not there is any X offset / partial sprite
 	if (xOffset > 0)
 	{
 		int i = 0;
 		// Render partial first sprite
 		nameTableTile = snapshot->background.getTile(tileX + i, tileY, nameTable);
-		gameData->sprites[virtualPatternTable.getTrueTileIndex(nameTableTile.tile)].renderPartial(x, y, nameTableTile.palette, { yOffset, xOffset, bottomOffset, 0 }, false, false);
+		gameData->sprites[virtualPatternTable.getTrueTileIndex(nameTableTile.tile)].renderPartial(x, y, nameTableTile.palette, xOffset, (8 - xOffset), yOffset, height, false, false);
 		x += 8 - xOffset;
 		i++;
 		// Render middle sprites
@@ -167,7 +165,7 @@ void VxlApp::renderRow(int y, int height, int xOffset, int yOffset, int nametabl
 			if (height < 8)
 			{
 				// Render partial sprite
-				gameData->sprites[virtualPatternTable.getTrueTileIndex(nameTableTile.tile)].renderPartial(x, y, nameTableTile.palette, { yOffset, 0, bottomOffset, 0 }, false, false);
+				gameData->sprites[virtualPatternTable.getTrueTileIndex(nameTableTile.tile)].renderPartial(x, y, nameTableTile.palette, 0, 8, yOffset, height, false, false);
 			}
 			else
 			{
@@ -177,7 +175,7 @@ void VxlApp::renderRow(int y, int height, int xOffset, int yOffset, int nametabl
 		}
 		// Render parital last sprite
 		nameTableTile = snapshot->background.getTile(tileX + i, tileY, nameTable);
-		gameData->sprites[virtualPatternTable.getTrueTileIndex(nameTableTile.tile)].renderPartial(x, y, nameTableTile.palette, { 0, 0, bottomOffset, 8 - xOffset }, false, false);
+		gameData->sprites[virtualPatternTable.getTrueTileIndex(nameTableTile.tile)].renderPartial(x, y, nameTableTile.palette, 0, xOffset, yOffset, height, false, false);
 	}
 	else
 	{
@@ -188,7 +186,7 @@ void VxlApp::renderRow(int y, int height, int xOffset, int yOffset, int nametabl
 			if (height < 8)
 			{
 				// Render partial sprite
-				gameData->sprites[virtualPatternTable.getTrueTileIndex(nameTableTile.tile)].renderPartial(x, y, nameTableTile.palette, { yOffset, 0, bottomOffset, 0 }, false, false);
+				gameData->sprites[virtualPatternTable.getTrueTileIndex(nameTableTile.tile)].renderPartial(x, y, nameTableTile.palette, 0, 8, yOffset, height, false, false);
 			}
 			else
 			{

@@ -58,24 +58,24 @@ void VoxelSprite::render(int x, int y, int palette, bool mirrorH, bool mirrorV)
 	}
 }
 
-void VoxelSprite::renderPartial(int x, int y, int palette, Sides offset, bool mirrorH, bool mirrorV)
+void VoxelSprite::renderPartial(int x, int y, int palette, int xOffset, int width, int yOffset, int height, bool mirrorH, bool mirrorV)
 {
 	VxlUtil::selectPalette(palette);
-	for (int posY = offset.top; posY < 8 - offset.bottom; posY++)
+	for (int posY = 0; posY < height; posY++)
 	{
-		for (int posX = offset.left; posX < 8 - offset.right; posX++)
+		for (int posX = 0; posX < width; posX++)
 		{
-			VxlUtil::updateWorldMatrix(-1.0f + (x + posX - offset.left) * pixelSizeW, 1.0f - (y + posY - offset.top) * pixelSizeH, 0);
+			VxlUtil::updateWorldMatrix(-1.0f + ((x + posX) * pixelSizeW), 1.0f - ((y + posY) * pixelSizeH), 0);
 			// Grab different zMeshes based on mirroring
 			int meshX, meshY;
 			if (mirrorH)
-				meshX = 7 - posX;
+				meshX = 7 - (posX + xOffset);
 			else
-				meshX = posX;
+				meshX = posX + xOffset;
 			if (mirrorV)
-				meshY = 7 - posY;
+				meshY = 7 - (posY + yOffset);
 			else
-				meshY = posY;
+				meshY = posY + yOffset;
 			VxlUtil::renderMesh(&zMeshes[(meshY * 8) + meshX]);
 		}
 	}

@@ -64,7 +64,7 @@ public:
 	void setVoxel(int, int, int, int);
 	void buildFromBitmapSprite(BitmapSprite bitmap);
 	void render(int x, int y, int palette, bool mirrorH, bool mirrorV);
-	void renderPartial(int x, int y, int palette, Sides offset, bool mirrorH, bool mirrorV);
+	void renderPartial(int x, int y, int palette, int xOffset, int width, int yOffset, int height, bool mirrorH, bool mirrorV);
 private:
 	Voxel getVoxel(int, int, int);
 	static void buildSide(std::vector<ColorVertex> * vertices, int x, int y, int z, int color, VoxelSide side);
