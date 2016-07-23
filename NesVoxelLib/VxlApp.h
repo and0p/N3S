@@ -30,5 +30,5 @@ private:
 	void renderSprites();
 	void renderNameTables();
 	void renderScrollSection(ScrollSection section);
-	void renderRow(int y, int height, int xOffset, int nametableX, int nametableY, int nameTable);
+	void renderRow(int y, int height, int xOffset, int yOffset, int nametableX, int nametableY, int nameTable);
 };

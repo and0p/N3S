@@ -25,7 +25,7 @@ public:
 	ScrollAddress t;
 	ScrollAddress v;
 	void poke(int reg, bool toggle, int data);
-	bool tToV;
+	bool tToV = false;
 	void changeVScroll(int y);
 	int getTrueX();
 	int getTrueY();

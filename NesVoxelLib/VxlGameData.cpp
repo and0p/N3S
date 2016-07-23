@@ -52,7 +52,7 @@ void VoxelSprite::render(int x, int y, int palette, bool mirrorH, bool mirrorV)
 		if(mirrorH)
 			posX += (pixelSizeW * 8);
 		if (mirrorV)
-			posY += (pixelSizeH * 8);
+			posY -= (pixelSizeH * 8);
 		VxlUtil::updateWorldMatrix(posX, posY, 0);
 		VxlUtil::renderMesh(&mesh);
 	}

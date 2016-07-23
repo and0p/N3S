@@ -14,7 +14,7 @@ void VxlApp::assignD3DContext(VxlD3DContext context)
 
 void VxlApp::load()
 {
-	char romPath[] = "c:\\wrestlemania.nes\0";
+	char romPath[] = "c:\\zelda2.nes\0";
 	NesEmulator::Initialize(&romPath[0]);
 	info = NesEmulator::getGameInfo();
 	gameData = std::shared_ptr<VoxelGameData>(new VoxelGameData((char*)info->data));
@@ -110,92 +110,85 @@ void VxlApp::renderScrollSection(ScrollSection section)
 	// Get offset of top-left pixel within top-left sprite referenced
 	int xOffset = section.x % 8;
 	int yOffset = section.y % 8;
-	// Count height of section
+	// Get size of section
 	int sectionHeight = section.bottom - section.top + 1;
-	// Figure out how much to clip the sprites on the edges, if at all
-	Sides offset = { 0, 0, 0, 0 };
-	if (yOffset > 0)
+	// Render rows based on section size and yOffset
+	int topRowHeight = 8 - yOffset;
+	renderRow(section.top, topRowHeight, xOffset, yOffset, section.x, section.y, section.nameTable);
+	int yPositionOffset = topRowHeight;
+	// Render rest of rows, depending on how many there are
+	if (sectionHeight <= 8)
 	{
-		offset.top = 8 - yOffset;
-		offset.bottom = (sectionHeight - yOffset) % 8;
-	}
-	if (xOffset > 0)
-	{
-		offset.left = 8 - xOffset;
-		offset.right = (256 - xOffset) % 8;
-	}
-	// Count how many rows of different sprites there will be
-	int rows = floor((sectionHeight - offset.top - offset.bottom) / 8);
-	if (yOffset > 0)
-	{
-		if (yOffset + sectionHeight > 8)
-			rows += 2;
-		else
-			rows++;
-	}
-	// Start rendering
-	int y = section.top;
-	int yNameTableIncrement = 0;
-	for (int r = 0; r < rows; r++)
-	{
-		// Render partial if it's the first or last row, and there's also a Y offset
-		if (r == 0 && offset.top != 0)
+		if (sectionHeight > topRowHeight)
 		{
-			renderRow(y, offset.top, xOffset, section.x, section.y + (r * 8), section.nameTable);
-			y += offset.top;
+			int bottomRowHeight = sectionHeight - topRowHeight;
+			renderRow(section.top + yPositionOffset, bottomRowHeight, xOffset, yOffset, section.x, section.y + yPositionOffset, section.nameTable);
 		}
-		else if (r == rows - 1 && offset.bottom != 0)
+	}
+	else
+	{
+		// Render all full rows
+		int fullRows = floor((sectionHeight - topRowHeight) / 8);
+		for (int i = 0; i < fullRows; i++)
 		{
-			renderRow(y, offset.bottom, xOffset, section.x, section.y + (r * 8), section.nameTable);
+			renderRow(section.top + yPositionOffset, 8, xOffset, yOffset, section.x, section.y + yPositionOffset, section.nameTable);
+			yPositionOffset += 8;
 		}
-		else
+		if (yOffset != 0)
 		{
-			renderRow(y, 8, xOffset, floor(section.x / 8), floor(section.y / 8) + r, section.nameTable);
-			y += 8;
+			int bottomRowHeight = (sectionHeight - topRowHeight) % 8;
+			renderRow(section.top + yPositionOffset, bottomRowHeight, xOffset, 0, section.x, section.y + yPositionOffset, section.nameTable);
 		}
 	}
 }
 
-void VxlApp::renderRow(int y, int height, int xOffset, int nametableX, int nametableY, int nameTable)
+void VxlApp::renderRow(int y, int height, int xOffset, int yOffset, int nametableX, int nametableY, int nameTable)
 {
 	int x = 0;
 	NameTableTile nameTableTile;
+	int tileX = floor(nametableX / 8);
+	int tileY = floor(nametableY / 8);
+	int bottomOffset = 8 - height - yOffset;
+	if (bottomOffset < 0)
+		bottomOffset = 0;
 	// Branch based on whether or not there is any X offset / partial sprite
 	if (xOffset > 0)
 	{
 		int i = 0;
 		// Render partial first sprite
-		nameTableTile = snapshot->background.getTile(nametableX + i, nametableY, nameTable);
-		gameData->sprites[virtualPatternTable.getTrueTileIndex(nameTableTile.tile)].renderPartial(x, y, nameTableTile.palette, { 0, xOffset, 0, 0 }, false, false);
+		nameTableTile = snapshot->background.getTile(tileX + i, tileY, nameTable);
+		gameData->sprites[virtualPatternTable.getTrueTileIndex(nameTableTile.tile)].renderPartial(x, y, nameTableTile.palette, { yOffset, xOffset, bottomOffset, 0 }, false, false);
 		x += 8 - xOffset;
 		i++;
 		// Render middle sprites
 		for (i; i < 32; i++)
 		{
+			nameTableTile = snapshot->background.getTile(tileX + i, tileY, nameTable);
 			if (height < 8)
 			{
 				// Render partial sprite
+				gameData->sprites[virtualPatternTable.getTrueTileIndex(nameTableTile.tile)].renderPartial(x, y, nameTableTile.palette, { yOffset, 0, bottomOffset, 0 }, false, false);
 			}
 			else
 			{
-				nameTableTile = snapshot->background.getTile(nametableX + i, nametableY, nameTable);
 				gameData->sprites[virtualPatternTable.getTrueTileIndex(nameTableTile.tile)].render(x, y, nameTableTile.palette, false, false);
 			}
 			x += 8;
 		}
 		// Render parital last sprite
-		nameTableTile = snapshot->background.getTile(nametableX + i, nametableY, nameTable);
-		gameData->sprites[virtualPatternTable.getTrueTileIndex(nameTableTile.tile)].renderPartial(x, y, nameTableTile.palette, { 0, 0, 0, 8 - xOffset }, false, false);
+		nameTableTile = snapshot->background.getTile(tileX + i, tileY, nameTable);
+		gameData->sprites[virtualPatternTable.getTrueTileIndex(nameTableTile.tile)].renderPartial(x, y, nameTableTile.palette, { 0, 0, bottomOffset, 8 - xOffset }, false, false);
 	}
 	else
 	{
 		// Render all full sprites
 		for (int i = 0; i < 32; i++)
 		{
-			NameTableTile nameTableTile = snapshot->background.getTile(nametableX + i, nametableY, nameTable);
+			NameTableTile nameTableTile = snapshot->background.getTile(tileX + i, tileY, nameTable);
 			if (height < 8)
 			{
 				// Render partial sprite
+				gameData->sprites[virtualPatternTable.getTrueTileIndex(nameTableTile.tile)].renderPartial(x, y, nameTableTile.palette, { yOffset, 0, bottomOffset, 0 }, false, false);
 			}
 			else
 			{
