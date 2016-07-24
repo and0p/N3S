@@ -14,7 +14,7 @@ void VxlApp::assignD3DContext(VxlD3DContext context)
 
 void VxlApp::load()
 {
-	char romPath[] = "c:\\mario.nes\0";
+	char romPath[] = "c:\\pinball.nes\0";
 	NesEmulator::Initialize(&romPath[0]);
 	info = NesEmulator::getGameInfo();
 	gameData = std::shared_ptr<VoxelGameData>(new VoxelGameData((char*)info->data));
@@ -34,8 +34,9 @@ void VxlApp::update()
 void VxlApp::render()
 {
 	VxlUtil::updateGameTexture(NesEmulator::getPixelData());
-	camera.SetPosition(0, 0, -2);
-	camera.SetRotation(0, 0, 0);
+	float zoomAmount = inputState.gamePads[0].triggerStates[lTrigger] - inputState.gamePads[0].triggerStates[rTrigger];
+	camera.SetPosition(inputState.gamePads[0].analogStickStates[lStick].x * 1.5f, inputState.gamePads[0].analogStickStates[lStick].y * 1.5f, -2 + (zoomAmount * 1.5f));
+	camera.SetRotation(inputState.gamePads[0].analogStickStates[rStick].x * 20, 0, inputState.gamePads[0].analogStickStates[rStick].y * -20);
 	camera.Render();
 	VxlUtil::updateMatricesWithCamera(&camera);
 	VxlUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
@@ -44,8 +45,10 @@ void VxlApp::render()
 	if (inputState.gamePads[0].buttonStates[ba] != true) {
 		// renderSprites();
 	}
-	renderSprites();
-	renderNameTables();
+	//if(snapshot->mask.renderSprites)
+		renderSprites();
+	//if(snapshot->mask.renderBackground)
+		renderNameTables();
 }
 
 XMVECTORF32 VxlApp::getBackgroundColor()
@@ -152,7 +155,7 @@ void VxlApp::renderScrollSection(ScrollSection section)
 		if (sectionHeight > topRowHeight)
 		{
 			int bottomRowHeight = sectionHeight - topRowHeight;
-			renderRow(section.top + yPositionOffset, bottomRowHeight, xOffset, yOffset, section.x, section.y + yPositionOffset, section.nameTable);
+			renderRow(section.top + yPositionOffset, bottomRowHeight, xOffset, 0, section.x, section.y + yPositionOffset, section.nameTable);
 		}
 	}
 	else
