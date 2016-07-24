@@ -16,6 +16,8 @@
 static const void *pixelData;
 static retro_game_info *info;
 
+int16_t NesEmulator::inputs[2][8];
+
 static struct {
 	HMODULE handle;
 	bool initialized;
@@ -162,7 +164,7 @@ static int16_t core_input_state(unsigned port, unsigned device, unsigned index, 
 	if (port || index || device != RETRO_DEVICE_JOYPAD)
 		return 0;
 
-	return g_joy[id];
+	return NesEmulator::inputs[0][id];
 }
 
 //static void core_audio_sample(int16_t left, int16_t right) {

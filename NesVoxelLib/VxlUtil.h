@@ -101,3 +101,4 @@ private:
 	static int selectedPalette;
 };
 
+bool toggleBool(bool b);

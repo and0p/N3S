@@ -564,3 +564,11 @@ void VxlUtil::updateGameTexture(const void *data) {
 	context->PSSetSamplers(0, 1, &sampleState);
 	context->PSSetShaderResources(0, 1, &textureView);
 }
+
+bool toggleBool(bool b)
+{
+	if (b == false)
+		return true;
+	else
+		return false;;
+}

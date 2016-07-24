@@ -127,6 +127,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <Text Include="nesmapper.txt" />
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>

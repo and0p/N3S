@@ -3,6 +3,7 @@
 
 class NesEmulator {
 public:
+	static int16_t inputs[2][8];
 	static void Initialize(char * romPath);
 	static void ExecuteFrame();
 	static const void* getPixelData();

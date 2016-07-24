@@ -23,6 +23,9 @@ public:
 	VxlCamera camera;
 	std::shared_ptr<VoxelGameData> gameData;
 private:
+	bool emulationPaused;
+	bool pausedThisPress;
+	bool frameAdvanced;
 	std::shared_ptr<VxlPPUSnapshot> snapshot;
 	InputState inputState;
 	VxlVirtualPatternTable virtualPatternTable;

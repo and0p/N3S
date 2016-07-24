@@ -4,6 +4,7 @@
 VxlApp::VxlApp()
 {
 	gameData = {};
+	emulationPaused = false;
 	camera = VxlCamera();
 }
 
@@ -14,7 +15,7 @@ void VxlApp::assignD3DContext(VxlD3DContext context)
 
 void VxlApp::load()
 {
-	char romPath[] = "c:\\pinball.nes\0";
+	char romPath[] = "c:\\mario.nes\0";
 	NesEmulator::Initialize(&romPath[0]);
 	info = NesEmulator::getGameInfo();
 	gameData = std::shared_ptr<VoxelGameData>(new VoxelGameData((char*)info->data));
@@ -25,15 +26,28 @@ void VxlApp::load()
 
 void VxlApp::update()
 {
-	NesEmulator::ExecuteFrame();
 	inputState.refreshInput();
+	bool yPressed = inputState.gamePads[0].buttonStates[by];
+	bool xPressed = inputState.gamePads[0].buttonStates[bx];
+	if (xPressed && !pausedThisPress)
+		emulationPaused = toggleBool(emulationPaused);
+	if(!emulationPaused || (yPressed && !frameAdvanced))
+		NesEmulator::ExecuteFrame();
+	if (xPressed)
+		pausedThisPress = true;
+	else
+		pausedThisPress = false;
+	if (yPressed)
+		frameAdvanced = true;
+	else
+		frameAdvanced = false;
 	snapshot.reset(new VxlPPUSnapshot((VxlRawPPU*)NesEmulator::getVRam()));
 	virtualPatternTable.update(snapshot->patternTable);
 }
 
 void VxlApp::render()
 {
-	VxlUtil::updateGameTexture(NesEmulator::getPixelData());
+	// VxlUtil::updateGameTexture(NesEmulator::getPixelData());
 	float zoomAmount = inputState.gamePads[0].triggerStates[lTrigger] - inputState.gamePads[0].triggerStates[rTrigger];
 	camera.SetPosition(inputState.gamePads[0].analogStickStates[lStick].x * 1.5f, inputState.gamePads[0].analogStickStates[lStick].y * 1.5f, -2 + (zoomAmount * 1.5f));
 	camera.SetRotation(inputState.gamePads[0].analogStickStates[rStick].x * 20, 0, inputState.gamePads[0].analogStickStates[rStick].y * -20);
@@ -42,9 +56,6 @@ void VxlApp::render()
 	VxlUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
 	VxlUtil::updateMirroring(false, false);
 	updatePalette();
-	if (inputState.gamePads[0].buttonStates[ba] != true) {
-		// renderSprites();
-	}
 	//if(snapshot->mask.renderSprites)
 		renderSprites();
 	//if(snapshot->mask.renderBackground)
@@ -164,7 +175,7 @@ void VxlApp::renderScrollSection(ScrollSection section)
 		int fullRows = floor((sectionHeight - topRowHeight) / 8);
 		for (int i = 0; i < fullRows; i++)
 		{
-			renderRow(section.top + yPositionOffset, 8, xOffset, yOffset, section.x, section.y + yPositionOffset, section.nameTable);
+			renderRow(section.top + yPositionOffset, 8, xOffset, 0, section.x, section.y + yPositionOffset, section.nameTable);
 			yPositionOffset += 8;
 		}
 		if (yOffset != 0)
