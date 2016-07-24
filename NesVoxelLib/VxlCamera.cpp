@@ -39,6 +39,24 @@ void VxlCamera::SetRotation(float x, float y, float z)
 	return;
 }
 
+void VxlCamera::AdjustPosition(float x, float y, float z)
+{
+	m_positionX += x;
+	m_positionY += y;
+	m_positionZ += z;
+}
+
+void VxlCamera::AdjustRotation(float x, float y, float z)
+{
+	m_rotationX += x;
+	m_rotationY += y;
+	m_rotationZ += z;
+	if (m_rotationX > 360)
+		m_rotationX -= 360.0f;
+	if (m_rotationX < 0)
+		m_rotationX += 360.0f;
+}
+
 XMFLOAT3 VxlCamera::GetPosition()
 {
 	return XMFLOAT3(m_positionX, m_positionY, m_positionZ);

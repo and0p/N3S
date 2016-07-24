@@ -23,6 +23,9 @@ public:
 	void SetPosition(float, float, float);
 	void SetRotation(float, float, float);
 
+	void AdjustPosition(float, float, float);
+	void AdjustRotation(float, float, float);
+
 	XMFLOAT3 GetPosition();
 	XMFLOAT3 GetRotation();
 

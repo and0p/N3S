@@ -6,6 +6,8 @@ VxlApp::VxlApp()
 	gameData = {};
 	emulationPaused = false;
 	camera = VxlCamera();
+	camera.SetPosition(0, 0, -2);
+	camera.SetRotation(0, 0, 0);
 }
 
 void VxlApp::assignD3DContext(VxlD3DContext context)
@@ -28,12 +30,12 @@ void VxlApp::update()
 {
 	inputState.refreshInput();
 	bool yPressed = inputState.gamePads[0].buttonStates[by];
-	bool xPressed = inputState.gamePads[0].buttonStates[bx];
-	if (xPressed && !pausedThisPress)
+	bool bPressed = inputState.gamePads[0].buttonStates[bb];
+	if (bPressed && !pausedThisPress)
 		emulationPaused = toggleBool(emulationPaused);
 	if(!emulationPaused || (yPressed && !frameAdvanced))
 		NesEmulator::ExecuteFrame();
-	if (xPressed)
+	if (bPressed)
 		pausedThisPress = true;
 	else
 		pausedThisPress = false;
@@ -43,14 +45,18 @@ void VxlApp::update()
 		frameAdvanced = false;
 	snapshot.reset(new VxlPPUSnapshot((VxlRawPPU*)NesEmulator::getVRam()));
 	virtualPatternTable.update(snapshot->patternTable);
+	float zoomAmount = inputState.gamePads[0].triggerStates[lTrigger] - inputState.gamePads[0].triggerStates[rTrigger];
+	camera.AdjustPosition(inputState.gamePads[0].analogStickStates[lStick].x * 0.05f, inputState.gamePads[0].analogStickStates[lStick].y * 0.05f, zoomAmount * 0.05f);
+	camera.AdjustRotation(inputState.gamePads[0].analogStickStates[rStick].x, 0, inputState.gamePads[0].analogStickStates[rStick].y * -1);
+	if (inputState.gamePads[0].buttonStates[brb])
+	{
+		camera.SetPosition(0, 0, -2);
+		camera.SetRotation(0, 0, 0);
+	}
 }
 
 void VxlApp::render()
 {
-	// VxlUtil::updateGameTexture(NesEmulator::getPixelData());
-	float zoomAmount = inputState.gamePads[0].triggerStates[lTrigger] - inputState.gamePads[0].triggerStates[rTrigger];
-	camera.SetPosition(inputState.gamePads[0].analogStickStates[lStick].x * 1.5f, inputState.gamePads[0].analogStickStates[lStick].y * 1.5f, -2 + (zoomAmount * 1.5f));
-	camera.SetRotation(inputState.gamePads[0].analogStickStates[rStick].x * 20, 0, inputState.gamePads[0].analogStickStates[rStick].y * -20);
 	camera.Render();
 	VxlUtil::updateMatricesWithCamera(&camera);
 	VxlUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);

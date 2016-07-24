@@ -20,6 +20,8 @@ ControllerState::ControllerState(XINPUT_GAMEPAD gamepad)
 	buttonStates[bdRight] = ((gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT) != 0);
 	buttonStates[bdUp] = ((gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP) != 0);
 	buttonStates[bdDown] = ((gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN) != 0);
+	buttonStates[blb] = ((gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER) != 0);
+	buttonStates[brb] = ((gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER) != 0);
 	// Read analog sticks
 	analogStickStates[lStick] = { gamepad.sThumbLX / 32767.0f, gamepad.sThumbLY / 32767.0f };
 	analogStickStates[rStick] = { gamepad.sThumbRX / 32767.0f, gamepad.sThumbRY / 32767.0f };
@@ -65,7 +67,7 @@ void InputState::refreshInput()
 	}
 	// Send to emulator
 	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_A] = gamePads[0].buttonStates[ba];
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_B] = gamePads[0].buttonStates[bb];
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_B] = gamePads[0].buttonStates[bx];
 	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_SELECT] = gamePads[0].buttonStates[bselect];
 	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_START] = gamePads[0].buttonStates[bstart];
 	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_UP] = gamePads[0].buttonStates[bdUp];
