@@ -14,7 +14,7 @@ void VxlApp::assignD3DContext(VxlD3DContext context)
 
 void VxlApp::load()
 {
-	char romPath[] = "c:\\mario.nes\0";
+	char romPath[] = "c:\\zelda2.nes\0";
 	NesEmulator::Initialize(&romPath[0]);
 	info = NesEmulator::getGameInfo();
 	gameData = std::shared_ptr<VoxelGameData>(new VoxelGameData((char*)info->data));
@@ -34,7 +34,7 @@ void VxlApp::update()
 void VxlApp::render()
 {
 	VxlUtil::updateGameTexture(NesEmulator::getPixelData());
-	camera.SetPosition(0, 0, -2.0f);
+	camera.SetPosition(0, 0, -2);
 	camera.SetRotation(0, 0, 0);
 	camera.Render();
 	VxlUtil::updateMatricesWithCamera(&camera);
@@ -61,10 +61,13 @@ void VxlApp::renderSprites()
 		int x = sprite.x;
 		int y = sprite.y;
 		int tile = virtualPatternTable.getTrueTileIndex(sprite.tile);
+		// See if we're in 8x16 sprite mode and this sprite is verticall mirrored, in which case we have to adjust Y accordingly
+		if (snapshot->ctrl.spriteSize16x8 && sprite.vFlip)
+			y += 8;
 		if (y > 0 && y < 240) {
-			// Use partial rendering as needed
 			if (x >= 248 || y >= 232)
 			{
+				// Use partial rendering
 				int width = 8;
 				int height = 8;
 				if (x >= 248)
@@ -76,8 +79,34 @@ void VxlApp::renderSprites()
 			else
 				gameData->sprites[tile].render(x, y, sprite.palette, sprite.hFlip, sprite.vFlip);
 		}
+		// Render the accompanying vertical sprite if PPU in 8x16 mode
+		if (snapshot->ctrl.spriteSize16x8)
+		{
+			tile++;
+			if (sprite.vFlip)
+				y -= 8;
+			else
+				y += 8;
+			if (y > 0 && y < 240) {
+				if (x >= 248 || y >= 232)
+				{
+					// Use partial rendering
+					int width = 8;
+					int height = 8;
+					if (x >= 248)
+						width = 256 - x;
+					if (y >= 232)
+						height = 240 - y;
+					gameData->sprites[tile].renderPartial(x, y, sprite.palette, 0, width, 0, height, sprite.hFlip, sprite.vFlip);
+				}
+				else
+					gameData->sprites[tile].render(x, y, sprite.palette, sprite.hFlip, sprite.vFlip);
+			}
+		}
 	}
 }
+
+
 
 void VxlApp::updatePalette()
 {
