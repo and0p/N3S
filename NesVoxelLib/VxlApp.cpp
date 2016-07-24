@@ -14,7 +14,7 @@ void VxlApp::assignD3DContext(VxlD3DContext context)
 
 void VxlApp::load()
 {
-	char romPath[] = "c:\\zelda2.nes\0";
+	char romPath[] = "c:\\mario.nes\0";
 	NesEmulator::Initialize(&romPath[0]);
 	info = NesEmulator::getGameInfo();
 	gameData = std::shared_ptr<VoxelGameData>(new VoxelGameData((char*)info->data));
@@ -41,7 +41,7 @@ void VxlApp::render()
 	VxlUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
 	VxlUtil::updateMirroring(false, false);
 	updatePalette();
-	if (inputState.gamePads[0].buttonStates[xa] != true) {
+	if (inputState.gamePads[0].buttonStates[ba] != true) {
 		// renderSprites();
 	}
 	renderSprites();
