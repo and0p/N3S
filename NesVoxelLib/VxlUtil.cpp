@@ -281,10 +281,10 @@ ID3D11Buffer* VxlUtil::createBufferFromColorVertices(ColorVertex vertices[], int
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));
 
-	bd.Usage = D3D11_USAGE_DYNAMIC;                // write access access by CPU and GPU
-	bd.ByteWidth = sizeof(ColorVertex) * arraySize;             // size is the VERTEX struct * 3in
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;       // use as a vertex buffer
-	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;    // allow CPU to write in buffer
+	bd.Usage = D3D11_USAGE_DYNAMIC;						// write access access by CPU and GPU
+	bd.ByteWidth = sizeof(ColorVertex) * arraySize;     // size is the VERTEX struct * 3in
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;			// use as a vertex buffer
+	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;			// allow CPU to write in buffer
 
 	ID3D11Buffer *pVBuffer;								// the vertex buffer
 	device1->CreateBuffer(&bd, NULL, &pVBuffer);		// create the buffer
@@ -306,19 +306,15 @@ ID3D11Buffer* VxlUtil::createBufferFromColorVerticesV(std::vector<ColorVertex>  
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));
 
-	bd.Usage = D3D11_USAGE_DYNAMIC;                // write access access by CPU and GPU
-	bd.ByteWidth = sizeof(ColorVertex) * arraySize;             // size is the VERTEX struct * 3in
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;       // use as a vertex buffer
-	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;    // allow CPU to write in buffer
+	bd.Usage = D3D11_USAGE_DEFAULT;						// write access access by CPU and GPU
+	bd.ByteWidth = sizeof(ColorVertex) * arraySize;     // size is the VERTEX struct * 3in
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;			// use as a vertex buffer
+	bd.CPUAccessFlags = 0;								// disallow CPU to write in buffer
 
 	ID3D11Buffer *pVBuffer;								// the vertex buffer
-	device1->CreateBuffer(&bd, NULL, &pVBuffer);		// create the buffer
-
-														// copy the vertices into the buffer
-	D3D11_MAPPED_SUBRESOURCE ms;
-	HRESULT result = context1->Map(pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);    // map the buffer
-	memcpy(ms.pData, vertices->data(), bd.ByteWidth);							// copy the data
-	context1->Unmap(pVBuffer, NULL);                                         // unmap the buffer
+	D3D11_SUBRESOURCE_DATA vData;
+	vData.pSysMem = &(vertices->data()[0]);
+	device1->CreateBuffer(&bd, &vData, &pVBuffer);		// create the buffer
 	return pVBuffer;
 }
 

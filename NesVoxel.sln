@@ -1,13 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NesVoxelLib", "NesVoxelLib\NesVoxelLib.vcxproj", "{C50BF794-AC22-4556-AFEA-A7ED22A4F835}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NesVoxelD3D11", "NesVoxelD3D11\NesVoxelD3D11.vcxproj", "{FD01B185-4639-4F01-B2F4-F9FF142ABDE0}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "msvc-2010", "..\nestopia\libretro\msvc\msvc-2010\msvc-2010.vcxproj", "{C4D4209C-05D5-404F-8925-BD7ABA58D686}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "N3SHololens", "N3SHololens\N3SHololens.vcxproj", "{E3235D88-C3A9-4A81-A620-65AF0A601AD0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -47,6 +49,16 @@ Global
 		{C4D4209C-05D5-404F-8925-BD7ABA58D686}.Release|x64.ActiveCfg = Release|Win32
 		{C4D4209C-05D5-404F-8925-BD7ABA58D686}.Release|x86.ActiveCfg = Release|Win32
 		{C4D4209C-05D5-404F-8925-BD7ABA58D686}.Release|x86.Build.0 = Release|Win32
+		{E3235D88-C3A9-4A81-A620-65AF0A601AD0}.Debug|ARM.ActiveCfg = Debug|Win32
+		{E3235D88-C3A9-4A81-A620-65AF0A601AD0}.Debug|x64.ActiveCfg = Debug|Win32
+		{E3235D88-C3A9-4A81-A620-65AF0A601AD0}.Debug|x86.ActiveCfg = Debug|Win32
+		{E3235D88-C3A9-4A81-A620-65AF0A601AD0}.Debug|x86.Build.0 = Debug|Win32
+		{E3235D88-C3A9-4A81-A620-65AF0A601AD0}.Debug|x86.Deploy.0 = Debug|Win32
+		{E3235D88-C3A9-4A81-A620-65AF0A601AD0}.Release|ARM.ActiveCfg = Release|Win32
+		{E3235D88-C3A9-4A81-A620-65AF0A601AD0}.Release|x64.ActiveCfg = Release|Win32
+		{E3235D88-C3A9-4A81-A620-65AF0A601AD0}.Release|x86.ActiveCfg = Release|Win32
+		{E3235D88-C3A9-4A81-A620-65AF0A601AD0}.Release|x86.Build.0 = Release|Win32
+		{E3235D88-C3A9-4A81-A620-65AF0A601AD0}.Release|x86.Deploy.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
