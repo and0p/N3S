@@ -12,6 +12,8 @@
 
 #include "Common\DeviceResources.h"
 #include "Common\StepTimer.h"
+#include <VxlApp.h>
+#include <VxlUtil.h>
 
 #ifdef DRAW_SAMPLE_CONTENT
 #include "Content\SpinningCubeRenderer.h"
@@ -46,6 +48,8 @@ namespace N3SHololens
         virtual void OnDeviceRestored();
 
     private:
+		// N3S app
+		VxlApp app;
         // Asynchronously creates resources for new holographic cameras.
         void OnCameraAdded(
             Windows::Graphics::Holographic::HolographicSpace^ sender,

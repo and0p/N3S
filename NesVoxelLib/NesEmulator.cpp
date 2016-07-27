@@ -204,7 +204,7 @@ static void core_load() {
 	void(*set_audio_sample_batch)(retro_audio_sample_batch_t) = NULL;
 
 	memset(&g_retro, 0, sizeof(g_retro));
-	g_retro.handle = LoadLibrary(L"msvc-2010.dll");
+	g_retro.handle = LoadPackagedLibrary(L"msvc-2010.dll", 0);
 
 	load_retro_sym(retro_init);
 	load_retro_sym(retro_deinit);

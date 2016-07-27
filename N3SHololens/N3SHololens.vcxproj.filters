@@ -99,5 +99,11 @@
   <ItemGroup>
     <None Include="N3SHololens_TemporaryKey.pfx" />
     <None Include="ClassDiagram.cd" />
+    <None Include="..\Debug\mario.nes">
+      <Filter>Content</Filter>
+    </None>
+    <None Include="..\Debug\msvc-2010.dll">
+      <Filter>Content</Filter>
+    </None>
   </ItemGroup>
 </Project>

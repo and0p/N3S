@@ -17,7 +17,8 @@ void VxlApp::assignD3DContext(VxlD3DContext context)
 
 void VxlApp::load()
 {
-	char romPath[] = "c:\\shadowgate.nes\0";
+	//char romPath[] = "ms-appx:///Assets/mario.nes\0";
+	char romPath[] = "mario.nes\0";
 	NesEmulator::Initialize(&romPath[0]);
 	info = NesEmulator::getGameInfo();
 	gameData = std::shared_ptr<VoxelGameData>(new VoxelGameData((char*)info->data));

@@ -2,6 +2,7 @@
 #include "AppView.h"
 
 #include <ppltasks.h>
+#include "VxlApp.h"
 
 using namespace N3SHololens;
 

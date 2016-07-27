@@ -5,7 +5,6 @@
 #include <windows.graphics.directx.direct3d11.interop.h>
 #include <Collection.h>
 
-
 using namespace N3SHololens;
 
 using namespace concurrency;
@@ -23,6 +22,11 @@ N3SHololensMain::N3SHololensMain(const std::shared_ptr<DX::DeviceResources>& dev
 {
     // Register to be notified if the device is lost or recreated.
     m_deviceResources->RegisterDeviceNotify(this);
+	// Load VoxelApp
+	app = VxlApp();
+	VxlD3DContext context = {};
+	app.assignD3DContext({});
+	app.load();
 }
 
 void N3SHololensMain::SetHolographicSpace(HolographicSpace^ holographicSpace)
@@ -174,6 +178,8 @@ HolographicFrame^ N3SHololensMain::Update()
         // but if you change the StepTimer to use a fixed time step this code will
         // run as many times as needed to get to the current step.
         //
+
+		app.update();
 
 #ifdef DRAW_SAMPLE_CONTENT
         m_spinningCubeRenderer->Update(m_timer);
