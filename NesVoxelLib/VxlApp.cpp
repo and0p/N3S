@@ -29,36 +29,39 @@ void VxlApp::load()
 
 void VxlApp::update()
 {
-	inputState.refreshInput();
-	bool yPressed = inputState.gamePads[0].buttonStates[by];
-	bool bPressed = inputState.gamePads[0].buttonStates[bb];
-	if (bPressed && !pausedThisPress)
-		emulationPaused = toggleBool(emulationPaused);
-	if(!emulationPaused || (yPressed && !frameAdvanced))
-		NesEmulator::ExecuteFrame();
-	if (bPressed)
-		pausedThisPress = true;
-	else
-		pausedThisPress = false;
-	if (yPressed)
-		frameAdvanced = true;
-	else
-		frameAdvanced = false;
+	//inputState.refreshInput();
+	//bool yPressed = inputState.gamePads[0].buttonStates[by];
+	//bool bPressed = inputState.gamePads[0].buttonStates[bb];
+	//if (bPressed && !pausedThisPress)
+	//	emulationPaused = toggleBool(emulationPaused);
+	//if(!emulationPaused || (yPressed && !frameAdvanced))
+	NesEmulator::ExecuteFrame();
+	//if (bPressed)
+	//	pausedThisPress = true;
+	//else
+	//	pausedThisPress = false;
+	//if (yPressed)
+	//	frameAdvanced = true;
+	//else
+	//	frameAdvanced = false;
 	snapshot.reset(new VxlPPUSnapshot((VxlRawPPU*)NesEmulator::getVRam()));
 	virtualPatternTable.update(snapshot->patternTable);
-	float zoomAmount = inputState.gamePads[0].triggerStates[lTrigger] - inputState.gamePads[0].triggerStates[rTrigger];
+	/*float zoomAmount = inputState.gamePads[0].triggerStates[lTrigger] - inputState.gamePads[0].triggerStates[rTrigger];
 	camera.AdjustPosition(inputState.gamePads[0].analogStickStates[lStick].x * 0.05f, inputState.gamePads[0].analogStickStates[lStick].y * 0.05f, zoomAmount * 0.05f);
 	camera.AdjustRotation(inputState.gamePads[0].analogStickStates[rStick].x, 0, inputState.gamePads[0].analogStickStates[rStick].y * -1);
 	if (inputState.gamePads[0].buttonStates[brb])
 	{
 		camera.SetPosition(0, 0, -2);
 		camera.SetRotation(0, 0, 0);
-	}
+	}*/
 }
 
 void VxlApp::render()
 {
-	camera.Render();
+	VxlUtil::setShader(color);
+	camera.SetPosition(0, 0, -2);
+	camera.SetRotation(0, 0, 0);
+	// camera.Render();
 	VxlUtil::updateMatricesWithCamera(&camera);
 	VxlUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
 	VxlUtil::updateMirroring(false, false);
@@ -67,6 +70,16 @@ void VxlApp::render()
 		renderSprites();
 	//if(snapshot->mask.renderBackground)
 		renderNameTables();
+}
+
+void VxlApp::updateCameraViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
+{
+	VxlUtil::updateViewMatrices(view, projection);
+}
+
+void VxlApp::updateGameOriginPosition(float x, float y, float z)
+{
+
 }
 
 XMVECTORF32 VxlApp::getBackgroundColor()

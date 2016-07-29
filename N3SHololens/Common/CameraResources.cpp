@@ -4,6 +4,7 @@
 #include "Common\DirectXHelper.h"
 #include "DeviceResources.h"
 #include <windows.graphics.directx.direct3d11.interop.h>
+#include <VxlApp.h>
 
 using namespace DirectX;
 using namespace Microsoft::WRL;
@@ -160,7 +161,8 @@ void DX::CameraResources::ReleaseResourcesForBackBuffer(DX::DeviceResources* pDe
 void DX::CameraResources::UpdateViewProjectionBuffer(
     std::shared_ptr<DX::DeviceResources> deviceResources,
     HolographicCameraPose^ cameraPose,
-    SpatialCoordinateSystem^ coordinateSystem
+    SpatialCoordinateSystem^ coordinateSystem,
+	VxlApp * app
     )
 {
     // The system changes the viewport on a per-frame basis for system optimizations.

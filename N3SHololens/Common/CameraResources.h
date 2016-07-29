@@ -31,7 +31,8 @@ namespace DX
         void UpdateViewProjectionBuffer(
             std::shared_ptr<DX::DeviceResources> deviceResources,
             Windows::Graphics::Holographic::HolographicCameraPose^ cameraPose,
-            Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
+            Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem,
+			VxlApp * app);
 
         bool AttachViewProjectionBuffer(
             std::shared_ptr<DX::DeviceResources> deviceResources);

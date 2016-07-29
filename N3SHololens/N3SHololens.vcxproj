@@ -116,12 +116,24 @@
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
+    <None Include="..\Debug\color_pixel.cso">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\Debug\color_vertex.cso">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="..\Debug\mario.nes">
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="..\Debug\msvc-2010.dll">
       <DeploymentContent>true</DeploymentContent>
       <FileType>CppCode</FileType>
+    </None>
+    <None Include="..\Debug\texture_pixel.cso">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\Debug\texture_vertex.cso">
+      <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="ClassDiagram.cd" />
     <None Include="N3SHololens_TemporaryKey.pfx" />

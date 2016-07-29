@@ -22,11 +22,8 @@ N3SHololensMain::N3SHololensMain(const std::shared_ptr<DX::DeviceResources>& dev
 {
     // Register to be notified if the device is lost or recreated.
     m_deviceResources->RegisterDeviceNotify(this);
-	// Load VoxelApp
+	// Cast devices and contexts to relevant types for our app TODO: maybe clean this up later???
 	app = VxlApp();
-	VxlD3DContext context = {};
-	app.assignD3DContext({});
-	app.load();
 }
 
 void N3SHololensMain::SetHolographicSpace(HolographicSpace^ holographicSpace)
@@ -38,6 +35,14 @@ void N3SHololensMain::SetHolographicSpace(HolographicSpace^ holographicSpace)
     //
     // TODO: Add code here to initialize your holographic content.
     //
+
+	ID3D11Device* d = m_deviceResources->GetD3DDevice();
+	ID3D11Device1* d1 = m_deviceResources->GetD3DDevice();
+	ID3D11DeviceContext* c = m_deviceResources->GetD3DDeviceContext();
+	ID3D11DeviceContext1* c1 = m_deviceResources->GetD3DDeviceContext();
+	VxlD3DContext context = { d, d1, c, c1 };
+	app.assignD3DContext(context);
+	app.load();
 
 #ifdef DRAW_SAMPLE_CONTENT
     // Initialize the sample hologram.
@@ -285,6 +290,7 @@ bool N3SHololensMain::Render(Windows::Graphics::Holographic::HolographicFrame^ h
             // every frame. This function refreshes the data in the constant buffer for
             // the holographic camera indicated by cameraPose.
             pCameraResources->UpdateViewProjectionBuffer(m_deviceResources, cameraPose, m_referenceFrame->CoordinateSystem);
+			app.updateCameraViewMatrices(, cameraPose->ProjectionTransform.Left.);
 
             // Attach the view/projection constant buffer for this camera to the graphics pipeline.
             bool cameraActive = pCameraResources->AttachViewProjectionBuffer(m_deviceResources);
@@ -294,12 +300,14 @@ bool N3SHololensMain::Render(Windows::Graphics::Holographic::HolographicFrame^ h
             if (cameraActive)
             {
                 // Draw the sample hologram.
-                m_spinningCubeRenderer->Render();
+                // m_spinningCubeRenderer->Render();
+				
             }
 #endif
             atLeastOneCameraRendered = true;
         }
-
+		app.render();
+		atLeastOneCameraRendered = true;
         return atLeastOneCameraRendered;
     });
 }

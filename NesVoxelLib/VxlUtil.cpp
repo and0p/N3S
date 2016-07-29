@@ -143,7 +143,7 @@ void VxlUtil::initShaders() {
 	ifstream s_stream;
 	size_t s_size;
 	char* s_data;
-	s_stream.open("C:\\Users\\and0\\Source\\Repos\\NesVoxel\\Debug\\color_vertex.cso", ifstream::in | ifstream::binary);
+	s_stream.open("color_vertex.cso", ifstream::in | ifstream::binary);
 	s_stream.seekg(0, ios::end);
 	s_size = size_t(s_stream.tellg());
 	s_data = new char[s_size];
@@ -162,7 +162,7 @@ void VxlUtil::initShaders() {
 
 	device1->CreateInputLayout(colorLayout, 3, &s_data[0], s_size, &inputLayouts[0]);
 
-	s_stream.open("C:\\Users\\and0\\Source\\Repos\\NesVoxel\\Debug\\color_pixel.cso", ifstream::in | ifstream::binary);
+	s_stream.open("color_pixel.cso", ifstream::in | ifstream::binary);
 	s_stream.seekg(0, ios::end);
 	s_size = size_t(s_stream.tellg());
 	s_data = new char[s_size];
@@ -172,7 +172,7 @@ void VxlUtil::initShaders() {
 
 	device1->CreatePixelShader(s_data, s_size, 0, &shaderSets[0].pixelShader);
 
-	s_stream.open("C:\\Users\\and0\\Source\\Repos\\NesVoxel\\Debug\\texture_vertex.cso", ifstream::in | ifstream::binary);
+	s_stream.open("texture_vertex.cso", ifstream::in | ifstream::binary);
 	s_stream.seekg(0, ios::end);
 	s_size = size_t(s_stream.tellg());
 	s_data = new char[s_size];
@@ -190,7 +190,7 @@ void VxlUtil::initShaders() {
 
 	device1->CreateInputLayout(textureLayout, 2, &s_data[0], s_size, &inputLayouts[1]);
 
-	s_stream.open("C:\\Users\\and0\\Source\\Repos\\NesVoxel\\Debug\\texture_pixel.cso", ifstream::in | ifstream::binary);
+	s_stream.open("texture_pixel.cso", ifstream::in | ifstream::binary);
 	s_stream.seekg(0, ios::end);
 	s_size = size_t(s_stream.tellg());
 	s_data = new char[s_size];
@@ -485,6 +485,38 @@ void VxlUtil::updateMatricesWithCamera(VxlCamera * camera) {
 	context1->VSSetConstantBuffers(2, 1, &projectionMatrixBuffer);
 }
 
+void VxlUtil::updateViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
+{
+	XMMATRIX viewMatrix, projectionMatrix;
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	MatrixBuffer* dataPtr;
+
+	viewMatrix = XMLoadFloat4x4(&view);
+	projectionMatrix = XMLoadFloat4x4(&projection);
+
+	// Lock the constant buffer so it can be written to.
+	context1->Map(viewMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	// Get a pointer to the data in the constant buffer.
+	dataPtr = (MatrixBuffer*)mappedResource.pData;
+	// Copy the matrices into the constant buffer.
+	dataPtr->matrix = viewMatrix;
+	// Unlock the constant buffer.
+	context1->Unmap(viewMatrixBuffer, 0);
+	// Finally set the constant buffer in the vertex shader with the updated values.
+	context1->VSSetConstantBuffers(1, 1, &viewMatrixBuffer);
+
+	// Lock the constant buffer so it can be written to.
+	context1->Map(projectionMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	// Get a pointer to the data in the constant buffer.
+	dataPtr = (MatrixBuffer*)mappedResource.pData;
+	// Copy the matrices into the constant buffer.
+	dataPtr->matrix = projectionMatrix;
+	// Unlock the constant buffer.
+	context1->Unmap(projectionMatrixBuffer, 0);
+	// Finally set the constant buffer in the vertex shader with the updated values.
+	context1->VSSetConstantBuffers(2, 1, &projectionMatrixBuffer);
+}
+
 XMMATRIX VxlUtil::getProjectionMatrix(const float near_plane, const float far_plane, const float fov_horiz, const float fov_vert)
 {
 	float    h, w, Q;
@@ -517,6 +549,7 @@ void VxlUtil::renderMesh(VoxelMesh *voxelMesh) {
 		UINT stride = sizeof(ColorVertex); // TODO optimize
 		UINT offset = 0;
 		context->IASetVertexBuffers(0, 1, &voxelMesh->buffer, &stride, &offset);
+		context->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		// draw the vertex buffer to the back buffer
 		context->Draw(voxelMesh->size, 0);
 	}

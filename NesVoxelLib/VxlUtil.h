@@ -65,6 +65,7 @@ public:
 	static VoxelMesh* CreateRectangle(ShaderType type);
 	static VoxelMesh* CreateSpriteMarker();
 	static void updateMatricesWithCamera(VxlCamera * camera);
+	static void updateViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 perspective);
 	static void updateWorldMatrix(float, float, float);
 	static void updateMirroring(bool horizontal, bool vertical);
 	static void updatePalette(float palette[72]);

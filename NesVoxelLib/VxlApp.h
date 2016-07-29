@@ -18,6 +18,8 @@ public:
 	void load();
 	void update();
 	void render();
+	void updateCameraViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection);
+	void updateGameOriginPosition(float x, float y, float z);
 	XMVECTORF32 getBackgroundColor();
 	retro_game_info *info;
 	VxlCamera camera;
