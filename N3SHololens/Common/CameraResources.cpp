@@ -161,9 +161,7 @@ void DX::CameraResources::ReleaseResourcesForBackBuffer(DX::DeviceResources* pDe
 void DX::CameraResources::UpdateViewProjectionBuffer(
     std::shared_ptr<DX::DeviceResources> deviceResources,
     HolographicCameraPose^ cameraPose,
-    SpatialCoordinateSystem^ coordinateSystem,
-	VxlApp * app
-    )
+    SpatialCoordinateSystem^ coordinateSystem)
 {
     // The system changes the viewport on a per-frame basis for system optimizations.
     m_d3dViewport = CD3D11_VIEWPORT(

@@ -2,7 +2,7 @@
 struct GeometryShaderInput
 {
     min16float4 pos     : SV_POSITION;
-    min16float3 color   : COLOR0;
+    min16float4 color   : COLOR0;
     uint        instId  : TEXCOORD0;
 };
 
@@ -10,7 +10,7 @@ struct GeometryShaderInput
 struct GeometryShaderOutput
 {
     min16float4 pos     : SV_POSITION;
-    min16float3 color   : COLOR0;
+    min16float4 color   : COLOR0;
     uint        rtvId   : SV_RenderTargetArrayIndex;
 };
 

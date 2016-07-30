@@ -204,6 +204,7 @@ static void core_load() {
 	void(*set_audio_sample_batch)(retro_audio_sample_batch_t) = NULL;
 
 	memset(&g_retro, 0, sizeof(g_retro));
+#ifdef HOLOLENS
 	g_retro.handle = LoadPackagedLibrary(L"msvc-2010.dll", 0);
 
 	load_retro_sym(retro_init);
@@ -232,6 +233,36 @@ static void core_load() {
 	set_input_state(core_input_state);
 	// set_audio_sample(core_audio_sample);
 	// set_audio_sample_batch(core_audio_sample_batch);
+#else
+	g_retro.handle = LoadLibrary(L"msvc-2010.dll");
+
+	load_retro_sym(retro_init);
+	load_retro_sym(retro_deinit);
+	load_retro_sym(retro_api_version);
+	load_retro_sym(retro_get_system_info);
+	load_retro_sym(retro_get_system_av_info);
+	load_retro_sym(retro_set_controller_port_device);
+	load_retro_sym(retro_reset);
+	load_retro_sym(retro_run);
+	load_retro_sym(retro_load_game);
+	load_retro_sym(retro_unload_game);
+	load_retro_sym(retro_get_memory_data);
+	//g_retro.retro_get_memory_data = GetProcAddress(g_retro.handle, (LPCSTR)retro_get_memory_data);
+
+	load_sym(set_environment, retro_set_environment);
+	load_sym(set_video_refresh, retro_set_video_refresh);
+	load_sym(set_input_poll, retro_set_input_poll);
+	load_sym(set_input_state, retro_set_input_state);
+	load_sym(set_audio_sample, retro_set_audio_sample);
+	load_sym(set_audio_sample_batch, retro_set_audio_sample_batch);
+
+	set_environment(core_environment);
+	set_video_refresh(core_video_refresh);
+	set_input_poll(core_input_poll);
+	set_input_state(core_input_state);
+	// set_audio_sample(core_audio_sample);
+	// set_audio_sample_batch(core_audio_sample_batch);
+#endif
 
 	g_retro.retro_init();
 	g_retro.initialized = true;

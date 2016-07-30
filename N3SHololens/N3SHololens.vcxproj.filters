@@ -105,17 +105,5 @@
     <None Include="..\Debug\msvc-2010.dll">
       <Filter>Content</Filter>
     </None>
-    <None Include="..\Debug\color_pixel.cso">
-      <Filter>Content\Shaders</Filter>
-    </None>
-    <None Include="..\Debug\color_vertex.cso">
-      <Filter>Content\Shaders</Filter>
-    </None>
-    <None Include="..\Debug\texture_pixel.cso">
-      <Filter>Content\Shaders</Filter>
-    </None>
-    <None Include="..\Debug\texture_vertex.cso">
-      <Filter>Content\Shaders</Filter>
-    </None>
   </ItemGroup>
 </Project>

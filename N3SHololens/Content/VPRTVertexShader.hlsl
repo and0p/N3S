@@ -13,8 +13,8 @@ cbuffer ViewProjectionConstantBuffer : register(b1)
 // Per-vertex data used as input to the vertex shader.
 struct VertexShaderInput
 {
-    min16float3 pos     : POSITION;
-    min16float3 color   : COLOR0;
+    min16float4 pos     : POSITION;
+    min16float4 color   : COLOR0;
     uint        instId  : SV_InstanceID;
 };
 
@@ -23,7 +23,7 @@ struct VertexShaderInput
 struct VertexShaderOutput
 {
     min16float4 pos     : SV_POSITION;
-    min16float3 color   : COLOR0;
+    min16float4 color   : COLOR0;
     uint        rtvId   : SV_RenderTargetArrayIndex; // SV_InstanceID % 2
 };
 
@@ -31,7 +31,7 @@ struct VertexShaderOutput
 VertexShaderOutput main(VertexShaderInput input)
 {
     VertexShaderOutput output;
-    float4 pos = float4(input.pos, 1.0f);
+    float4 pos = input.pos;
 
     // Note which view this vertex has been sent to. Used for matrix lookup.
     // Taking the modulo of the instance ID allows geometry instancing to be used

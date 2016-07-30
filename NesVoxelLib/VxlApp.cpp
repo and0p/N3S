@@ -17,7 +17,6 @@ void VxlApp::assignD3DContext(VxlD3DContext context)
 
 void VxlApp::load()
 {
-	//char romPath[] = "ms-appx:///Assets/mario.nes\0";
 	char romPath[] = "mario.nes\0";
 	NesEmulator::Initialize(&romPath[0]);
 	info = NesEmulator::getGameInfo();
@@ -58,11 +57,11 @@ void VxlApp::update()
 
 void VxlApp::render()
 {
-	VxlUtil::setShader(color);
+	// VxlUtil::setShader(color);
 	camera.SetPosition(0, 0, -2);
 	camera.SetRotation(0, 0, 0);
 	// camera.Render();
-	VxlUtil::updateMatricesWithCamera(&camera);
+	// VxlUtil::updateMatricesWithCamera(&camera);
 	VxlUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
 	VxlUtil::updateMirroring(false, false);
 	updatePalette();

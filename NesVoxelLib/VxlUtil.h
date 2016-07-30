@@ -17,7 +17,6 @@ enum ShaderType { color, texture };
 struct ColorVertex {
 	XMFLOAT4 Pos;
 	XMFLOAT4 Col;
-	XMFLOAT4 Nor;
 };
 
 struct TextureVertex {
@@ -82,6 +81,7 @@ private:
 	static Microsoft::WRL::ComPtr<ID3D11DeviceContext1>    context1;
 	static void initShaders();
 	static void initSampleState();
+	static void createIndexBuffer();
 	static ShaderSet shaderSets[2];
 	static ID3D11InputLayout *inputLayouts[2];
 	static ID3D11Buffer *worldMatrixBuffer;
@@ -90,6 +90,7 @@ private:
 	static ID3D11Buffer *mirrorBuffer;
 	static ID3D11Buffer *paletteBuffer;
 	static ID3D11Buffer *paletteSelectionBuffer;
+	static ID3D11Buffer *indexBuffer;
 	static MatrixBuffer *worldMatrixPtr;
 	static MatrixBuffer *viewMatrixPtr;
 	static MatrixBuffer *projectionMatrixPtr;
@@ -100,6 +101,7 @@ private:
 	static D3D11_SUBRESOURCE_DATA subData;
 	static MirrorState mirrorState;
 	static int selectedPalette;
+	static int mirrorBufferNumber;
 };
 
 bool toggleBool(bool b);

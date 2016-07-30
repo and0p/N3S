@@ -18,6 +18,7 @@ ID3D11Buffer *VxlUtil::projectionMatrixBuffer;
 ID3D11Buffer *VxlUtil::mirrorBuffer;
 ID3D11Buffer *VxlUtil::paletteBuffer;
 ID3D11Buffer *VxlUtil::paletteSelectionBuffer;
+ID3D11Buffer *VxlUtil::indexBuffer;
 ShaderSet VxlUtil::shaderSets[2];
 ID3D11InputLayout *VxlUtil::inputLayouts[2];
 ID3D11Texture2D *VxlUtil::texture2d;
@@ -27,6 +28,7 @@ D3D11_SUBRESOURCE_DATA VxlUtil::subData;
 MirrorState VxlUtil::mirrorState;
 PPUHueStandardCollection VxlUtil::ppuHueStandardCollection;
 int VxlUtil::selectedPalette;
+int VxlUtil::mirrorBufferNumber;
 
 void VxlUtil::initPipeline(VxlD3DContext c)
 {
@@ -80,6 +82,7 @@ void VxlUtil::initPipeline(VxlD3DContext c)
 
 	device1->CreateBuffer(&paletteSelectionBufferDesc, NULL, &paletteSelectionBuffer);
 
+#ifndef HOLOLENS
 	initShaders();
 	setShader(color);
 	initSampleState();
@@ -104,6 +107,11 @@ void VxlUtil::initPipeline(VxlD3DContext c)
 
 	device->CreateTexture2D(&desc, NULL, &texture2d);
 	device->CreateShaderResourceView(texture2d, NULL, &textureView);
+#endif
+
+#ifdef HOLOLENS
+	createIndexBuffer();
+#endif
 
 	D3D11_RASTERIZER_DESC rasterDesc;
 	rasterDesc.AntialiasedLineEnable = false;
@@ -137,6 +145,13 @@ void VxlUtil::initPipeline(VxlD3DContext c)
 		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f
 	};
 	updatePalette(paletteArray);
+
+	// Set mirror buffer number based on whether we're compiling for Hololens or not
+#ifdef HOLOLENS
+	mirrorBufferNumber = 5;
+#else
+	mirrorBufferNumber = 3;
+#endif
 }
 
 void VxlUtil::initShaders() {
@@ -157,7 +172,6 @@ void VxlUtil::initShaders() {
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "NORMAL",   0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
 
 	device1->CreateInputLayout(colorLayout, 3, &s_data[0], s_size, &inputLayouts[0]);
@@ -385,7 +399,7 @@ void VxlUtil::updateMirroring(bool horizontal, bool vertical) {
 		// Unlock the constant buffer.
 		context1->Unmap(mirrorBuffer, 0);
 		// Finally set the constant buffer in the vertex shader with the updated values.
-		context1->VSSetConstantBuffers(3, 1, &mirrorBuffer);
+		context1->VSSetConstantBuffers(mirrorBufferNumber, 1, &mirrorBuffer);
 	}
 }
 
@@ -541,8 +555,10 @@ XMMATRIX VxlUtil::getProjectionMatrix(const float near_plane, const float far_pl
 
 void VxlUtil::renderMesh(VoxelMesh *voxelMesh) {
 	ShaderType type = voxelMesh->type;
+#ifndef HOLOLENS
 	// Switch shader if needed
 	if (activeShader != type) setShader(type);
+#endif
 	// Switch based on type
 	if (type == color)
 	{
@@ -551,7 +567,22 @@ void VxlUtil::renderMesh(VoxelMesh *voxelMesh) {
 		context->IASetVertexBuffers(0, 1, &voxelMesh->buffer, &stride, &offset);
 		context->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		// draw the vertex buffer to the back buffer
+#ifdef HOLOLENS
+			context->IASetIndexBuffer(
+				indexBuffer,
+				DXGI_FORMAT_R16_UINT, // Each index is one 16-bit unsigned integer (short).
+				0
+				);
+		    context->DrawIndexedInstanced(
+				voxelMesh->size,   // Index count per instance.
+		        2,              // Instance count.
+		        0,              // Start index location.
+		        0,              // Base vertex location.
+		        0               // Start instance location.
+		        );
+#else
 		context->Draw(voxelMesh->size, 0);
+#endif
 	}
 	else if (type == texture)
 	{
@@ -579,6 +610,25 @@ void VxlUtil::initSampleState() {
 	samplerDesc.MinLOD = 0;
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	device->CreateSamplerState(&samplerDesc, &sampleState);
+}
+
+void VxlUtil::createIndexBuffer()
+{
+	unsigned short indices[73728];
+	for (int i = 0; i < 73728; i++)
+	{
+		indices[i] = i;
+	}
+	D3D11_SUBRESOURCE_DATA indexBufferData = { 0 };
+	indexBufferData.pSysMem = indices;
+	indexBufferData.SysMemPitch = 0;
+	indexBufferData.SysMemSlicePitch = 0;
+	const CD3D11_BUFFER_DESC indexBufferDesc(sizeof(indices), D3D11_BIND_INDEX_BUFFER);
+	device->CreateBuffer(
+		&indexBufferDesc,
+		&indexBufferData,
+		&indexBuffer
+		);
 }
 
 void VxlUtil::updateGameTexture(const void *data) {

@@ -280,60 +280,36 @@ void VoxelSprite::buildSide(std::vector<ColorVertex> * vertices, int x, int y, i
 		v2.Pos = XMFLOAT4(xf, yf, zf, 1.0f);
 		v3.Pos = XMFLOAT4(xf, yf - pixelSizeH, zf, 1.0f);
 		v4.Pos = XMFLOAT4(xf, yf - pixelSizeH, zf + pixelSizeW, 1.0f);
-		v1.Nor = XMFLOAT4(-1, 0, 0, 0);
-		v2.Nor = XMFLOAT4(-1, 0, 0, 0);
-		v3.Nor = XMFLOAT4(-1, 0, 0, 0);
-		v4.Nor = XMFLOAT4(-1, 0, 0, 0);
 		break;
 	case right:
 		v1.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf, 1.0f);
 		v2.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf + pixelSizeW, 1.0f);
 		v3.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeH, zf + pixelSizeW, 1.0f);
 		v4.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeH, zf, 1.0f);
-		v1.Nor = XMFLOAT4(1, 0, 0, 0);
-		v2.Nor = XMFLOAT4(1, 0, 0, 0);
-		v3.Nor = XMFLOAT4(1, 0, 0, 0);
-		v4.Nor = XMFLOAT4(1, 0, 0, 0);
 		break;
 	case top:
 		v1.Pos = XMFLOAT4(xf, yf, zf + pixelSizeW, 1.0f);
 		v2.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf + pixelSizeW, 1.0f);
 		v3.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf, 1.0f);
 		v4.Pos = XMFLOAT4(xf, yf, zf, 1.0f);
-		v1.Nor = XMFLOAT4(0, 1, 0, 0);
-		v2.Nor = XMFLOAT4(0, 1, 0, 0);
-		v3.Nor = XMFLOAT4(0, 1, 0, 0);
-		v4.Nor = XMFLOAT4(0, 1, 0, 0);
 		break;
 	case bottom:
 		v1.Pos = XMFLOAT4(xf, yf - pixelSizeH, zf, 1.0f);
 		v2.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeH, zf, 1.0f);
 		v3.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeH, zf + pixelSizeW, 1.0f);
 		v4.Pos = XMFLOAT4(xf, yf - pixelSizeH, zf + pixelSizeW, 1.0f);
-		v1.Nor = XMFLOAT4(0, -1, 0, 0);
-		v2.Nor = XMFLOAT4(0, -1, 0, 0);
-		v3.Nor = XMFLOAT4(0, -1, 0, 0);
-		v4.Nor = XMFLOAT4(0, -1, 0, 0);
 		break;
 	case front:
 		v1.Pos = XMFLOAT4(xf, yf, zf, 1.0f);
 		v2.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf, 1.0f);
 		v3.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeH, zf, 1.0f);
 		v4.Pos = XMFLOAT4(xf, yf - pixelSizeH, zf, 1.0f);
-		v1.Nor = XMFLOAT4(0, 0, 1, 0);
-		v2.Nor = XMFLOAT4(0, 0, 1, 0);
-		v3.Nor = XMFLOAT4(0, 0, 1, 0);
-		v4.Nor = XMFLOAT4(0, 0, 1, 0);
 		break;
 	case back:
 		v1.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf + pixelSizeW, 1.0f);
 		v2.Pos = XMFLOAT4(xf, yf, zf + pixelSizeW, 1.0f);
 		v3.Pos = XMFLOAT4(xf, yf - pixelSizeH, zf + pixelSizeW, 1.0f);
 		v4.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeH, zf + pixelSizeW, 1.0f);
-		v1.Nor = XMFLOAT4(0, 0, -1, 0);
-		v2.Nor = XMFLOAT4(0, 0, -1, 0);
-		v3.Nor = XMFLOAT4(0, 0, -1, 0);
-		v4.Nor = XMFLOAT4(0, 0, -1, 0);
 		break;
 	}
 	vertices->push_back(v1);

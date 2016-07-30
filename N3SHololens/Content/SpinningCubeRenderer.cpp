@@ -96,21 +96,21 @@ void SpinningCubeRenderer::Render()
     const auto context = m_deviceResources->GetD3DDeviceContext();
 
     // Each vertex is one instance of the VertexPositionColor struct.
-    const UINT stride = sizeof(VertexPositionColor);
-    const UINT offset = 0;
-    context->IASetVertexBuffers(
-        0,
-        1,
-        m_vertexBuffer.GetAddressOf(),
-        &stride,
-        &offset
-        );
+    //const UINT stride = sizeof(VertexPositionColor);
+    //const UINT offset = 0;
+    //context->IASetVertexBuffers(
+    //    0,
+    //    1,
+    //    m_vertexBuffer.GetAddressOf(),
+    //    &stride,
+    //    &offset
+    //    );
     context->IASetIndexBuffer(
         m_indexBuffer.Get(),
         DXGI_FORMAT_R16_UINT, // Each index is one 16-bit unsigned integer (short).
         0
         );
-    context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    context->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     context->IASetInputLayout(m_inputLayout.Get());
 
     // Attach the vertex shader.
@@ -192,8 +192,8 @@ void SpinningCubeRenderer::CreateDeviceDependentResources()
 
         static const D3D11_INPUT_ELEMENT_DESC vertexDesc[] =
         {
-            { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-            { "COLOR",    0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+            { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+            { "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 },
         };
 
         DX::ThrowIfFailed(
@@ -256,14 +256,14 @@ void SpinningCubeRenderer::CreateDeviceDependentResources()
         // cube at a comfortable size we made the cube width 0.2 m (20 cm).
         static const VertexPositionColor cubeVertices[] =
         {
-            { XMFLOAT3(-0.1f, -0.1f, -0.1f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
-            { XMFLOAT3(-0.1f, -0.1f,  0.1f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-            { XMFLOAT3(-0.1f,  0.1f, -0.1f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-            { XMFLOAT3(-0.1f,  0.1f,  0.1f), XMFLOAT3(0.0f, 1.0f, 1.0f) },
-            { XMFLOAT3( 0.1f, -0.1f, -0.1f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-            { XMFLOAT3( 0.1f, -0.1f,  0.1f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
-            { XMFLOAT3( 0.1f,  0.1f, -0.1f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
-            { XMFLOAT3( 0.1f,  0.1f,  0.1f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
+            { XMFLOAT4(-0.1f, -0.1f, -0.1f, 0.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f) },
+            { XMFLOAT4(-0.1f, -0.1f,  0.1f, 0.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) },
+            { XMFLOAT4(-0.1f,  0.1f, -0.1f, 0.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
+            { XMFLOAT4(-0.1f,  0.1f,  0.1f, 0.0f), XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f) },
+            { XMFLOAT4( 0.1f, -0.1f, -0.1f, 0.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
+            { XMFLOAT4( 0.1f, -0.1f,  0.1f, 0.0f), XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f) },
+            { XMFLOAT4( 0.1f,  0.1f, -0.1f, 0.0f), XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f) },
+            { XMFLOAT4( 0.1f,  0.1f,  0.1f, 0.0f), XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f) },
         };
 
         D3D11_SUBRESOURCE_DATA vertexBufferData = {0};

@@ -290,7 +290,6 @@ bool N3SHololensMain::Render(Windows::Graphics::Holographic::HolographicFrame^ h
             // every frame. This function refreshes the data in the constant buffer for
             // the holographic camera indicated by cameraPose.
             pCameraResources->UpdateViewProjectionBuffer(m_deviceResources, cameraPose, m_referenceFrame->CoordinateSystem);
-			app.updateCameraViewMatrices(, cameraPose->ProjectionTransform.Left.);
 
             // Attach the view/projection constant buffer for this camera to the graphics pipeline.
             bool cameraActive = pCameraResources->AttachViewProjectionBuffer(m_deviceResources);
@@ -300,7 +299,7 @@ bool N3SHololensMain::Render(Windows::Graphics::Holographic::HolographicFrame^ h
             if (cameraActive)
             {
                 // Draw the sample hologram.
-                // m_spinningCubeRenderer->Render();
+                m_spinningCubeRenderer->Render();
 				
             }
 #endif

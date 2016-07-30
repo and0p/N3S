@@ -8,7 +8,7 @@
 //     * Remove the unused code from your app's Main class.
 //     * Delete the Content folder provided with this template.
 //
-// #define DRAW_SAMPLE_CONTENT
+#define DRAW_SAMPLE_CONTENT
 
 #include "Common\DeviceResources.h"
 #include "Common\StepTimer.h"
