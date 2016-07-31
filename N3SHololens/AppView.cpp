@@ -91,6 +91,7 @@ void AppView::SetWindow(CoreWindow^ window)
 // previously saved app state.
 void AppView::Load(Platform::String^ entryPoint)
 {
+	m_main->loadApp();
 }
 
 // This method is called after the window becomes active. It oversees the

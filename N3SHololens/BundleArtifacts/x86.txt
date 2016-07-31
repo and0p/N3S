@@ -1,0 +1,2 @@
+MainPackage=C:\Users\and0\Source\Repos\NesVoxel\Release\N3SHololens\N3SHololens_0.1.1.0_Win32.appx
+SymbolPackage=C:\Users\and0\Source\Repos\NesVoxel\AppPackages\N3SHololens\N3SHololens_0.1.1.0_Test\N3SHololens_0.1.1.0_Win32.appxsym

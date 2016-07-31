@@ -22,7 +22,6 @@ N3SHololensMain::N3SHololensMain(const std::shared_ptr<DX::DeviceResources>& dev
 {
     // Register to be notified if the device is lost or recreated.
     m_deviceResources->RegisterDeviceNotify(this);
-	// Cast devices and contexts to relevant types for our app TODO: maybe clean this up later???
 	app = VxlApp();
 }
 
@@ -347,6 +346,11 @@ void N3SHololensMain::OnDeviceRestored()
 #ifdef DRAW_SAMPLE_CONTENT
     m_spinningCubeRenderer->CreateDeviceDependentResources();
 #endif
+}
+
+void N3SHololens::N3SHololensMain::loadApp()
+{
+	
 }
 
 void N3SHololensMain::OnLocatabilityChanged(SpatialLocator^ sender, Object^ args)

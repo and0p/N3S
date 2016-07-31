@@ -47,6 +47,8 @@ namespace N3SHololens
         virtual void OnDeviceLost();
         virtual void OnDeviceRestored();
 
+		void loadApp();
+
     private:
 		// N3S app
 		VxlApp app;
