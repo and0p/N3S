@@ -5,6 +5,7 @@ VxlApp::VxlApp()
 {
 	gameData = {};
 	emulationPaused = false;
+	loaded = false;
 	camera = VxlCamera();
 	camera.SetPosition(0, 0, -2);
 	camera.SetRotation(0, 0, 0);
@@ -24,6 +25,7 @@ void VxlApp::load()
 	virtualPatternTable.load(gameData->totalSprites, 8, gameData->chrData);
 	gameData->grabBitmapSprites(info->data);
 	gameData->createSpritesFromBitmaps();
+	loaded = true;
 }
 
 void VxlApp::update()
@@ -65,9 +67,9 @@ void VxlApp::render()
 	VxlUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
 	VxlUtil::updateMirroring(false, false);
 	updatePalette();
-	//if(snapshot->mask.renderSprites)
+	if(snapshot->mask.renderSprites)
 		renderSprites();
-	//if(snapshot->mask.renderBackground)
+	if(snapshot->mask.renderBackground)
 		renderNameTables();
 }
 

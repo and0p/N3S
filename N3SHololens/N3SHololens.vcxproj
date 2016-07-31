@@ -122,6 +122,12 @@
     <None Include="..\Debug\msvc-2010.dll">
       <DeploymentContent>true</DeploymentContent>
       <FileType>CppCode</FileType>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</DeploymentContent>
+    </None>
+    <None Include="..\msvc-2010\Release\msvc-2010.dll">
+      <FileType>CppCode</FileType>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
     </None>
     <None Include="ClassDiagram.cd" />
     <None Include="N3SHololens_TemporaryKey.pfx" />

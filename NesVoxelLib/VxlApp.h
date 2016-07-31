@@ -24,6 +24,7 @@ public:
 	retro_game_info *info;
 	VxlCamera camera;
 	std::shared_ptr<VoxelGameData> gameData;
+	bool loaded;
 private:
 	bool emulationPaused;
 	bool pausedThisPress;

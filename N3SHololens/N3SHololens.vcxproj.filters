@@ -105,5 +105,8 @@
     <None Include="..\Debug\msvc-2010.dll">
       <Filter>Content</Filter>
     </None>
+    <None Include="..\msvc-2010\Release\msvc-2010.dll">
+      <Filter>Content</Filter>
+    </None>
   </ItemGroup>
 </Project>

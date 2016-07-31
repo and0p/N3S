@@ -60,23 +60,27 @@ void VoxelSprite::render(int x, int y, int palette, bool mirrorH, bool mirrorV)
 
 void VoxelSprite::renderPartial(int x, int y, int palette, int xOffset, int width, int yOffset, int height, bool mirrorH, bool mirrorV)
 {
-	VxlUtil::selectPalette(palette);
-	for (int posY = 0; posY < height; posY++)
+	if (meshExists)
 	{
-		for (int posX = 0; posX < width; posX++)
+		VxlUtil::selectPalette(palette);
+		for (int posY = 0; posY < height; posY++)
 		{
-			VxlUtil::updateWorldMatrix(-1.0f + ((x + posX) * pixelSizeW), 1.0f - ((y + posY) * pixelSizeH), 0);
-			// Grab different zMeshes based on mirroring
-			int meshX, meshY;
-			if (mirrorH)
-				meshX = 7 - (posX + xOffset);
-			else
-				meshX = posX + xOffset;
-			if (mirrorV)
-				meshY = 7 - (posY + yOffset);
-			else
-				meshY = posY + yOffset;
-			VxlUtil::renderMesh(&zMeshes[(meshY * 8) + meshX]);
+			for (int posX = 0; posX < width; posX++)
+			{
+				VxlUtil::updateWorldMatrix(-1.0f + ((x + posX) * pixelSizeW), 1.0f - ((y + posY) * pixelSizeH), 0);
+				// Grab different zMeshes based on mirroring
+				int meshX, meshY;
+				if (mirrorH)
+					meshX = 7 - (posX + xOffset);
+				else
+					meshX = posX + xOffset;
+				if (mirrorV)
+					meshY = 7 - (posY + yOffset);
+				else
+					meshY = posY + yOffset;
+				if (zMeshes[(meshY * 8) + meshX].buffer != nullptr)
+					VxlUtil::renderMesh(&zMeshes[(meshY * 8) + meshX]);
+			}
 		}
 	}
 }

@@ -555,43 +555,27 @@ XMMATRIX VxlUtil::getProjectionMatrix(const float near_plane, const float far_pl
 
 void VxlUtil::renderMesh(VoxelMesh *voxelMesh) {
 	ShaderType type = voxelMesh->type;
-#ifndef HOLOLENS
-	// Switch shader if needed
-	if (activeShader != type) setShader(type);
-#endif
-	// Switch based on type
-	if (type == color)
-	{
-		UINT stride = sizeof(ColorVertex); // TODO optimize
-		UINT offset = 0;
-		context->IASetVertexBuffers(0, 1, &voxelMesh->buffer, &stride, &offset);
-		context->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		// draw the vertex buffer to the back buffer
+	UINT stride = sizeof(ColorVertex); // TODO optimize
+	UINT offset = 0;
+	context->IASetVertexBuffers(0, 1, &voxelMesh->buffer, &stride, &offset);
+	context->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	// draw the vertex buffer to the back buffer
 #ifdef HOLOLENS
-			context->IASetIndexBuffer(
-				indexBuffer,
-				DXGI_FORMAT_R16_UINT, // Each index is one 16-bit unsigned integer (short).
-				0
-				);
-		    context->DrawIndexedInstanced(
-				voxelMesh->size,   // Index count per instance.
-		        2,              // Instance count.
-		        0,              // Start index location.
-		        0,              // Base vertex location.
-		        0               // Start instance location.
-		        );
+		context->IASetIndexBuffer(
+			indexBuffer,
+			DXGI_FORMAT_R16_UINT, // Each index is one 16-bit unsigned integer (short).
+			0
+			);
+		context->DrawIndexedInstanced(
+			voxelMesh->size,   // Index count per instance.
+		    2,              // Instance count.
+		    0,              // Start index location.
+		    0,              // Base vertex location.
+		    0               // Start instance location.
+		    );
 #else
-		context->Draw(voxelMesh->size, 0);
+	context->Draw(voxelMesh->size, 0);
 #endif
-	}
-	else if (type == texture)
-	{
-		UINT stride = sizeof(TextureVertex);
-		UINT offset = 0;
-		context->IASetVertexBuffers(0, 1, &voxelMesh->buffer, &stride, &offset);
-		// draw the vertex buffer to the back buffer
-		context->Draw(voxelMesh->size, 0);
-	}
 }
 
 void VxlUtil::initSampleState() {

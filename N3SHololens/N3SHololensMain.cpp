@@ -183,7 +183,8 @@ HolographicFrame^ N3SHololensMain::Update()
         // run as many times as needed to get to the current step.
         //
 
-		app.update();
+		if (app.loaded)
+			app.update();
 
 #ifdef DRAW_SAMPLE_CONTENT
         m_spinningCubeRenderer->Update(m_timer);
@@ -304,7 +305,8 @@ bool N3SHololensMain::Render(Windows::Graphics::Holographic::HolographicFrame^ h
 #endif
             atLeastOneCameraRendered = true;
         }
-		app.render();
+		if (app.loaded)
+			app.render();
 		atLeastOneCameraRendered = true;
         return atLeastOneCameraRendered;
     });
