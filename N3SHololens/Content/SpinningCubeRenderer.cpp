@@ -95,16 +95,7 @@ void SpinningCubeRenderer::Render()
 
     const auto context = m_deviceResources->GetD3DDeviceContext();
 
-    // Each vertex is one instance of the VertexPositionColor struct.
-    //const UINT stride = sizeof(VertexPositionColor);
-    //const UINT offset = 0;
-    //context->IASetVertexBuffers(
-    //    0,
-    //    1,
-    //    m_vertexBuffer.GetAddressOf(),
-    //    &stride,
-    //    &offset
-    //    );
+
     context->IASetIndexBuffer(
         m_indexBuffer.Get(),
         DXGI_FORMAT_R16_UINT, // Each index is one 16-bit unsigned integer (short).
@@ -147,13 +138,13 @@ void SpinningCubeRenderer::Render()
         );
 
     // Draw the objects.
-    context->DrawIndexedInstanced(
-        m_indexCount,   // Index count per instance.
-        2,              // Instance count.
-        0,              // Start index location.
-        0,              // Base vertex location.
-        0               // Start instance location.
-        );
+    //context->DrawIndexedInstanced(
+    //    m_indexCount,   // Index count per instance.
+    //    2,              // Instance count.
+    //    0,              // Start index location.
+    //    0,              // Base vertex location.
+    //    0               // Start instance location.
+    //    );
 }
 
 void SpinningCubeRenderer::CreateDeviceDependentResources()

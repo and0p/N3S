@@ -60,8 +60,8 @@ void VxlApp::update()
 void VxlApp::render()
 {
 	// VxlUtil::setShader(color);
-	camera.SetPosition(0, 0, -2);
-	camera.SetRotation(0, 0, 0);
+	// camera.SetPosition(0, 0, -2);
+	// camera.SetRotation(0, 0, 0);
 	// camera.Render();
 	// VxlUtil::updateMatricesWithCamera(&camera);
 	VxlUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
@@ -69,8 +69,8 @@ void VxlApp::render()
 	updatePalette();
 	if(snapshot->mask.renderSprites)
 		renderSprites();
-	if(snapshot->mask.renderBackground)
-		renderNameTables();
+	 if(snapshot->mask.renderBackground)
+		 renderNameTables();
 }
 
 void VxlApp::updateCameraViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
