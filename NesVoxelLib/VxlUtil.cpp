@@ -19,6 +19,8 @@ ID3D11Buffer *VxlUtil::mirrorBuffer;
 ID3D11Buffer *VxlUtil::paletteBuffer;
 ID3D11Buffer *VxlUtil::paletteSelectionBuffer;
 ID3D11Buffer *VxlUtil::indexBuffer;
+int VxlUtil::paletteBufferNumber;
+int VxlUtil::paletteSelectionBufferNumber;
 ShaderSet VxlUtil::shaderSets[2];
 ID3D11InputLayout *VxlUtil::inputLayouts[2];
 ID3D11Texture2D *VxlUtil::texture2d;
@@ -115,7 +117,7 @@ void VxlUtil::initPipeline(VxlD3DContext c)
 
 	D3D11_RASTERIZER_DESC rasterDesc;
 	rasterDesc.AntialiasedLineEnable = false;
-	rasterDesc.CullMode = D3D11_CULL_BACK;
+	rasterDesc.CullMode = D3D11_CULL_NONE;
 	rasterDesc.DepthBias = 0;
 	rasterDesc.DepthBiasClamp = 0.0f;
 	rasterDesc.DepthClipEnable = true;
@@ -146,11 +148,15 @@ void VxlUtil::initPipeline(VxlD3DContext c)
 	};
 	updatePalette(paletteArray);
 
-	// Set mirror buffer number based on whether we're compiling for Hololens or not
+	// Set buffer slots based on whether we're compiling for Hololens or not
 #ifdef HOLOLENS
-	mirrorBufferNumber = 5;
+	mirrorBufferNumber = 2;
+	paletteBufferNumber = 3;
+	paletteSelectionBufferNumber = 4;
 #else
 	mirrorBufferNumber = 3;
+	paletteBufferNumber = 4;
+	paletteSelectionBufferNumber = 5;
 #endif
 }
 
@@ -185,34 +191,6 @@ void VxlUtil::initShaders() {
 	s_stream.close();
 
 	device1->CreatePixelShader(s_data, s_size, 0, &shaderSets[0].pixelShader);
-
-	s_stream.open("texture_vertex.cso", ifstream::in | ifstream::binary);
-	s_stream.seekg(0, ios::end);
-	s_size = size_t(s_stream.tellg());
-	s_data = new char[s_size];
-	s_stream.seekg(0, ios::beg);
-	s_stream.read(&s_data[0], s_size);
-	s_stream.close();
-
-	device1->CreateVertexShader(s_data, s_size, 0, &shaderSets[1].vertexShader);
-
-	D3D11_INPUT_ELEMENT_DESC textureLayout[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXTURE",    0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-	};
-
-	device1->CreateInputLayout(textureLayout, 2, &s_data[0], s_size, &inputLayouts[1]);
-
-	s_stream.open("texture_pixel.cso", ifstream::in | ifstream::binary);
-	s_stream.seekg(0, ios::end);
-	s_size = size_t(s_stream.tellg());
-	s_data = new char[s_size];
-	s_stream.seekg(0, ios::beg);
-	s_stream.read(&s_data[0], s_size);
-	s_stream.close();
-
-	device1->CreatePixelShader(s_data, s_size, 0, &shaderSets[1].pixelShader);
 }
 
 void VxlUtil::setShader(ShaderType type) {
@@ -224,13 +202,6 @@ void VxlUtil::setShader(ShaderType type) {
 		context->VSSetShader(shaderSets[0].vertexShader, 0, 0);
 		context->PSSetShader(shaderSets[0].pixelShader, 0, 0);
 		activeShader = color;
-		break;
-	case texture:
-		context->IASetInputLayout(inputLayouts[1]);
-		context->GSSetShader(NULL, 0, 0);
-		context->VSSetShader(shaderSets[1].vertexShader, 0, 0);
-		context->PSSetShader(shaderSets[1].pixelShader, 0, 0);
-		activeShader = texture;
 		break;
 	}
 }
@@ -427,7 +398,7 @@ void VxlUtil::updatePalette(float palette[72])
 	// Unlock the constant buffer.
 	context1->Unmap(paletteBuffer, 0);
 	// Finally set the constant buffer in the pixel shader with the updated values.
-	context1->PSSetConstantBuffers(0, 1, &paletteBuffer);
+	context1->VSSetConstantBuffers(paletteBufferNumber, 1, &paletteBuffer);
 }
 
 void VxlUtil::selectPalette(int palette)
@@ -446,7 +417,7 @@ void VxlUtil::selectPalette(int palette)
 		// Unlock the constant buffer.
 		context1->Unmap(paletteSelectionBuffer, 0);
 		// Finally set the constant buffer in the pixel shader with the updated values.
-		context1->PSSetConstantBuffers(1, 1, &paletteSelectionBuffer);
+		context1->VSSetConstantBuffers(paletteSelectionBufferNumber, 1, &paletteSelectionBuffer);
 	}
 }
 
@@ -553,6 +524,15 @@ XMMATRIX VxlUtil::getProjectionMatrix(const float near_plane, const float far_pl
 	return XMLoadFloat4x4(&tmp);
 }
 
+void VxlUtil::setIndexBuffer()
+{
+	context->IASetIndexBuffer(
+		indexBuffer,
+		DXGI_FORMAT_R16_UINT, // Each index is one 16-bit unsigned integer (short).
+		0
+	);
+}
+
 void VxlUtil::renderMesh(VoxelMesh *voxelMesh) {
 	ShaderType type = voxelMesh->type;
 	UINT stride = sizeof(ColorVertex); // TODO optimize
@@ -561,14 +541,9 @@ void VxlUtil::renderMesh(VoxelMesh *voxelMesh) {
 	context->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	// draw the vertex buffer to the back buffer
 #ifdef HOLOLENS
-		context->IASetIndexBuffer(
-			indexBuffer,
-			DXGI_FORMAT_R16_UINT, // Each index is one 16-bit unsigned integer (short).
-			0
-			);
 		context->DrawIndexedInstanced(
 			voxelMesh->size,   // Index count per instance.
-		    2,              // Instance count.
+		    1,              // Instance count.
 		    0,              // Start index location.
 		    0,              // Base vertex location.
 		    0               // Start instance location.

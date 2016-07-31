@@ -1,3 +1,19 @@
+struct MirrorState
+{
+	int x;
+	int y;
+};
+
+struct Palette
+{
+	float3 hues[3];
+};
+
+struct PaletteCollection
+{
+	Palette palettes[8];
+};
+
 // A constant buffer that stores the model transform.
 cbuffer ModelConstantBuffer : register(b0)
 {
@@ -8,6 +24,21 @@ cbuffer ModelConstantBuffer : register(b0)
 cbuffer ViewProjectionConstantBuffer : register(b1)
 {
     float4x4 viewProjection[2];
+};
+
+cbuffer MirrorBuffer
+{
+	MirrorState mirrorState;
+};
+
+cbuffer PaletteBuffer
+{
+	PaletteCollection palettes;
+};
+
+cbuffer PaletteSelectionBuffer
+{
+	int selectedPalette;
 };
 
 // Per-vertex data used as input to the vertex shader.
@@ -39,6 +70,9 @@ VertexShaderOutput main(VertexShaderInput input)
     // instance would be drawn, one for left and one for right.
     int idx = input.instId % 2;
 
+	pos.x *= mirrorState.x;
+	pos.y *= mirrorState.y;
+
     // Transform the vertex position into world space.
     pos = mul(pos, model);
 
@@ -46,11 +80,16 @@ VertexShaderOutput main(VertexShaderInput input)
     pos = mul(pos, viewProjection[idx]);
     output.pos = (min16float4)pos;
 
-    // Pass the color through without modification.
-    output.color = input.color;
+	// Make the color X amount of the values of the palette as assigned by RGB input
+	float4 hue = float4(0, 0, 0, 0);
+	hue.rgb += mul(palettes.palettes[selectedPalette].hues[0].rgb, input.color.r);
+	hue.rgb += mul(palettes.palettes[selectedPalette].hues[1].rgb, input.color.g);
+	hue.rgb += mul(palettes.palettes[selectedPalette].hues[2].rgb, input.color.b);
+	hue.a = input.color.a;
+	output.color = hue;
 
     // Set the render target array index.
-    output.rtvId = idx;
+    output.rtvId = input.instId % 2;
 
     return output;
 }

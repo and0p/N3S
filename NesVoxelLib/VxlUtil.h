@@ -74,6 +74,7 @@ public:
 	static void renderMesh(VoxelMesh *voxelMesh);
 	static void updateGameTexture(const void *data);
 	static PPUHueStandardCollection ppuHueStandardCollection;
+	static void setIndexBuffer();
 private:
 	static Microsoft::WRL::ComPtr<ID3D11Device>            device;
 	static Microsoft::WRL::ComPtr<ID3D11Device1>           device1;
@@ -102,6 +103,8 @@ private:
 	static MirrorState mirrorState;
 	static int selectedPalette;
 	static int mirrorBufferNumber;
+	static int paletteBufferNumber;
+	static int paletteSelectionBufferNumber;
 };
 
 bool toggleBool(bool b);

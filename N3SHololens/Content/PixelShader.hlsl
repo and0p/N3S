@@ -1,23 +1,3 @@
-struct Palette
-{
-	float3 hues[3];
-};
-
-struct PaletteCollection
-{
-	Palette palettes[8];
-};
-
-cbuffer PaletteBuffer
-{
-	PaletteCollection palettes;
-};
-
-cbuffer PaletteSelectionBuffer
-{
-	int selectedPalette;
-};
-
 // Per-pixel color data passed through the pixel shader.
 struct PixelShaderInput
 {
@@ -29,9 +9,5 @@ struct PixelShaderInput
 // is interpolated and assigned to a pixel at the rasterization step.
 min16float4 main(PixelShaderInput input) : SV_TARGET
 {
-	float4 hue = float4(0, 0, 0, 1);
-	hue.rgb += mul(palettes.palettes[selectedPalette].hues[0].rgb, input.color.r);
-	hue.rgb += mul(palettes.palettes[selectedPalette].hues[1].rgb, input.color.g);
-	hue.rgb += mul(palettes.palettes[selectedPalette].hues[2].rgb, input.color.b);
-	return hue;
+	return input.color;
 }

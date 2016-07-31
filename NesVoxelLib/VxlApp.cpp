@@ -59,6 +59,7 @@ void VxlApp::update()
 
 void VxlApp::render()
 {
+	VxlUtil::setIndexBuffer();
 	// VxlUtil::setShader(color);
 	// camera.SetPosition(0, 0, -2);
 	// camera.SetRotation(0, 0, 0);
