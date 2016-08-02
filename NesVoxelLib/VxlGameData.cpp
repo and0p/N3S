@@ -29,7 +29,7 @@ void VoxelSprite::buildFromBitmapSprite(BitmapSprite bitmap)
 	// Offset to middle of z-index
 	int offset = 64 * 8;
 	// Insert all bitmap colors in that z-column
-	for (int c = 0; c < 3; c++) {
+	for (int c = 0; c < 5; c++) {
 		offset += 64;
 		for (int i = 0; i < 64; i++) {
 			voxels[offset + i].color = bitmap.pixels[i];
@@ -67,7 +67,6 @@ void VoxelSprite::renderPartial(int x, int y, int palette, int xOffset, int widt
 		{
 			for (int posX = 0; posX < width; posX++)
 			{
-				VxlUtil::updateWorldMatrix(-1.0f + ((x + posX) * pixelSizeW), 1.0f - ((y + posY) * pixelSizeH), 0);
 				// Grab different zMeshes based on mirroring
 				int meshX, meshY;
 				if (mirrorH)
@@ -79,7 +78,10 @@ void VoxelSprite::renderPartial(int x, int y, int palette, int xOffset, int widt
 				else
 					meshY = posY + yOffset;
 				if (zMeshes[(meshY * 8) + meshX].buffer != nullptr)
+				{
+					VxlUtil::updateWorldMatrix(-1.0f + ((x + posX) * pixelSizeW), 1.0f - ((y + posY) * pixelSizeH), 0);
 					VxlUtil::renderMesh(&zMeshes[(meshY * 8) + meshX]);
+				}
 			}
 		}
 	}

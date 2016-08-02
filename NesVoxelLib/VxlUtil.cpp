@@ -543,7 +543,7 @@ void VxlUtil::renderMesh(VoxelMesh *voxelMesh) {
 #ifdef HOLOLENS
 		context->DrawIndexedInstanced(
 			voxelMesh->size,   // Index count per instance.
-		    1,              // Instance count.
+		    2,              // Instance count.
 		    0,              // Start index location.
 		    0,              // Base vertex location.
 		    0               // Start instance location.

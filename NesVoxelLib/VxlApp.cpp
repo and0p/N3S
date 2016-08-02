@@ -71,7 +71,7 @@ void VxlApp::render()
 	if(snapshot->mask.renderSprites)
 		renderSprites();
 	 if(snapshot->mask.renderBackground)
-		 renderNameTables();
+		renderNameTables();
 }
 
 void VxlApp::updateCameraViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
