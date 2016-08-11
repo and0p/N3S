@@ -55,6 +55,7 @@ public:
 	bool matchLeft;
 	bool matchRight;
 	VoxelMesh mesh;
+	VoxelMesh xMirrorMesh;
 	VoxelMesh zMeshes[64];
 	bool buildMesh();
 	void buildZMeshes();
@@ -67,7 +68,7 @@ public:
 	void renderPartial(int x, int y, int palette, int xOffset, int width, int yOffset, int height, bool mirrorH, bool mirrorV);
 private:
 	Voxel getVoxel(int, int, int);
-	static void buildSide(std::vector<ColorVertex> * vertices, int x, int y, int z, int color, VoxelSide side);
+	static void buildSide(std::vector<ColorVertex> * vertices, int x, int y, int z, int color, VoxelSide side, bool mirrorX);
 	void clear();
 };
 

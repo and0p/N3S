@@ -108,5 +108,23 @@
     <None Include="..\msvc-2010\Release\msvc-2010.dll">
       <Filter>Content</Filter>
     </None>
+    <None Include="..\..\..\..\..\..\Pinball.nes">
+      <Filter>Content</Filter>
+    </None>
+    <None Include="..\..\..\..\..\..\zelda2.nes">
+      <Filter>Content</Filter>
+    </None>
+    <None Include="..\..\..\..\..\..\donkeykong.nes">
+      <Filter>Content</Filter>
+    </None>
+    <None Include="..\..\..\..\..\..\tetris.nes">
+      <Filter>Content</Filter>
+    </None>
+    <None Include="..\..\..\..\..\..\spaceinvaders.nes">
+      <Filter>Content</Filter>
+    </None>
+    <None Include="..\..\..\..\..\..\pacman.nes">
+      <Filter>Content</Filter>
+    </None>
   </ItemGroup>
 </Project>

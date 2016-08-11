@@ -117,7 +117,7 @@ void VxlUtil::initPipeline(VxlD3DContext c)
 
 	D3D11_RASTERIZER_DESC rasterDesc;
 	rasterDesc.AntialiasedLineEnable = false;
-	rasterDesc.CullMode = D3D11_CULL_NONE;
+	rasterDesc.CullMode = D3D11_CULL_BACK;
 	rasterDesc.DepthBias = 0;
 	rasterDesc.DepthBiasClamp = 0.0f;
 	rasterDesc.DepthClipEnable = true;
@@ -130,9 +130,6 @@ void VxlUtil::initPipeline(VxlD3DContext c)
 	ID3D11RasterizerState * m_rasterState;
 	device->CreateRasterizerState(&rasterDesc, &m_rasterState);
 	context->RSSetState(m_rasterState);
-
-	mirrorState = { 0, 0 };
-	updateMirroring(false, false);
 
 	selectPalette(0);
 	float paletteArray[72] =
@@ -150,9 +147,9 @@ void VxlUtil::initPipeline(VxlD3DContext c)
 
 	// Set buffer slots based on whether we're compiling for Hololens or not
 #ifdef HOLOLENS
-	mirrorBufferNumber = 2;
-	paletteBufferNumber = 3;
-	paletteSelectionBufferNumber = 4;
+	mirrorBufferNumber = 0;
+	paletteBufferNumber = 2;
+	paletteSelectionBufferNumber = 3;
 #else
 	mirrorBufferNumber = 3;
 	paletteBufferNumber = 4;
@@ -329,7 +326,7 @@ void VxlUtil::updateWorldMatrix(float x, float y, float z) {
 	XMMATRIX worldMatrix = XMMatrixIdentity();
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	MatrixBuffer* dataPtr;
-	XMVECTOR translation = { x, y, z, 0.0f };
+	XMVECTOR translation = { x, y, z - 2, 0.0f };
 	worldMatrix = XMMatrixTranslationFromVector(translation);
 	worldMatrix = XMMatrixTranspose(worldMatrix);
 	// Lock the constant buffer so it can be written to.

@@ -22,7 +22,7 @@ void VxlApp::load()
 	NesEmulator::Initialize(&romPath[0]);
 	info = NesEmulator::getGameInfo();
 	gameData = std::shared_ptr<VoxelGameData>(new VoxelGameData((char*)info->data));
-	virtualPatternTable.load(gameData->totalSprites, 8, gameData->chrData);
+	virtualPatternTable.load(512, 8, gameData->chrData);
 	gameData->grabBitmapSprites(info->data);
 	gameData->createSpritesFromBitmaps();
 	loaded = true;
@@ -66,7 +66,6 @@ void VxlApp::render()
 	// camera.Render();
 	// VxlUtil::updateMatricesWithCamera(&camera);
 	VxlUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
-	VxlUtil::updateMirroring(false, false);
 	updatePalette();
 	if(snapshot->mask.renderSprites)
 		renderSprites();
@@ -162,8 +161,6 @@ void VxlApp::updatePalette()
 
 void VxlApp::renderNameTables()
 {
-	// Reset tile mirroring, as Nametable cannot use it
-	VxlUtil::updateMirroring(false, false);
 	// Render each scroll section
 	for (ScrollSection scrollSection : snapshot->scrollSections)
 	{

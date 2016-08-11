@@ -241,6 +241,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Keyboard.h" />
     <ClInclude Include="libretro.h" />
     <ClInclude Include="NesEmulator.h" />
     <ClInclude Include="stdafx.h" />
@@ -257,6 +258,7 @@
     <ClInclude Include="VxlRawPPU.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Keyboard.cpp" />
     <ClCompile Include="NesEmulator.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

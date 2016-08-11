@@ -23,6 +23,8 @@ build/
 bld/
 [Bb]in/
 [Oo]bj/
+Hololens Release/
+Hololens Debug/
 
 # Visual Studio 2015 cache/options directory
 .vs/
@@ -213,3 +215,4 @@ GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
 /Report20160731-1402 (2).diagsession
+/NesVoxel.VC.db

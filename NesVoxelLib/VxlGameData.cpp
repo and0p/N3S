@@ -48,13 +48,11 @@ void VoxelSprite::render(int x, int y, int palette, bool mirrorH, bool mirrorV)
 		float posX, posY;
 		posX = -1.0f + (pixelSizeW * x);
 		posY = 1.0f - (pixelSizeH * y);
-		VxlUtil::updateMirroring(mirrorH, mirrorV);
-		if(mirrorH)
-			posX += (pixelSizeW * 8);
-		if (mirrorV)
-			posY -= (pixelSizeH * 8);
 		VxlUtil::updateWorldMatrix(posX, posY, 0);
-		VxlUtil::renderMesh(&mesh);
+		if(mirrorH)
+			VxlUtil::renderMesh(&xMirrorMesh);
+		else
+			VxlUtil::renderMesh(&mesh);
 	}
 }
 
@@ -151,27 +149,27 @@ bool VoxelSprite::buildMesh()
 					// Check each adjacent voxel/edge and draw a square as needed
 					// TODO: Also add > evaluation for semi-transparent voxels in the future
 					if (x == 0 || getVoxel(x - 1, y, z).color == 0) {
-						buildSide(&vertices, x, y, z, color, left);
+						buildSide(&vertices, x, y, z, color, left, false);
 						sideCount++;
 					}
 					if (x == spriteWidth - 1 || getVoxel(x + 1, y, z).color == 0) {
-						buildSide(&vertices, x, y, z, color, right);
+						buildSide(&vertices, x, y, z, color, right, false);
 						sideCount++;
 					}
 					if (y == 0 || getVoxel(x, y - 1, z).color == 0) {
-						buildSide(&vertices, x, y, z, color, top);
+						buildSide(&vertices, x, y, z, color, top, false);
 						sideCount++;
 					}
 					if (y == spriteHeight - 1 || getVoxel(x, y + 1, z).color == 0) {
-						buildSide(&vertices, x, y, z, color, bottom);
+						buildSide(&vertices, x, y, z, color, bottom, false);
 						sideCount++;
 					}
 					if (z == 0 || getVoxel(x - 1, y, z - 1).color == 0) {
-						buildSide(&vertices, x, y, z, color, front);
+						buildSide(&vertices, x, y, z, color, front, false);
 						sideCount++;
 					}
 					if (z == spriteDepth - 1 || getVoxel(x, y, z + 1).color == 0) {
-						buildSide(&vertices, x, y, z, color, back);
+						buildSide(&vertices, x, y, z, color, back, false);
 						sideCount++;
 					}
 				}
@@ -185,6 +183,52 @@ bool VoxelSprite::buildMesh()
 	{
 		mesh.buffer = VxlUtil::createBufferFromColorVerticesV(&vertices, mesh.size);
 		meshExists = true;
+		xMirrorMesh = VoxelMesh();
+		vertices.clear();
+		sideCount = 0;
+		for (int z = 0; z < spriteDepth; z++)
+		{
+			for (int y = 0; y < spriteHeight; y++)
+			{
+				for (int x = 0; x < spriteWidth; x++)
+				{
+					int color = getVoxel(x, y, z).color;
+					// See if the voxel is not empty
+					if (color > 0)
+					{
+						// Check each adjacent voxel/edge and draw a square as needed
+						// TODO: Also add > evaluation for semi-transparent voxels in the future
+						if (x == 0 || getVoxel(x - 1, y, z).color == 0) {
+							buildSide(&vertices, x, y, z, color, right, true);
+							sideCount++;
+						}
+						if (x == spriteWidth - 1 || getVoxel(x + 1, y, z).color == 0) {
+							buildSide(&vertices, x, y, z, color, left, true);
+							sideCount++;
+						}
+						if (y == 0 || getVoxel(x, y - 1, z).color == 0) {
+							buildSide(&vertices, x, y, z, color, top, true);
+							sideCount++;
+						}
+						if (y == spriteHeight - 1 || getVoxel(x, y + 1, z).color == 0) {
+							buildSide(&vertices, x, y, z, color, bottom, true);
+							sideCount++;
+						}
+						if (z == 0 || getVoxel(x - 1, y, z - 1).color == 0) {
+							buildSide(&vertices, x, y, z, color, front, true);
+							sideCount++;
+						}
+						if (z == spriteDepth - 1 || getVoxel(x, y, z + 1).color == 0) {
+							buildSide(&vertices, x, y, z, color, back, true);
+							sideCount++;
+						}
+					}
+				}
+			}
+		}
+		xMirrorMesh.size = sideCount * 6;
+		xMirrorMesh.type = color;
+		xMirrorMesh.buffer = VxlUtil::createBufferFromColorVerticesV(&vertices, xMirrorMesh.size);
 		return true;
 	}
 	else
@@ -224,20 +268,20 @@ VoxelMesh VoxelSprite::buildZMesh(int zArray[32])
 		if (color > 0)
 		{
 			// Draw left, right, top, and bottom edges, which should be visible on Z-Meshes no matter what
-			buildSide(&vertices, 0, 0, z, color, left);
-			buildSide(&vertices, 0, 0, z, color, right);
-			buildSide(&vertices, 0, 0, z, color, top);
-			buildSide(&vertices, 0, 0, z, color, bottom);
+			buildSide(&vertices, 0, 0, z, color, left, false);
+			buildSide(&vertices, 0, 0, z, color, right, false);
+			buildSide(&vertices, 0, 0, z, color, top, false);
+			buildSide(&vertices, 0, 0, z, color, bottom, false);
 			sideCount += 4;
 			// See if front and/or back are exposed, and add sides if so
 			if (z == 0 || zArray[z - 1] == 0)
 			{
-				buildSide(&vertices, 0, 0, z, color, front);
+				buildSide(&vertices, 0, 0, z, color, front, false);
 				sideCount++;
 			}
 			if (z == 31 || zArray[z + 1] == 0)
 			{
-				buildSide(&vertices, 0, 0, z, color, back);
+				buildSide(&vertices, 0, 0, z, color, back, false);
 				sideCount++;
 			}
 			// TODO: Also add > evaluation for semi-transparent voxels in the future
@@ -249,9 +293,13 @@ VoxelMesh VoxelSprite::buildZMesh(int zArray[32])
 	return mesh;
 }
 
-void VoxelSprite::buildSide(std::vector<ColorVertex> * vertices, int x, int y, int z, int color, VoxelSide side) {
+void VoxelSprite::buildSide(std::vector<ColorVertex> * vertices, int x, int y, int z, int color, VoxelSide side, bool mirrorX) {
 	// Translate voxel-space xyz into model-space based on pixel size in 3d space, phew
-	float xf = x * pixelSizeW;
+	float xf;
+	if (!mirrorX)
+		xf = x * pixelSizeW;
+	else
+		xf = (pixelSizeW * 7) - (pixelSizeW * x);
 	float yf = y * -pixelSizeH;
 	float zf = z * pixelSizeW;
 	// Init 4 vertices
@@ -278,9 +326,9 @@ void VoxelSprite::buildSide(std::vector<ColorVertex> * vertices, int x, int y, i
 		v3.Col = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
 		v4.Col = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
 	}
-	
+
 	// Switch based on side
-	switch(side) {
+	switch (side) {
 	case left:
 		v1.Pos = XMFLOAT4(xf, yf, zf + pixelSizeW, 1.0f);
 		v2.Pos = XMFLOAT4(xf, yf, zf, 1.0f);
@@ -329,7 +377,7 @@ void VoxelSprite::buildSide(std::vector<ColorVertex> * vertices, int x, int y, i
 VoxelGameData::VoxelGameData(char * data)
 {
 	cartridgeInfo = getCartidgeInfo(data);
-	totalSprites = cartridgeInfo.chrSize * 512;
+	totalSprites = 512;
 	chrData = data + 16 + (cartridgeInfo.prgSize * 16384);
 	// Initialize sprite list
 	sprites.reserve(totalSprites);

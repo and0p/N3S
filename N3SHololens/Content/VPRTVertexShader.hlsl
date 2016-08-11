@@ -1,9 +1,3 @@
-struct MirrorState
-{
-	int x;
-	int y;
-};
-
 struct Palette
 {
 	float3 hues[3];
@@ -24,11 +18,6 @@ cbuffer ModelConstantBuffer : register(b0)
 cbuffer ViewProjectionConstantBuffer : register(b1)
 {
     float4x4 viewProjection[2];
-};
-
-cbuffer MirrorBuffer
-{
-	MirrorState mirrorState;
 };
 
 cbuffer PaletteBuffer
@@ -69,9 +58,6 @@ VertexShaderOutput main(VertexShaderInput input)
     // along with stereo instanced drawing; in that case, two copies of each 
     // instance would be drawn, one for left and one for right.
     int idx = input.instId % 2;
-
-	pos.x *= mirrorState.x;
-	pos.y *= mirrorState.y;
 
     // Transform the vertex position into world space.
     pos = mul(pos, model);

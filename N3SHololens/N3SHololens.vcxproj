@@ -116,6 +116,24 @@
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
+    <None Include="..\..\..\..\..\..\donkeykong.nes">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\..\..\..\..\..\pacman.nes">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\..\..\..\..\..\Pinball.nes">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\..\..\..\..\..\spaceinvaders.nes">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\..\..\..\..\..\tetris.nes">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\..\..\..\..\..\zelda2.nes">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="..\Debug\mario.nes">
       <DeploymentContent>true</DeploymentContent>
     </None>
