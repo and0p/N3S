@@ -86,6 +86,7 @@ struct ScrollSection {
 	int nameTable = 0;
 	int top;
 	int bottom;
+	bool patternSelect;
 };
 
 class VxlPPUSnapshot {
@@ -100,7 +101,9 @@ public:
 	Mask mask;
 	char *patternTable;
 	std::vector<ScrollSection> scrollSections;
+	std::map<int, bool> oamPatternSelect;
 	int ppuScroll = 0;
+	bool getOAMSelectAtScanline(int scanline);
 private:
 	OamSprite buildSprite(unsigned char *ptr);
 	static int getTileAddress(unsigned char byte);

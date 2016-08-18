@@ -164,7 +164,7 @@ void VxlUtil::initShaders() {
 	ifstream s_stream;
 	size_t s_size;
 	char* s_data;
-	s_stream.open("color_vertex.cso", ifstream::in | ifstream::binary);
+	s_stream.open("C:\\Users\\and0\\Source\\Repos\\NesVoxel\\Debug\\color_vertex.cso", ifstream::in | ifstream::binary);
 	s_stream.seekg(0, ios::end);
 	s_size = size_t(s_stream.tellg());
 	s_data = new char[s_size];
@@ -180,9 +180,9 @@ void VxlUtil::initShaders() {
 		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
-	device1->CreateInputLayout(colorLayout, 3, &s_data[0], s_size, &inputLayouts[0]);
+	device1->CreateInputLayout(colorLayout, 2, &s_data[0], s_size, &inputLayouts[0]);
 
-	s_stream.open("color_pixel.cso", ifstream::in | ifstream::binary);
+	s_stream.open("C:\\Users\\and0\\Source\\Repos\\NesVoxel\\Debug\\color_pixel.cso", ifstream::in | ifstream::binary);
 	s_stream.seekg(0, ios::end);
 	s_size = size_t(s_stream.tellg());
 	s_data = new char[s_size];

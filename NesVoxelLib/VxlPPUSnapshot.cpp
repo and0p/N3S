@@ -74,6 +74,7 @@ VxlPPUSnapshot::VxlPPUSnapshot(VxlRawPPU * rawPPU)
 	int lastY = 0;
 	int lastNametable = 0;
 	int lastScanline = 0;
+	bool lastPatternSelect = false;
 	bool sectionAdded = false;
 	// Create "sections" of screen where scroll has changed
 	for (auto kv : rawPPU->scrollSnapshots)
@@ -82,26 +83,31 @@ VxlPPUSnapshot::VxlPPUSnapshot(VxlRawPPU * rawPPU)
 		int currentX = kv.second.getTrueX();
 		int currentY = kv.second.getTrueY();
 		int currentNametable = kv.second.v.nametable;
+		bool currentPatternSelect = kv.second.patternSelect;
 		// Measure if the change in Y matches change in scanline, which would indicate Y wasn't changed in way we'll see
 		int currentScanline = kv.first;
 		int scanlineDelta = currentScanline - lastScanline;
 		int yDelta = currentY - lastY;
 		// Push to list only if different from last snapshot and Y change hasn't matched scanline change
-		if (!sectionAdded || currentX != lastX || scanlineDelta != yDelta || currentNametable != lastNametable)
+		if (!sectionAdded || currentX != lastX || scanlineDelta != yDelta || currentNametable != lastNametable || currentPatternSelect != lastPatternSelect)
 		{
 			ScrollSection s = ScrollSection();
 			s.top = currentScanline;
 			s.x = currentX;
 			s.y = currentY;
 			s.nameTable = currentNametable;
+			s.patternSelect = currentPatternSelect;
 			scrollSections.push_back(s);
 			lastX = currentX;
 			lastY = currentY;
 			lastNametable = currentNametable;
 			lastScanline = currentScanline;
+			lastPatternSelect = currentPatternSelect;
 			sectionAdded = true;
 		}
 	}
+	// Create sections where OAM pattern is different
+	oamPatternSelect = rawPPU->oamPatternSelect;
 	// Make sure first and last scroll sections take up the full screen
 	if (scrollSections.size() > 0)
 	{
@@ -120,6 +126,27 @@ VxlPPUSnapshot::VxlPPUSnapshot(VxlRawPPU * rawPPU)
 
 VxlPPUSnapshot::~VxlPPUSnapshot()
 {
+}
+
+bool VxlPPUSnapshot::getOAMSelectAtScanline(int scanline)
+{
+	// Find which scroll section this sits in
+	bool passed = false;
+	bool value = false;
+	for (auto kv : oamPatternSelect)
+	{
+		if (kv.first <= scanline)
+		{
+			// Set that this might contain the value we're looking for
+			passed = true;
+			value = kv.second;
+		}
+		// When we know for sure, return it
+		if (kv.first > scanline && passed)
+			return value;
+	}
+	// This just makes sure we return the last value
+	return value;
 }
 
 OamSprite VxlPPUSnapshot::buildSprite(unsigned char* ptr)
@@ -209,8 +236,6 @@ void Background::addQuadrant(char * data, bool nameTableSelection)
 	{
 		int tile = *(data + i);
 		if (tile < 0)
-			tile += 256;
-		if (nameTableSelection)
 			tile += 256;
 		quadrant.tiles[i].tile = tile;
 	}
