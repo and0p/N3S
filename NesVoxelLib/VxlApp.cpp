@@ -98,8 +98,15 @@ void VxlApp::renderSprites()
 		int y = sprite.y;
 		int tile = sprite.tile;
 		// See if pattern selection is not what was 
-		if (snapshot->getOAMSelectAtScanline(y))
+		if (tile > 255 && !snapshot->getOAMSelectAtScanline(y))
+		{
 			tile -= 256;
+		}
+		else if (tile < 256 && snapshot->getOAMSelectAtScanline(y))
+		{
+			tile += 256;
+		}
+
 		tile = virtualPatternTable.getTrueTileIndex(tile);
 		// See if we're in 8x16 sprite mode and this sprite is verticall mirrored, in which case we have to adjust Y accordingly
 		if (snapshot->ctrl.spriteSize16x8 && sprite.vFlip)
