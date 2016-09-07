@@ -4,6 +4,8 @@
 
 #include "pch.h"
 #include "Game.h"
+#include "resource.h"
+#include <shobjidl.h>
 
 using namespace DirectX;
 
@@ -13,6 +15,8 @@ namespace
 };
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+
+bool readyToExit = false;
 
 // Entry point
 int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
@@ -39,7 +43,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         wcex.hIcon = LoadIcon(hInstance, L"IDI_ICON");
         wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
         wcex.hbrBackground = (HBRUSH) (COLOR_WINDOW + 1);
-        wcex.lpszMenuName = nullptr;
+        wcex.lpszMenuName = MAKEINTRESOURCE(IDR_MENU1);
         wcex.lpszClassName = L"NesVoxelD3D11WindowClass";
         wcex.hIconSm = LoadIcon(wcex.hInstance, L"IDI_ICON");
         if (!RegisterClassEx(&wcex))
@@ -57,7 +61,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 
         AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 
-        HWND hwnd = CreateWindowEx(0, L"NesVoxelD3D11WindowClass", L"NesVoxelD3D11", WS_OVERLAPPEDWINDOW,
+        HWND hwnd = CreateWindowEx(0, L"NesVoxelD3D11WindowClass", L"N3S", WS_OVERLAPPEDWINDOW,
             CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top, nullptr, nullptr, hInstance,
             nullptr);
         // TODO: Change to CreateWindowEx(WS_EX_TOPMOST, L"NesVoxelD3D11WindowClass", L"NesVoxelD3D11", WS_POPUP,
@@ -78,7 +82,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 
     // Main message loop
     MSG msg = { 0 };
-    while (WM_QUIT != msg.message)
+    while (WM_QUIT != msg.message && !readyToExit)
     {
         if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
         {
@@ -101,141 +105,192 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 // Windows procedure
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    PAINTSTRUCT ps;
-    HDC hdc;
+	PAINTSTRUCT ps;
+	HDC hdc;
 
-    static bool s_in_sizemove = false;
-    static bool s_in_suspend = false;
-    static bool s_minimized = false;
-    static bool s_fullscreen = false;
-    // TODO: Set s_fullscreen to true if defaulting to fullscreen.
+	static bool s_in_sizemove = false;
+	static bool s_in_suspend = false;
+	static bool s_minimized = false;
+	static bool s_fullscreen = false;
+	// TODO: Set s_fullscreen to true if defaulting to fullscreen.
 
-    auto game = reinterpret_cast<Game*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+	auto game = reinterpret_cast<Game*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 
-    switch (message)
-    {
-    case WM_PAINT:
-        hdc = BeginPaint(hWnd, &ps);
-        EndPaint(hWnd, &ps);
-        break;
+	switch (message)
+	{
+	case WM_PAINT:
+		hdc = BeginPaint(hWnd, &ps);
+		EndPaint(hWnd, &ps);
+		break;
 
-    case WM_SIZE:
-        if (wParam == SIZE_MINIMIZED)
-        {
-            if (!s_minimized)
-            {
-                s_minimized = true;
-                if (!s_in_suspend && game)
-                    game->OnSuspending();
-                s_in_suspend = true;
-            }
-        }
-        else if (s_minimized)
-        {
-            s_minimized = false;
-            if (s_in_suspend && game)
-                game->OnResuming();
-            s_in_suspend = false;
-        }
-        else if (!s_in_sizemove && game)
-        {
-            game->OnWindowSizeChanged(LOWORD(lParam), HIWORD(lParam));
-        }
-        break;
+	case WM_SIZE:
+		if (wParam == SIZE_MINIMIZED)
+		{
+			if (!s_minimized)
+			{
+				s_minimized = true;
+				if (!s_in_suspend && game)
+					game->OnSuspending();
+				s_in_suspend = true;
+			}
+		}
+		else if (s_minimized)
+		{
+			s_minimized = false;
+			if (s_in_suspend && game)
+				game->OnResuming();
+			s_in_suspend = false;
+		}
+		else if (!s_in_sizemove && game)
+		{
+			game->OnWindowSizeChanged(LOWORD(lParam), HIWORD(lParam));
+		}
+		break;
 
-    case WM_ENTERSIZEMOVE:
-        s_in_sizemove = true;
-        break;
+	case WM_ENTERSIZEMOVE:
+		s_in_sizemove = true;
+		break;
 
-    case WM_EXITSIZEMOVE:
-        s_in_sizemove = false;
-        if (game)
-        {
-            RECT rc;
-            GetClientRect(hWnd, &rc);
+	case WM_EXITSIZEMOVE:
+		s_in_sizemove = false;
+		if (game)
+		{
+			RECT rc;
+			GetClientRect(hWnd, &rc);
 
-            game->OnWindowSizeChanged(rc.right - rc.left, rc.bottom - rc.top);
-        }
-        break;
+			game->OnWindowSizeChanged(rc.right - rc.left, rc.bottom - rc.top);
+		}
+		break;
 
-    case WM_GETMINMAXINFO:
-        {
-            auto info = reinterpret_cast<MINMAXINFO*>(lParam);
-            info->ptMinTrackSize.x = 320;
-            info->ptMinTrackSize.y = 200;
-        }
-        break;
+	case WM_GETMINMAXINFO:
+	{
+		auto info = reinterpret_cast<MINMAXINFO*>(lParam);
+		info->ptMinTrackSize.x = 320;
+		info->ptMinTrackSize.y = 200;
+	}
+	break;
 
-    case WM_ACTIVATEAPP:
-        if (game)
-        {
-            if (wParam)
-            {
-                game->OnActivated();
-            }
-            else
-            {
-                game->OnDeactivated();
-            }
-        }
-        break;
+	case WM_ACTIVATEAPP:
+		if (game)
+		{
+			if (wParam)
+			{
+				game->OnActivated();
+			}
+			else
+			{
+				game->OnDeactivated();
+			}
+		}
+		break;
 
-    case WM_POWERBROADCAST:
-        switch (wParam)
-        {
-        case PBT_APMQUERYSUSPEND:
-            if (!s_in_suspend && game)
-                game->OnSuspending();
-            s_in_suspend = true;
-            return true;
+	case WM_POWERBROADCAST:
+		switch (wParam)
+		{
+		case PBT_APMQUERYSUSPEND:
+			if (!s_in_suspend && game)
+				game->OnSuspending();
+			s_in_suspend = true;
+			return true;
 
-        case PBT_APMRESUMESUSPEND:
-            if (!s_minimized)
-            {
-                if (s_in_suspend && game)
-                    game->OnResuming();
-                s_in_suspend = false;
-            }
-            return true;
-        }
-        break;
+		case PBT_APMRESUMESUSPEND:
+			if (!s_minimized)
+			{
+				if (s_in_suspend && game)
+					game->OnResuming();
+				s_in_suspend = false;
+			}
+			return true;
+		}
+		break;
 
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
+	case WM_DESTROY:
+		PostQuitMessage(0);
+		break;
 
-    case WM_SYSKEYDOWN:
-        if (wParam == VK_RETURN && (lParam & 0x60000000) == 0x20000000)
-        {
-            // Implements the classic ALT+ENTER fullscreen toggle
-            if (s_fullscreen)
-            {
-                SetWindowLongPtr(hWnd, GWL_STYLE, WS_OVERLAPPEDWINDOW);
-                SetWindowLongPtr(hWnd, GWL_EXSTYLE, 0);
+	case WM_SYSKEYDOWN:
+		if (wParam == VK_RETURN && (lParam & 0x60000000) == 0x20000000)
+		{
+			// Implements the classic ALT+ENTER fullscreen toggle
+			if (s_fullscreen)
+			{
+				SetWindowLongPtr(hWnd, GWL_STYLE, WS_OVERLAPPEDWINDOW);
+				SetWindowLongPtr(hWnd, GWL_EXSTYLE, 0);
 
-                int width = 800;
-                int height = 600;
-                if (game)
-                    game->GetDefaultSize(width, height);
+				int width = 800;
+				int height = 600;
+				if (game)
+					game->GetDefaultSize(width, height);
 
-                ShowWindow(hWnd, SW_SHOWNORMAL);
+				ShowWindow(hWnd, SW_SHOWNORMAL);
 
-                SetWindowPos(hWnd, HWND_TOP, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
-            }
-            else
-            {
-                SetWindowLongPtr(hWnd, GWL_STYLE, 0);
-                SetWindowLongPtr(hWnd, GWL_EXSTYLE, WS_EX_TOPMOST);
+				SetWindowPos(hWnd, HWND_TOP, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
+			}
+			else
+			{
+				SetWindowLongPtr(hWnd, GWL_STYLE, 0);
+				SetWindowLongPtr(hWnd, GWL_EXSTYLE, WS_EX_TOPMOST);
 
-                SetWindowPos(hWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+				SetWindowPos(hWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 
-                ShowWindow(hWnd, SW_SHOWMAXIMIZED);
-            }
+				ShowWindow(hWnd, SW_SHOWMAXIMIZED);
+			}
 
-            s_fullscreen = !s_fullscreen;
-        }
-        break;
-    }
+			s_fullscreen = !s_fullscreen;
+		}
+		break;
 
-    return DefWindowProc(hWnd, message, wParam, lParam);
+		case WM_COMMAND:
+		{
+			switch (LOWORD(wParam))
+			{
+			case ID_FILE_EXIT:
+				readyToExit = true;
+				break;
+			case ID_FILE_LOAD:
+				HRESULT hr = CoInitializeEx(NULL, COINITBASE_MULTITHREADED |
+					COINIT_DISABLE_OLE1DDE);
+				if (SUCCEEDED(hr))
+				{
+					IFileOpenDialog *pFileOpen;
+
+					// Create the FileOpenDialog object.
+					hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
+						IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+
+					if (SUCCEEDED(hr))
+					{
+						// Show the Open dialog box.
+						hr = pFileOpen->Show(NULL);
+
+						// Get the file name from the dialog box.
+						if (SUCCEEDED(hr))
+						{
+							IShellItem *pItem;
+							hr = pFileOpen->GetResult(&pItem);
+							if (SUCCEEDED(hr))
+							{
+								PWSTR pszFilePath;
+								hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+
+								// Display the file name to the user.
+								if (SUCCEEDED(hr))
+								{
+									MessageBox(NULL, pszFilePath, L"File Path", MB_OK);
+									CoTaskMemFree(pszFilePath);
+								}
+								pItem->Release();
+							}
+						}
+						pFileOpen->Release();
+					}
+					CoUninitialize();
+				}
+				break;
+			}
+		}
+		break;
+	}
+	return DefWindowProc(hWnd, message, wParam, lParam);
+	
 }
