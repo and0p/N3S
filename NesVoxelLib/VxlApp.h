@@ -16,6 +16,7 @@ public:
 	VxlApp();
 	void assignD3DContext(VxlD3DContext);
 	void load();
+	void unload();
 	void update();
 	void render();
 	void updateCameraViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection);

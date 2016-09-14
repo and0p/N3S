@@ -58,6 +58,11 @@ int VxlVirtualPatternTable::getTrueTileIndex(int tile)
 	return trueSectionIndices[section] + tileWithinSection;
 }
 
+void VxlVirtualPatternTable::reset()
+{
+	map.clear();
+}
+
 std::string VxlVirtualPatternTable::getPatternSectionHash(char *data)
 {
 	int size = 512 / tableDivisor;

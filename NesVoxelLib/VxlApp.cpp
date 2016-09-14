@@ -28,6 +28,13 @@ void VxlApp::load()
 	loaded = true;
 }
 
+void VxlApp::unload()
+{
+	gameData->unload();
+	gameData.reset();
+	virtualPatternTable.reset();
+}
+
 void VxlApp::update()
 {
 	inputState.refreshInput();

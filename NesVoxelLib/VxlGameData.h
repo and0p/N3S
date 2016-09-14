@@ -84,6 +84,7 @@ public:
 	static VoxelMesh getSharedMesh(int zArray[32]);
 	static void releaseSharedMesh(std::string hash);
 	CartridgeInfo cartridgeInfo;
+	void unload();
 private:
 	static std::unordered_map<std::string, SharedMesh> sharedMeshes;
 };

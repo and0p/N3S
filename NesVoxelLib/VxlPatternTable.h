@@ -19,6 +19,7 @@ public:
 	int sectionSize;
 	int sectionByteWidth;
 	int hashComplexity = 4;
+	void reset();
 private:
 	std::map<std::string, int> map;
 	std::string getPatternSectionHash(char* data);

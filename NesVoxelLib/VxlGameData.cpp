@@ -405,6 +405,24 @@ void VoxelGameData::releaseSharedMesh(std::string hash)
 	}
 }
 
+void VoxelGameData::unload()
+{
+	// Release all full meshes
+	for (VoxelSprite sprite : sprites)
+	{
+		sprite.mesh.buffer->Release();
+		for (VoxelMesh mesh : sprite.zMeshes)
+		{
+			mesh.buffer->Release();
+		}
+	}
+	// Release all partial meshes
+	for (auto kv : sharedMeshes)
+	{
+		kv.second.mesh.buffer->Release();
+	}
+}
+
 // Create blank sprite
 BitmapSprite::BitmapSprite()
 {
