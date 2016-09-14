@@ -16,6 +16,7 @@ public:
 	VxlApp();
 	void assignD3DContext(VxlD3DContext);
 	void load();
+	void load(char *path);
 	void unload();
 	void update();
 	void render();
