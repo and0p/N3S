@@ -8,6 +8,8 @@
 #include "StepTimer.h"
 #include "libretro.h"
 #include "VxlApp.h"
+#include "resource.h"
+#include <shobjidl.h>
 
 // A basic game implementation that creates a D3D11 device and
 // provides a game loop.
@@ -40,6 +42,9 @@ public:
 
     // Properties
     void GetDefaultSize( int& width, int& height ) const;
+
+	// Get message from parent window and pass onto game as function (typically)
+	void getAppMessage(WORD wparam);
 
 private:
 

@@ -16,10 +16,10 @@ void VxlApp::assignD3DContext(VxlD3DContext context)
 	VxlUtil::initPipeline(context);
 }
 
-void VxlApp::load()
+void VxlApp::load(char *path)
 {
 	char romPath[] = "c:\\mario.nes\0";
-	NesEmulator::Initialize(&romPath[0]);
+	NesEmulator::Initialize(path);
 	info = NesEmulator::getGameInfo();
 	gameData = std::shared_ptr<VoxelGameData>(new VoxelGameData((char*)info->data));
 	virtualPatternTable.load(gameData->totalSprites, 8, gameData->chrData);
@@ -37,30 +37,33 @@ void VxlApp::unload()
 
 void VxlApp::update()
 {
-	inputState.refreshInput();
-	bool yPressed = inputState.gamePads[0].buttonStates[by];
-	bool bPressed = inputState.gamePads[0].buttonStates[bb];
-	if (bPressed && !pausedThisPress)
-		emulationPaused = toggleBool(emulationPaused);
-	if(!emulationPaused || (yPressed && !frameAdvanced))
-	NesEmulator::ExecuteFrame();
-	if (bPressed)
-		pausedThisPress = true;
-	else
-		pausedThisPress = false;
-	if (yPressed)
-		frameAdvanced = true;
-	else
-		frameAdvanced = false;
-	snapshot.reset(new VxlPPUSnapshot((VxlRawPPU*)NesEmulator::getVRam()));
-	virtualPatternTable.update(snapshot->patternTable);
-	float zoomAmount = inputState.gamePads[0].triggerStates[lTrigger] - inputState.gamePads[0].triggerStates[rTrigger];
-	camera.AdjustPosition(inputState.gamePads[0].analogStickStates[lStick].x * 0.05f, inputState.gamePads[0].analogStickStates[lStick].y * 0.05f, zoomAmount * 0.05f);
-	camera.AdjustRotation(inputState.gamePads[0].analogStickStates[rStick].x, 0, inputState.gamePads[0].analogStickStates[rStick].y * -1);
-	if (inputState.gamePads[0].buttonStates[brb])
+	if (loaded)
 	{
-		camera.SetPosition(0, 0, -2);
-		camera.SetRotation(0, 0, 0);
+		inputState.refreshInput();
+		bool yPressed = inputState.gamePads[0].buttonStates[by];
+		bool bPressed = inputState.gamePads[0].buttonStates[bb];
+		if (bPressed && !pausedThisPress)
+			emulationPaused = toggleBool(emulationPaused);
+		if (!emulationPaused || (yPressed && !frameAdvanced))
+			NesEmulator::ExecuteFrame();
+		if (bPressed)
+			pausedThisPress = true;
+		else
+			pausedThisPress = false;
+		if (yPressed)
+			frameAdvanced = true;
+		else
+			frameAdvanced = false;
+		snapshot.reset(new VxlPPUSnapshot((VxlRawPPU*)NesEmulator::getVRam()));
+		virtualPatternTable.update(snapshot->patternTable);
+		float zoomAmount = inputState.gamePads[0].triggerStates[lTrigger] - inputState.gamePads[0].triggerStates[rTrigger];
+		camera.AdjustPosition(inputState.gamePads[0].analogStickStates[lStick].x * 0.05f, inputState.gamePads[0].analogStickStates[lStick].y * 0.05f, zoomAmount * 0.05f);
+		camera.AdjustRotation(inputState.gamePads[0].analogStickStates[rStick].x, 0, inputState.gamePads[0].analogStickStates[rStick].y * -1);
+		if (inputState.gamePads[0].buttonStates[brb])
+		{
+			camera.SetPosition(0, 0, -2);
+			camera.SetRotation(0, 0, 0);
+		}
 	}
 }
 
