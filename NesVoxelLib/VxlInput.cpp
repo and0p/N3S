@@ -43,7 +43,7 @@ InputState::InputState()
 {
 }
 
-void InputState::refreshInput()
+void InputState::checkGamePads()
 {
 	XINPUT_STATE state;
 	// See if either controller is connected and grab input state if so
@@ -65,6 +65,10 @@ void InputState::refreshInput()
 	{
 		connected[1] = false;
 	}
+}
+
+void InputState::refreshInput()
+{
 	// Send to emulator
 	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_A] = gamePads[0].buttonStates[ba];
 	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_B] = gamePads[0].buttonStates[bx];

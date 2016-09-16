@@ -30,5 +30,6 @@ public:
 	InputState();
 	bool connected[2];
 	ControllerState gamePads[2];
+	void checkGamePads();
 	void refreshInput();
 };
