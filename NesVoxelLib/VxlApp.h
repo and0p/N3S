@@ -25,6 +25,8 @@ public:
 	VxlCamera camera;
 	std::shared_ptr<VoxelGameData> gameData;
 	bool loaded;
+	void passKeyboardInput(int key, bool pressed);
+	enum VirtualKey { GamepadDPadUp = 203, GamepadDPadDown = 204, GamepadDPadLeft = 205, GamepadDPadRight = 206, GamepadMenu = 207, GamepadView = 208, GamepadA = 195, GamepadB = 196};
 private:
 	bool emulationPaused;
 	bool pausedThisPress;
