@@ -7,6 +7,7 @@ public:
 	static void Initialize(char * romPath);
 	static void ExecuteFrame();
 	static void unload();
+	static void reset();
 	static const void* getPixelData();
 	static const void* getVRam();
 	static struct retro_game_info* getGameInfo();

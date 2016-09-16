@@ -32,7 +32,7 @@
     <ResourceCompile Include="resource.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="directx.ico">
+    <Image Include="n3s.ico">
       <Filter>Assets</Filter>
     </Image>
   </ItemGroup>

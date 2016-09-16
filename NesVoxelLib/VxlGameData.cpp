@@ -410,17 +410,18 @@ void VoxelGameData::unload()
 	// Release all full meshes
 	for (VoxelSprite sprite : sprites)
 	{
-		sprite.mesh.buffer->Release();
-		for (VoxelMesh mesh : sprite.zMeshes)
+		if (sprite.meshExists)
 		{
-			mesh.buffer->Release();
+			sprite.mesh.buffer->Release();
 		}
 	}
 	// Release all partial meshes
 	for (auto kv : sharedMeshes)
 	{
-		kv.second.mesh.buffer->Release();
+		if(kv.second.mesh.buffer != nullptr)
+			kv.second.mesh.buffer->Release();
 	}
+	sharedMeshes.clear();
 }
 
 // Create blank sprite

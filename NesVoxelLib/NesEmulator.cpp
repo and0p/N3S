@@ -321,6 +321,11 @@ void NesEmulator::unload()
 {
 }
 
+void NesEmulator::reset()
+{
+	g_retro.retro_reset();
+}
+
 const void* NesEmulator::getPixelData() {
 	return pixelData;
 }

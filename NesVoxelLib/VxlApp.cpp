@@ -18,6 +18,8 @@ void VxlApp::assignD3DContext(VxlD3DContext context)
 
 void VxlApp::load(char *path)
 {
+	if (loaded)
+		unload();
 	char romPath[] = "c:\\mario.nes\0";
 	NesEmulator::Initialize(path);
 	info = NesEmulator::getGameInfo();
@@ -30,9 +32,20 @@ void VxlApp::load(char *path)
 
 void VxlApp::unload()
 {
-	gameData->unload();
-	gameData.reset();
-	virtualPatternTable.reset();
+	if (loaded)
+	{
+		gameData->unload();
+		gameData.reset();
+		virtualPatternTable.reset();
+		camera.SetPosition(0, 0, -2);
+		camera.SetRotation(0, 0, 0);
+		loaded = false;
+	}
+}
+
+void VxlApp::reset()
+{
+	NesEmulator::reset();
 }
 
 void VxlApp::update()
@@ -69,19 +82,20 @@ void VxlApp::update()
 
 void VxlApp::render()
 {
-	VxlUtil::setIndexBuffer();
-	VxlUtil::setShader(color);
-	//camera.SetPosition(0, 0, -2);
-	//camera.SetRotation(0, 0, 0);
-	camera.Render();
-	VxlUtil::updateMatricesWithCamera(&camera);
-	VxlUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
-	VxlUtil::updateMirroring(false, false);
-	updatePalette();
-	if(snapshot->mask.renderSprites)
-		renderSprites();
-	if(snapshot->mask.renderBackground)
-		renderNameTables();
+	if (loaded)
+	{
+		VxlUtil::setIndexBuffer();
+		VxlUtil::setShader(color);
+		camera.Render();
+		VxlUtil::updateMatricesWithCamera(&camera);
+		VxlUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
+		VxlUtil::updateMirroring(false, false);
+		updatePalette();
+		if (snapshot->mask.renderSprites)
+			renderSprites();
+		if (snapshot->mask.renderBackground)
+			renderNameTables();
+	}
 }
 
 void VxlApp::updateCameraViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
@@ -94,9 +108,18 @@ void VxlApp::updateGameOriginPosition(float x, float y, float z)
 
 }
 
+void VxlApp::recieveKeyInput(int key)
+{
+
+}
+
 XMVECTORF32 VxlApp::getBackgroundColor()
 {
-	Hue hue = VxlUtil::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->backgroundColor);
+	Hue hue;
+	if (loaded)
+		hue = VxlUtil::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->backgroundColor);
+	else
+		hue = { 0.0f, 0.0f, 0.0f };
 	return{ hue.red, hue.green, hue.blue, 1.0f };
 }
 

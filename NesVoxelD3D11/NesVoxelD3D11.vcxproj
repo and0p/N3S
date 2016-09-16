@@ -175,7 +175,7 @@
     <ResourceCompile Include="resource.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="directx.ico" />
+    <Image Include="n3s.ico" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="settings.manifest" />

@@ -166,6 +166,7 @@ void Game::getAppMessage(WORD wparam)
 	switch (wparam)
 	{
 	case ID_FILE_LOAD:
+	{
 		HRESULT hr = CoInitializeEx(NULL, COINITBASE_MULTITHREADED |
 			COINIT_DISABLE_OLE1DDE);
 		if (SUCCEEDED(hr))
@@ -207,6 +208,13 @@ void Game::getAppMessage(WORD wparam)
 			}
 			CoUninitialize();
 		}
+		break;
+	}
+	case ID_FILE_UNLOAD:
+		app.unload();
+		break;
+	case ID_NES_RESET:
+		app.reset();
 		break;
 	}
 }
