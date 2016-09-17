@@ -22,6 +22,7 @@
     <RootNamespace>NesVoxelD3D11</RootNamespace>
     <ProjectGuid>{fd01b185-4639-4f01-b2f4-f9ff142abde0}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -78,6 +79,7 @@
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir)NesVoxelLib;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)Hololens Release;$(LibraryPath)</LibraryPath>
+    <TargetName>N3S</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>

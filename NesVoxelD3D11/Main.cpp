@@ -15,8 +15,9 @@ namespace
 };
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-
 bool readyToExit = false;
+HMENU menu;
+bool menuShown = true;
 
 // Entry point
 int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
@@ -66,6 +67,9 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
             nullptr);
         // TODO: Change to CreateWindowEx(WS_EX_TOPMOST, L"NesVoxelD3D11WindowClass", L"NesVoxelD3D11", WS_POPUP,
         // to default to fullscreen.
+
+		// Get menu handle from window we just made
+		menu = GetMenu(hwnd);
 
         if (!hwnd)
             return 1;
@@ -224,6 +228,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 				ShowWindow(hWnd, SW_SHOWNORMAL);
 
+				SetMenu(hWnd, menu);
+				menuShown = true;
+
 				SetWindowPos(hWnd, HWND_TOP, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
 			}
 			else
@@ -232,11 +239,27 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				SetWindowLongPtr(hWnd, GWL_EXSTYLE, WS_EX_TOPMOST);
 
 				SetWindowPos(hWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+				SetMenu(hWnd, NULL);
+				menuShown = false;
 
 				ShowWindow(hWnd, SW_SHOWMAXIMIZED);
 			}
 
 			s_fullscreen = !s_fullscreen;
+		}
+		else if ((lParam & 0x60000000) == 0x20000000 && s_fullscreen)
+		{
+			if (menuShown)
+			{
+				SetMenu(hWnd, NULL);
+				menuShown = false;
+			}
+			else
+			{
+				SetMenu(hWnd, menu);
+				menuShown = true;
+			}
+
 		}
 		break;
 

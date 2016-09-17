@@ -1,12 +1,12 @@
 #include "stdafx.h"
 #include "VxlApp.h"
+#include <time.h>
 
 VxlApp::VxlApp()
 {
 	gameData = {};
 	emulationPaused = false;
 	loaded = false;
-	camera = VxlCamera();
 	camera.SetPosition(0, 0, -2);
 	camera.SetRotation(0, 0, 0);
 }
