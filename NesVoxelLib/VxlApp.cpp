@@ -52,6 +52,7 @@ void VxlApp::update()
 {
 	if (loaded)
 	{
+		inputState.checkGamePads();
 		inputState.refreshInput();
 		bool yPressed = inputState.gamePads[0].buttonStates[by];
 		bool bPressed = inputState.gamePads[0].buttonStates[bb];
@@ -108,9 +109,12 @@ void VxlApp::updateGameOriginPosition(float x, float y, float z)
 
 }
 
-void VxlApp::recieveKeyInput(int key)
+void VxlApp::recieveKeyInput(int key, bool down)
 {
-
+	if (down)
+		inputState.keyboardState.setDown(key);
+	else
+		inputState.keyboardState.setUp(key);
 }
 
 XMVECTORF32 VxlApp::getBackgroundColor()

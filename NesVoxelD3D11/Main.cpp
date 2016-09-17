@@ -240,19 +240,27 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 
-		case WM_COMMAND:
-		{
-			switch (LOWORD(wParam))
-			{
-			case ID_FILE_EXIT:
-				readyToExit = true;
-				break;
-			default:
-				g_game->getAppMessage(LOWORD(wParam));
-				break;
-			}
-		}
+	case WM_KEYDOWN:
+		g_game->getAppMessage(message, wParam, lParam);
 		break;
+
+	case WM_KEYUP:
+		g_game->getAppMessage(message, wParam, lParam);
+		break;
+
+	case WM_COMMAND:
+	{
+		switch (LOWORD(wParam))
+		{
+		case ID_FILE_EXIT:
+			readyToExit = true;
+			break;
+		default:
+			g_game->getAppMessage(message, wParam, lParam);
+			break;
+		}
+	}
+	break;
 	}
 	return DefWindowProc(hWnd, message, wParam, lParam);
 	
