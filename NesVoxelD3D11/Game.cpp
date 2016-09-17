@@ -161,62 +161,80 @@ void Game::GetDefaultSize(int& width, int& height) const
     width = 1024;
     height = 768;
 }
-void Game::getAppMessage(WORD wparam)
+void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam)
 {
-	switch (wparam)
+	switch (message)
 	{
-	case ID_FILE_LOAD:
+	case WM_COMMAND:
 	{
-		HRESULT hr = CoInitializeEx(NULL, COINITBASE_MULTITHREADED |
-			COINIT_DISABLE_OLE1DDE);
-		if (SUCCEEDED(hr))
+		switch (LOWORD(wParam))
 		{
-			IFileOpenDialog *pFileOpen;
-
-			// Create the FileOpenDialog object.
-			hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
-				IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
-
+		case ID_FILE_LOAD:
+		{
+			HRESULT hr = CoInitializeEx(NULL, COINITBASE_MULTITHREADED |
+				COINIT_DISABLE_OLE1DDE);
 			if (SUCCEEDED(hr))
 			{
-				// Show the Open dialog box.
-				hr = pFileOpen->Show(NULL);
+				IFileOpenDialog *pFileOpen;
 
-				// Get the file name from the dialog box.
+				// Create the FileOpenDialog object.
+				hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
+					IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+
 				if (SUCCEEDED(hr))
 				{
-					IShellItem *pItem;
-					hr = pFileOpen->GetResult(&pItem);
+					// Show the Open dialog box.
+					hr = pFileOpen->Show(NULL);
+
+					// Get the file name from the dialog box.
 					if (SUCCEEDED(hr))
 					{
-						PWSTR pszFilePath;
-						hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
-
-						// Display the file name to the user.
+						IShellItem *pItem;
+						hr = pFileOpen->GetResult(&pItem);
 						if (SUCCEEDED(hr))
 						{
-							//MessageBox(NULL, pszFilePath, L"File Path", MB_OK);
-							char buffer[500];
-							wcstombs(buffer, pszFilePath, 500);
-							app.load(&buffer[0]);
-							CoTaskMemFree(pszFilePath);
+							PWSTR pszFilePath;
+							hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+
+							// Display the file name to the user.
+							if (SUCCEEDED(hr))
+							{
+								//MessageBox(NULL, pszFilePath, L"File Path", MB_OK);
+								char buffer[500];
+								wcstombs(buffer, pszFilePath, 500);
+								app.load(&buffer[0]);
+								CoTaskMemFree(pszFilePath);
+							}
+							pItem->Release();
 						}
-						pItem->Release();
 					}
+					pFileOpen->Release();
 				}
-				pFileOpen->Release();
+				CoUninitialize();
 			}
-			CoUninitialize();
+			break;
+		}
+		case ID_FILE_UNLOAD:
+			app.unload();
+			break;
+		case ID_NES_RESET:
+			app.reset();
+			break;
 		}
 		break;
 	}
-	case ID_FILE_UNLOAD:
-		app.unload();
-		break;
-	case ID_NES_RESET:
-		app.reset();
+	case WM_KEYDOWN:
+	{
+		bool previouslyDown = (int)lParam >> 30 & 1;
+		if(!previouslyDown)
+			app.recieveKeyInput(wParam, true);
 		break;
 	}
+	case WM_KEYUP:
+		app.recieveKeyInput(wParam, false);
+		break;
+	}
+
 }
 #pragma endregion
 

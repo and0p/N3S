@@ -44,7 +44,7 @@ public:
     void GetDefaultSize( int& width, int& height ) const;
 
 	// Get message from parent window and pass onto game as function (typically)
-	void getAppMessage(WORD wparam);
+	void getAppMessage(UINT message, WPARAM wParam, LPARAM lParam);
 
 private:
 

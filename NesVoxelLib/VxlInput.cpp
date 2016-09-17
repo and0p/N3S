@@ -41,6 +41,7 @@ ControllerState::ControllerState(XINPUT_GAMEPAD gamepad)
 
 InputState::InputState()
 {
+	keyboardState = KeyboardState();
 }
 
 void InputState::checkGamePads()
@@ -70,12 +71,31 @@ void InputState::checkGamePads()
 void InputState::refreshInput()
 {
 	// Send to emulator
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_A] = gamePads[0].buttonStates[ba];
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_B] = gamePads[0].buttonStates[bx];
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_SELECT] = gamePads[0].buttonStates[bselect];
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_START] = gamePads[0].buttonStates[bstart];
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_UP] = gamePads[0].buttonStates[bdUp];
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_DOWN] = gamePads[0].buttonStates[bdDown];
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_LEFT] = gamePads[0].buttonStates[bdLeft];
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_RIGHT] = gamePads[0].buttonStates[bdRight];
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_A] = (gamePads[0].buttonStates[ba] || keyboardState.keyStates[75]);;
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_B] = (gamePads[0].buttonStates[bx] || keyboardState.keyStates[74]);;
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_SELECT] = (gamePads[0].buttonStates[bselect] || keyboardState.keyStates[85]);
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_START] = (gamePads[0].buttonStates[bstart] || keyboardState.keyStates[73]);
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_UP] = (gamePads[0].buttonStates[bdUp] || keyboardState.keyStates[87]);;
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_DOWN] = (gamePads[0].buttonStates[bdDown] || keyboardState.keyStates[83]);;
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_LEFT] = (gamePads[0].buttonStates[bdLeft] || keyboardState.keyStates[65]);;
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_RIGHT] = (gamePads[0].buttonStates[bdRight] || keyboardState.keyStates[68]);;
+	
+}
+
+KeyboardState::KeyboardState()
+{
+	for (int i = 0; i < 256; i++)
+	{
+		keyStates[i] = false;
+	}
+}
+
+void KeyboardState::setDown(int key)
+{
+	keyStates[key] = true;
+}
+
+void KeyboardState::setUp(int key)
+{
+	keyStates[key] = false;
 }
