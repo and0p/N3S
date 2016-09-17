@@ -64,6 +64,9 @@ void AppView::SetWindow(CoreWindow^ window)
     window->KeyDown +=
         ref new TypedEventHandler<CoreWindow^, KeyEventArgs^>(this, &AppView::OnKeyPressed);
 
+	window->KeyUp +=
+		ref new TypedEventHandler<CoreWindow^, KeyEventArgs^>(this, &AppView::OnKeyReleased);
+
     // Register for notification that the app window is being closed.
     window->Closed +=
         ref new TypedEventHandler<CoreWindow^, CoreWindowEventArgs^>(this, &AppView::OnWindowClosed);
@@ -193,7 +196,6 @@ void AppView::OnWindowClosed(CoreWindow^ sender, CoreWindowEventArgs^ args)
     m_windowClosed = true;
 }
 
-
 // Input event handlers
 
 void AppView::OnKeyPressed(CoreWindow^ sender, KeyEventArgs^ args)
@@ -203,4 +205,17 @@ void AppView::OnKeyPressed(CoreWindow^ sender, KeyEventArgs^ args)
     //       keyboard input if you want to support it as an optional input method for
     //       your holographic app.
     //
+
+	m_main->app.passKeyboardInput((int)args->VirtualKey, true);
+}
+
+void AppView::OnKeyReleased(CoreWindow^ sender, KeyEventArgs^ args)
+{
+	//
+	// TODO: Bluetooth keyboards are supported by HoloLens. You can use this method for
+	//       keyboard input if you want to support it as an optional input method for
+	//       your holographic app.
+	//
+
+	m_main->app.passKeyboardInput((int)args->VirtualKey, false);
 }
