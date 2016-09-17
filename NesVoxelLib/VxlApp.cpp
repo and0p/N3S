@@ -89,6 +89,37 @@ XMVECTORF32 VxlApp::getBackgroundColor()
 	return{ hue.red, hue.green, hue.blue, 1.0f };
 }
 
+void VxlApp::passKeyboardInput(int key, bool pressed)
+{
+	switch (key)
+	{
+	case(VirtualKey::GamepadDPadUp):
+		NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_UP] = pressed;
+		break;
+	case(VirtualKey::GamepadDPadDown):
+		NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_DOWN] = pressed;
+		break;
+	case(VirtualKey::GamepadDPadLeft):
+		NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_LEFT] = pressed;
+		break;
+	case(VirtualKey::GamepadDPadRight):
+		NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_RIGHT] = pressed;
+		break;
+	case(VirtualKey::GamepadMenu):
+		NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_START] = pressed;
+		break;
+	case(VirtualKey::GamepadView):
+		NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_SELECT] = pressed;
+		break;
+	case(VirtualKey::GamepadA):
+		NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_B] = pressed;
+		break;
+	case(VirtualKey::GamepadB):
+		NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_A] = pressed;
+		break;
+	}
+}
+
 void VxlApp::renderSprites()
 {
 	for (int i = 0; i < 64; i++) {
