@@ -24,7 +24,7 @@ N3SHololensMain::N3SHololensMain(const std::shared_ptr<DX::DeviceResources>& dev
     m_deviceResources->RegisterDeviceNotify(this);
 	m_timer.SetFixedTimeStep(true);
 	m_timer.SetTargetElapsedSeconds(1.f / 60.f);
-	app = VxlApp();
+	//app = VxlApp();
 }
 
 void N3SHololensMain::SetHolographicSpace(HolographicSpace^ holographicSpace)
