@@ -68,16 +68,16 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <LibraryPath>..\..\nestopia\libretro\msvc\msvc-2010\Debug;$(SolutionDir)Debug;$(LibraryPath)</LibraryPath>
-    <IncludePath>$(SolutionDir)NesVoxelLib;$(SolutionDir)Debug;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\and0\Source\Repos\nestopia\libretro\msvc\msvc-2010\Debug;C:\Users\and0\Source\Repos\NesVoxel\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\and0\Source\Repos\NesVoxel\NesVoxelLib;C:\Users\and0\Source\Repos\NesVoxel\Debug;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)NesVoxelLib;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)Hololens Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\and0\Source\Repos\NesVoxel\NesVoxelLib;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\and0\Source\Repos\NesVoxel\Hololens Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -91,7 +91,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <FloatingPointModel>Fast</FloatingPointModel>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
-      <AdditionalIncludeDirectories>$(SolutionDir)NesVoxelLib;$(SolutionDir)NesVoxelD3D11\Debug;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\and0\Source\Repos\NesVoxel\NesVoxelLib;C:\Users\and0\Source\Repos\NesVoxel\NesVoxelD3D11\Debug;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

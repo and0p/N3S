@@ -22,11 +22,10 @@ struct ScrollAddress {
 class ScrollSnapshot
 {
 public:
-	bool patternSelect = 0;
 	ScrollAddress t;
 	ScrollAddress v;
 	void poke(int reg, bool toggle, int data);
-	bool tToV;
+	bool tToV = false;
 	void changeVScroll(int y);
 	int getTrueX();
 	int getTrueY();
@@ -36,7 +35,6 @@ inline void ScrollSnapshot::poke(int reg, bool toggle, int data)
 {
 	switch (reg) {
 	case 2000:
-		patternSelect = data >> 4 & 1;
 		t.nametable = data & 3;
 		v.nametable = data & 3; // Still curious about this behavior
 		break;
@@ -113,13 +111,11 @@ public:
 	PatternTable patternTable;
 	NameTable nameTables[4];
 	std::map<int, ScrollSnapshot> scrollSnapshots;
-	std::map<int, bool> oamPatternSelect;
 	void writeScrollValue(int scanline, int reg, bool toggle, int data);
-	void setOAMPatternSelect(int scanline, bool select);
-	void reset(int mirrorType, bool oamPattern, bool namePattern);
+
+	void reset();
 private:
-	int mostRecentScanlineModified = 0;
-	int mostRecentOamPatternScanline = 0;
+	int mostRecentScanLineModified = 0;
 };
 
 inline void VxlRawPPU::writeScrollValue(int scanline, int reg, bool toggle, int data) {
@@ -133,42 +129,23 @@ inline void VxlRawPPU::writeScrollValue(int scanline, int reg, bool toggle, int 
 	if (scrollSnapshots.count(scanline) < 1)
 	{
 		// Copy the last one
-		ScrollSnapshot newSnapshot = scrollSnapshots[mostRecentScanlineModified];
-		newSnapshot.tToV = false;
+		ScrollSnapshot newSnapshot = scrollSnapshots[mostRecentScanLineModified];
 		// Assume each scanline since has been incrementing the Y value
-		newSnapshot.changeVScroll(scanline - mostRecentScanlineModified);
+		newSnapshot.changeVScroll(scanline - mostRecentScanLineModified);
 		// Set modified copy to current scanline and mark as most recent
 		scrollSnapshots[scanline] = newSnapshot;
-		mostRecentScanlineModified = scanline;
+		mostRecentScanLineModified = scanline;
 	}
 	// Poke reg with data
 	scrollSnapshots[scanline].poke(reg, toggle, data);
 }
 
-inline void VxlRawPPU::setOAMPatternSelect(int scanline, bool select) {
-	// Increment the scanline, assuming these changes are applying to next line
-	scanline++;
-	// Set scanline to 0 if we are outside of visible range, as it will all wrap back to rendering at 0
-	if (scanline < 0 || scanline > 240)
-		scanline = 0;
-	if (select != oamPatternSelect[mostRecentOamPatternScanline])
-	{
-		oamPatternSelect[scanline] = select;
-		mostRecentOamPatternScanline = scanline;
-	}
-}
-
 // Reset the scroll history, but re-insert the most recent snapshot and set v to t
-inline void VxlRawPPU::reset(int mirrorType, bool oamPattern, bool namePattern)
+inline void VxlRawPPU::reset()
 {
-	ScrollSnapshot rollover = scrollSnapshots[mostRecentScanlineModified];
+	ScrollSnapshot rollover = scrollSnapshots[mostRecentScanLineModified];
 	scrollSnapshots.clear();
-	bool lastOAMPatternSelect = oamPatternSelect[mostRecentOamPatternScanline];
-	oamPatternSelect.clear();
-	oamPatternSelect[0] = mostRecentOamPatternScanline;
 	rollover.v = rollover.t;
 	scrollSnapshots[0] = rollover;
-	scrollSnapshots[0];
-	mirroring = mirrorType;
-	mostRecentScanlineModified = 0;
+	mostRecentScanLineModified = 0;
 }

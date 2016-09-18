@@ -26,9 +26,6 @@ namespace N3SHololens
     class N3SHololensMain : public DX::IDeviceNotify
     {
     public:
-		// N3S app
-		VxlApp app;
-
         N3SHololensMain(const std::shared_ptr<DX::DeviceResources>& deviceResources);
         ~N3SHololensMain();
 
@@ -53,6 +50,8 @@ namespace N3SHololens
 		void loadApp();
 
     private:
+		// N3S app
+		VxlApp app;
         // Asynchronously creates resources for new holographic cameras.
         void OnCameraAdded(
             Windows::Graphics::Holographic::HolographicSpace^ sender,

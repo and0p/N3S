@@ -30,7 +30,6 @@ namespace N3SHololens
 
         // CoreWindow input event handlers.
         void OnKeyPressed(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::KeyEventArgs^ args);
-		void OnKeyReleased(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::KeyEventArgs^ args);
 
     private:
         std::unique_ptr<N3SHololensMain> m_main;
