@@ -9,18 +9,22 @@
 #include "libretro.h"
 #include "VxlInput.h"
 #include "VxlPatternTable.h"
+#include "VxlAudio.h"
 #include <memory>
 
 class VxlApp {
 public:
 	VxlApp();
 	void assignD3DContext(VxlD3DContext);
-	void load();
+	void initDirectAudio(HWND hwnd);
 	void load(char *path);
 	void unload();
 	void reset();
-	void update();
+	void update(bool runThisFrame);
 	void render();
+	void pause();
+	void unpause();
+	void setMute(bool mute);
 	void updateCameraViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection);
 	void updateGameOriginPosition(float x, float y, float z);
 	void recieveKeyInput(int key, bool down);
@@ -30,9 +34,12 @@ public:
 	std::shared_ptr<VoxelGameData> gameData;
 	bool loaded;
 private:
+	SoundDriver *audioEngine;
+	HWND hwnd;
 	bool emulationPaused;
 	bool pausedThisPress;
 	bool frameAdvanced;
+	bool muted;
 	std::shared_ptr<VxlPPUSnapshot> snapshot;
 	InputState inputState;
 	VxlVirtualPatternTable virtualPatternTable;

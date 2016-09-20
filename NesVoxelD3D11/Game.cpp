@@ -34,6 +34,7 @@ void Game::Initialize(HWND window, int width, int height)
 						m_deviceResources->GetD3DDeviceContext1() };
 
     app.assignD3DContext(c);
+	app.initDirectAudio(window);
 	//app.load(' ');
 
     // TODO: Change the timer settings if you want something other than the default variable timestep mode.
@@ -50,9 +51,12 @@ void Game::Initialize(HWND window, int width, int height)
 // Executes the basic game loop.
 void Game::Tick()
 {
+	bool run = false;
     m_timer.Tick([&]()
     {
         Update(m_timer);
+		app.update(run);
+		run = true;
     });
 
 	Render();
@@ -62,7 +66,6 @@ void Game::Tick()
 void Game::Update(DX::StepTimer const& timer)
 {
     float elapsedTime = float(timer.GetElapsedSeconds());
-	app.update();
     elapsedTime;
 }
 #pragma endregion

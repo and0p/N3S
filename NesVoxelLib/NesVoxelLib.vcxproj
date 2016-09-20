@@ -247,6 +247,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="VxlAudio.h" />
     <ClInclude Include="VxlGameData.h" />
     <ClInclude Include="VxlD3DContext.h" />
     <ClInclude Include="VxlApp.h" />
@@ -270,6 +271,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Hololens Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="VxlAudio.cpp" />
     <ClCompile Include="VxlGameData.cpp" />
     <ClCompile Include="VxlApp.cpp" />
     <ClCompile Include="VxlInput.cpp" />
