@@ -17,6 +17,7 @@ static const void *pixelData;
 static retro_game_info *info;
 
 int16_t NesEmulator::inputs[2][8];
+SoundDriver* NesEmulator::audioEngine;
 
 static struct {
 	HMODULE handle;
@@ -167,27 +168,28 @@ static int16_t core_input_state(unsigned port, unsigned device, unsigned index, 
 	return NesEmulator::inputs[0][id];
 }
 
-//static void core_audio_sample(int16_t left, int16_t right) {
-//	int16_t buf[2] = { left, right };
-//	audio_write(buf, 1);
-//}
-//
-//static size_t core_audio_sample_batch(const int16_t *data, size_t frames) {
-//	return audio_write(data, frames);
-//}
-//
-//static size_t audio_write(const void *buf, unsigned frames) {
-//	int written = snd_pcm_writei(g_pcm, buf, frames);
-//
-//	if (written < 0) {
-//		printf("Alsa warning/error #%i: ", -written);
-//		snd_pcm_recover(g_pcm, written, 0);
-//
-//		return 0;
-//	}
-//
-//	return written;
-//}
+static size_t audio_write(const void *buf, unsigned frames) {
+	int written = 0;/*snd_pcm_writei(g_pcm, buf, frames);
+
+					if (written < 0) {
+					printf("Alsa warning/error #%i: ", -written);
+					snd_pcm_recover(g_pcm, written, 0);
+
+					return 0;
+					}*/
+	NesEmulator::audioEngine->write((u16*)buf, frames);
+	return written;
+}
+
+
+static void core_audio_sample(int16_t left, int16_t right) {
+	int16_t buf[2] = { left, right };
+	audio_write(buf, 1);
+}
+
+static size_t core_audio_sample_batch(const int16_t *data, size_t frames) {
+	return audio_write(data, frames);
+}
 
 #define load_sym(V, S) do {\
 	if (!((*(void**)&V) = GetProcAddress(g_retro.handle, #S))) \
@@ -260,8 +262,8 @@ static void core_load() {
 	set_video_refresh(core_video_refresh);
 	set_input_poll(core_input_poll);
 	set_input_state(core_input_state);
-	// set_audio_sample(core_audio_sample);
-	// set_audio_sample_batch(core_audio_sample_batch);
+	set_audio_sample(core_audio_sample);
+	set_audio_sample_batch(core_audio_sample_batch);
 #endif
 
 	g_retro.retro_init();

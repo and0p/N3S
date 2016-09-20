@@ -2,19 +2,33 @@
 #include "VxlApp.h"
 #include <time.h>
 
+extern SoundDriver *newDirectSound();
+
 VxlApp::VxlApp()
 {
+	this->hwnd = hwnd;
 	gameData = {};
 	emulationPaused = false;
 	loaded = false;
 	camera.SetPosition(0, 0, -2);
 	camera.SetRotation(0, 0, 0);
+	SoundDriver * drv = 0;
 }
 
 void VxlApp::assignD3DContext(VxlD3DContext context)
 {
 	VxlUtil::initPipeline(context);
+	
 }
+
+void VxlApp::initDirectAudio(HWND hwnd)
+{
+	audioEngine = newDirectSound();
+	audioEngine->init(hwnd, 44100);
+	NesEmulator::audioEngine = audioEngine;
+	audioEngine->resume();
+}
+
 
 void VxlApp::load(char *path)
 {
@@ -28,12 +42,14 @@ void VxlApp::load(char *path)
 	gameData->grabBitmapSprites(info->data);
 	gameData->createSpritesFromBitmaps();
 	loaded = true;
+	unpause();
 }
 
 void VxlApp::unload()
 {
 	if (loaded)
 	{
+		pause();
 		gameData->unload();
 		gameData.reset();
 		virtualPatternTable.reset();
@@ -48,7 +64,7 @@ void VxlApp::reset()
 	NesEmulator::reset();
 }
 
-void VxlApp::update()
+void VxlApp::update(bool runThisNesFrame)
 {
 	if (loaded)
 	{
@@ -56,20 +72,29 @@ void VxlApp::update()
 		inputState.refreshInput();
 		bool yPressed = inputState.gamePads[0].buttonStates[by];
 		bool bPressed = inputState.gamePads[0].buttonStates[bb];
-		if (bPressed && !pausedThisPress)
-			emulationPaused = toggleBool(emulationPaused);
-		if (!emulationPaused || (yPressed && !frameAdvanced))
-			NesEmulator::ExecuteFrame();
-		if (bPressed)
+		if (bPressed && !pausedThisPress && !emulationPaused)
+		{
 			pausedThisPress = true;
-		else
-			pausedThisPress = false;
+			pause();
+		}
+		else if (bPressed && !pausedThisPress && emulationPaused)
+		{
+			unpause();
+			pausedThisPress = true;
+		}
+		if (!bPressed)
+				pausedThisPress = false;
+		if (!emulationPaused || (yPressed && !frameAdvanced) && !runThisNesFrame)
+			NesEmulator::ExecuteFrame();
 		if (yPressed)
 			frameAdvanced = true;
 		else
 			frameAdvanced = false;
-		snapshot.reset(new VxlPPUSnapshot((VxlRawPPU*)NesEmulator::getVRam()));
-		virtualPatternTable.update(snapshot->patternTable);
+		if (!runThisNesFrame)
+		{
+			snapshot.reset(new VxlPPUSnapshot((VxlRawPPU*)NesEmulator::getVRam()));
+			virtualPatternTable.update(snapshot->patternTable);
+		}
 		float zoomAmount = inputState.gamePads[0].triggerStates[lTrigger] - inputState.gamePads[0].triggerStates[rTrigger];
 		camera.AdjustPosition(inputState.gamePads[0].analogStickStates[lStick].x * 0.05f, inputState.gamePads[0].analogStickStates[lStick].y * 0.05f, zoomAmount * 0.05f);
 		camera.AdjustRotation(inputState.gamePads[0].analogStickStates[rStick].x, 0, inputState.gamePads[0].analogStickStates[rStick].y * -1);
@@ -97,6 +122,18 @@ void VxlApp::render()
 		if (snapshot->mask.renderBackground)
 			renderNameTables();
 	}
+}
+
+void VxlApp::pause()
+{
+	emulationPaused = true;
+	audioEngine->pause();
+}
+
+void VxlApp::unpause()
+{
+	emulationPaused = false;
+	audioEngine->resume();
 }
 
 void VxlApp::updateCameraViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
