@@ -46,10 +46,10 @@ VxlPPUSnapshot::VxlPPUSnapshot(VxlRawPPU * rawPPU)
 	// Set mirroring type
 	switch (rawPPU->mirroring)
 	{
-	case 12:
+	case 10:
 		background.mirrorType = horizontal;
 		break;
-	case 10:
+	case 12:
 		background.mirrorType = vertical;
 		break;
 	case 0:

@@ -116,7 +116,7 @@ public:
 	std::map<int, bool> oamPatternSelect;
 	void writeScrollValue(int scanline, int reg, bool toggle, int data);
 	void setOAMPatternSelect(int scanline, bool select);
-	void reset();
+	void reset(int mirrorType, bool oamPattern, bool namePattern);
 private:
 	int mostRecentScanlineModified = 0;
 	int mostRecentOamPatternScanline = 0;
@@ -159,14 +159,16 @@ inline void VxlRawPPU::setOAMPatternSelect(int scanline, bool select) {
 }
 
 // Reset the scroll history, but re-insert the most recent snapshot and set v to t
-inline void VxlRawPPU::reset()
+inline void VxlRawPPU::reset(int mirrorType, bool oamPattern, bool namePattern)
 {
 	ScrollSnapshot rollover = scrollSnapshots[mostRecentScanlineModified];
 	scrollSnapshots.clear();
-	bool lastOAMPatternSelect = oamPatternSelect[mostRecentOamPatternScanline];
+	//bool lastOAMPatternSelect = oamPatternSelect[mostRecentOamPatternScanline];
 	oamPatternSelect.clear();
-	oamPatternSelect[0] = lastOAMPatternSelect;
+	oamPatternSelect[0] = oamPattern;
 	rollover.v = rollover.t;
+	rollover.patternSelect = namePattern;
 	scrollSnapshots[0] = rollover;
+	mirroring = mirrorType;
 	mostRecentScanlineModified = 0;
 }

@@ -5,6 +5,8 @@
 
 VxlCamera::VxlCamera()
 {
+	m_viewMatrix = (XMMATRIX*)_aligned_malloc(sizeof(XMMATRIX), alignof(XMMATRIX));
+	*m_viewMatrix = XMMatrixIdentity();
 	m_positionX = 0.0f;
 	m_positionY = 0.0f;
 	m_positionZ = 0.0f;
@@ -101,13 +103,11 @@ void VxlCamera::Render()
 	lookAt = position + lookAt;
 
 	// Finally create the view matrix from the three updated vectors.
-	m_viewMatrix = XMMatrixLookAtLH(position, lookAt, up);
-
-	return;
+	//*m_viewMatrix = XMMatrixIdentity();
+	*m_viewMatrix = XMMatrixLookAtLH(position, lookAt, up);
 }
 
-void VxlCamera::GetViewMatrix(XMMATRIX& viewMatrix)
+XMMATRIX VxlCamera::GetViewMatrix()
 {
-	viewMatrix = m_viewMatrix;
-	return;
+	return *m_viewMatrix;
 }

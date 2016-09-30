@@ -39,7 +39,7 @@ void VxlApp::load(char *path)
 	NesEmulator::Initialize(path);
 	info = NesEmulator::getGameInfo();
 	gameData = std::shared_ptr<VoxelGameData>(new VoxelGameData((char*)info->data));
-	virtualPatternTable.load(gameData->totalSprites, 8, gameData->chrData);
+	virtualPatternTable.load(gameData->totalSprites, 4, gameData->chrData);
 	gameData->grabBitmapSprites(info->data);
 	gameData->createSpritesFromBitmaps();
 	loaded = true;
@@ -111,7 +111,7 @@ void VxlApp::render()
 {
 	if (loaded)
 	{
-		VxlUtil::setIndexBuffer();
+		//VxlUtil::setIndexBuffer();
 		VxlUtil::setShader(color);
 		camera.Render();
 		VxlUtil::updateMatricesWithCamera(&camera);

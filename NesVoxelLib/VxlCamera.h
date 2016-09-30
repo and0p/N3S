@@ -1,6 +1,7 @@
 // Shamelessly stolen from http://www.rastertek.com/dx11tut04.html
 
 #pragma once
+#include <malloc.h>
 
 using namespace DirectX;
 
@@ -30,12 +31,12 @@ public:
 	XMFLOAT3 GetRotation();
 
 	void Render();
-	void GetViewMatrix(XMMATRIX&);
+	XMMATRIX GetViewMatrix();
 
 private:
 	float m_positionX, m_positionY, m_positionZ;
 	float m_rotationX, m_rotationY, m_rotationZ;
-	XMMATRIX m_viewMatrix = XMMatrixIdentity();
+	XMMATRIX* m_viewMatrix;
 };
 
 #endif

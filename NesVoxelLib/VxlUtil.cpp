@@ -429,7 +429,7 @@ void VxlUtil::updateMatricesWithCamera(VxlCamera * camera) {
 
 	worldMatrix = XMMatrixIdentity();
 	projectionMatrix = getProjectionMatrix(0.1f, 1000.0f, 1, 1);
-	camera->GetViewMatrix(viewMatrix);
+	viewMatrix = camera->GetViewMatrix();
 
 	// Transpose the matrices to prepare them for the shader.
 	worldMatrix = XMMatrixTranspose(worldMatrix);
@@ -538,7 +538,7 @@ void VxlUtil::renderMesh(VoxelMesh *voxelMesh) {
 	UINT stride = sizeof(ColorVertex); // TODO optimize
 	UINT offset = 0;
 	context->IASetVertexBuffers(0, 1, &voxelMesh->buffer, &stride, &offset);
-	context->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//context->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	// draw the vertex buffer to the back buffer
 #ifdef HOLOLENS
 		context->DrawIndexedInstanced(
