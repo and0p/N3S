@@ -45,6 +45,7 @@ private:
 	VxlVirtualPatternTable virtualPatternTable;
 	void updatePalette();
 	void renderSprites();
+	void renderSprite(int tile, int x, int y, int palette, bool flipX, bool flipY);
 	void renderNameTables();
 	void renderScrollSection(ScrollSection section);
 	void renderRow(int y, int height, int xOffset, int yOffset, int nametableX, int nametableY, int nameTable, bool patternSelect);

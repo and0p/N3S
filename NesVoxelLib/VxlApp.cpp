@@ -111,7 +111,6 @@ void VxlApp::render()
 {
 	if (loaded)
 	{
-		//VxlUtil::setIndexBuffer();
 		VxlUtil::setShader(color);
 		camera.Render();
 		VxlUtil::updateMatricesWithCamera(&camera);
@@ -181,59 +180,68 @@ void VxlApp::renderSprites()
 		int x = sprite.x;
 		int y = sprite.y;
 		int tile = sprite.tile;
-		// See if pattern selection is not what was 
-		if (tile > 255 && !snapshot->getOAMSelectAtScanline(y))
-		{
-			tile -= 256;
-		}
-		else if (tile < 256 && snapshot->getOAMSelectAtScanline(y))
-		{
-			tile += 256;
-		}
-
-		tile = virtualPatternTable.getTrueTileIndex(tile);
-		// See if we're in 8x16 sprite mode and this sprite is verticall mirrored, in which case we have to adjust Y accordingly
-		if (snapshot->ctrl.spriteSize16x8 && sprite.vFlip)
-			y += 8;
-		if (y > 0 && y < 240) {
-			if (x >= 248 || y >= 232)
-			{
-				// Use partial rendering
-				int width = 8;
-				int height = 8;
-				if (x >= 248)
-					width = 256 - x;
-				if (y >= 232)
-					height = 240 - y;
-				gameData->sprites[tile].renderPartial(x, y, sprite.palette, 0, width, 0, height, sprite.hFlip, sprite.vFlip);
-			}
-			else
-				gameData->sprites[tile].render(x, y, sprite.palette, sprite.hFlip, sprite.vFlip);
-		}
-		// Render the accompanying vertical sprite if PPU in 8x16 mode
+		// Branch on 8x16 mode
 		if (snapshot->ctrl.spriteSize16x8)
 		{
-			tile++;
+			// In 8x16, pattern table selection is specified by first bit.
+			// Since you can only select even (in base 0) tiles it is free for this purpose.
+			// Actual tile selection is bits 1-7.
+			int patternSelection = tile & 1;
+			// Nestopia tends to give tiles by absolute value, but seemingly only some of the time?
+			// So we need to correct to be sure
+			if (patternSelection && tile < 256)
+				tile += 256;
+			else if (!patternSelection && tile > 255)
+				tile -= 256;
+			if (patternSelection)
+				tile--;
+			// Flipped sprites in 8x16 also swap places on the Y axis
 			if (sprite.vFlip)
-				y -= 8;
-			else
 				y += 8;
-			if (y > 0 && y < 240) {
-				if (x >= 248 || y >= 232)
-				{
-					// Use partial rendering
-					int width = 8;
-					int height = 8;
-					if (x >= 248)
-						width = 256 - x;
-					if (y >= 232)
-						height = 240 - y;
-					gameData->sprites[tile].renderPartial(x, y, sprite.palette, 0, width, 0, height, sprite.hFlip, sprite.vFlip);
-				}
-				else
-					gameData->sprites[tile].render(x, y, sprite.palette, sprite.hFlip, sprite.vFlip);
-			}
+			// Get true tile #
+			tile = virtualPatternTable.getTrueTileIndex(tile);
+			// Render the first sprite
+			renderSprite(tile, x, y, sprite.palette, sprite.hFlip, sprite.vFlip);
+			// Render the second sprite, which swaps place with vertical flip
+			if(sprite.vFlip)
+				renderSprite(tile, x, y - 16, sprite.palette, sprite.hFlip, sprite.vFlip);
+			else
+				renderSprite(tile + 1, x, y + 8, sprite.palette, sprite.hFlip, sprite.vFlip);
 		}
+		else
+		{
+			// Select tile based on pattern table in CTRL register
+			if (tile > 255 && !snapshot->getOAMSelectAtScanline(y))
+			{
+				tile -= 256;
+			}
+			else if (tile < 256 && snapshot->getOAMSelectAtScanline(y))
+			{
+				tile += 256;
+			}
+			renderSprite(tile, x, y, sprite.palette, sprite.hFlip, sprite.vFlip);
+		}
+	}
+}
+
+void VxlApp::renderSprite(int tile, int x, int y, int palette, bool flipX, bool flipY)
+{
+	// Check that sprite is on renderable line (sprites with Y of 0 are ignored)
+	if (y > 0 && y < 240) {
+		// See if sprite is partially off-screen
+		if (x >= 248 || y >= 232)
+		{
+			// Use partial rendering
+			int width = 8;
+			int height = 8;
+			if (x >= 248)
+				width = 256 - x;
+			if (y >= 232)
+				height = 240 - y;
+			gameData->sprites[tile].renderPartial(x, y, palette, 0, width, 0, height, flipX, flipY);
+		}
+		else
+			gameData->sprites[tile].render(x, y, palette, flipX, flipY);
 	}
 }
 
