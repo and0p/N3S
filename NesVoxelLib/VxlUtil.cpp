@@ -164,7 +164,7 @@ void VxlUtil::initShaders() {
 	ifstream s_stream;
 	size_t s_size;
 	char* s_data;
-	s_stream.open("C:\\Users\\and0\\Source\\Repos\\NesVoxel\\Debug\\color_vertex.cso", ifstream::in | ifstream::binary);
+	s_stream.open(L"color_vertex.cso", ifstream::in | ifstream::binary);
 	s_stream.seekg(0, ios::end);
 	s_size = size_t(s_stream.tellg());
 	s_data = new char[s_size];
@@ -182,7 +182,7 @@ void VxlUtil::initShaders() {
 
 	device1->CreateInputLayout(colorLayout, 2, &s_data[0], s_size, &inputLayouts[0]);
 
-	s_stream.open("C:\\Users\\and0\\Source\\Repos\\NesVoxel\\Debug\\color_pixel.cso", ifstream::in | ifstream::binary);
+	s_stream.open(L"color_pixel.cso", ifstream::in | ifstream::binary);
 	s_stream.seekg(0, ios::end);
 	s_size = size_t(s_stream.tellg());
 	s_data = new char[s_size];
@@ -191,6 +191,8 @@ void VxlUtil::initShaders() {
 	s_stream.close();
 
 	device1->CreatePixelShader(s_data, s_size, 0, &shaderSets[0].pixelShader);
+
+	updateMirroring(true, true); // TODO: Make mirror cbuffer init cleaner
 }
 
 void VxlUtil::setShader(ShaderType type) {

@@ -56,7 +56,7 @@ VOut main(float4 position : POSITION, float4 color : COLOR)
 	output.position = mul(position, worldMatrix);
 	output.position = mul(output.position, viewMatrix);
 	output.position = mul(output.position, projectionMatrix);
-	float4 hue = float4(0, 0, 0, 0);
+	float4 hue = float4(0, 0, 0, 1);
 	hue.rgb += mul(palettes.palettes[selectedPalette].hues[0].rgb, color.r);
 	hue.rgb += mul(palettes.palettes[selectedPalette].hues[1].rgb, color.g);
 	hue.rgb += mul(palettes.palettes[selectedPalette].hues[2].rgb, color.b);

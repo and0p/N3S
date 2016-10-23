@@ -35,11 +35,10 @@ void VxlApp::load(char *path)
 {
 	if (loaded)
 		unload();
-	char romPath[] = "c:\\mario.nes\0";
 	NesEmulator::Initialize(path);
 	info = NesEmulator::getGameInfo();
 	gameData = std::shared_ptr<VoxelGameData>(new VoxelGameData((char*)info->data));
-	virtualPatternTable.load(gameData->totalSprites, 4, gameData->chrData);
+	virtualPatternTable.load(gameData->totalSprites, 8, gameData->chrData);
 	gameData->grabBitmapSprites(info->data);
 	gameData->createSpritesFromBitmaps();
 	loaded = true;
@@ -115,6 +114,7 @@ void VxlApp::render()
 		camera.Render();
 		VxlUtil::updateMatricesWithCamera(&camera);
 		VxlUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
+		VxlUtil::updateMirroring(true, true);
 		VxlUtil::updateMirroring(false, false);
 		updatePalette();
 		if (snapshot->mask.renderSprites)
@@ -204,7 +204,7 @@ void VxlApp::renderSprites()
 			renderSprite(tile, x, y, sprite.palette, sprite.hFlip, sprite.vFlip);
 			// Render the second sprite, which swaps place with vertical flip
 			if(sprite.vFlip)
-				renderSprite(tile, x, y - 16, sprite.palette, sprite.hFlip, sprite.vFlip);
+				renderSprite(tile + 1, x, y - 8, sprite.palette, sprite.hFlip, sprite.vFlip);
 			else
 				renderSprite(tile + 1, x, y + 8, sprite.palette, sprite.hFlip, sprite.vFlip);
 		}
