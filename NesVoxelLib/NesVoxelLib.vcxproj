@@ -242,6 +242,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="json.hpp" />
     <ClInclude Include="libretro.h" />
     <ClInclude Include="NesEmulator.h" />
     <ClInclude Include="resource.h" />
@@ -251,6 +252,7 @@
     <ClInclude Include="VxlGameData.h" />
     <ClInclude Include="VxlD3DContext.h" />
     <ClInclude Include="VxlApp.h" />
+    <ClInclude Include="VxlHash.hpp" />
     <ClInclude Include="VxlInput.h" />
     <ClInclude Include="VxlPalette.h" />
     <ClInclude Include="VxlPatternTable.h" />

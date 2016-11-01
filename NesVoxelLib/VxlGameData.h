@@ -4,6 +4,12 @@
 #include "VxlUtil.h"
 #include <unordered_map>
 #include <string>
+#include "json.hpp"
+#include "VxlHash.hpp"
+#include <unordered_set>
+
+using json = nlohmann::json;
+using namespace std;
 
 const int spriteWidth = 8;
 const int spriteHeight = 8;
@@ -45,15 +51,17 @@ public:
 	int referenceCount;
 };
 
+class SpriteGroup {
+public:
+	SpriteGroup(string hash, int size);
+	string hash;
+	vector<shared_ptr<VoxelSprite>> sprites;
+};
+
 class VoxelSprite {
 public:
 	VoxelSprite();
 	Voxel voxels[2048];
-	int zPosition;
-	bool matchUp;
-	bool matchDown;
-	bool matchLeft;
-	bool matchRight;
 	VoxelMesh mesh;
 	VoxelMesh zMeshes[64];
 	bool buildMesh();
@@ -65,28 +73,36 @@ public:
 	void buildFromBitmapSprite(BitmapSprite bitmap);
 	void render(int x, int y, int palette, bool mirrorH, bool mirrorV);
 	void renderPartial(int x, int y, int palette, int xOffset, int width, int yOffset, int height, bool mirrorH, bool mirrorV);
+	json getJSON();
 private:
 	Voxel getVoxel(int, int, int);
-	static void buildSide(std::vector<ColorVertex> * vertices, int x, int y, int z, int color, VoxelSide side);
+	static void buildSide(vector<ColorVertex> * vertices, int x, int y, int z, int color, VoxelSide side);
 	void clear();
 };
 
 class VoxelGameData {
 public:
-	VoxelGameData(char * data);
-	char * chrData;
+	VoxelGameData(char * data, int spriteGroupSize);
+	VoxelGameData(json json);
+	char * chrData; // Any need for this?
 	int totalSprites;
-	std::vector<VoxelSprite> sprites;
-	std::vector<BitmapSprite> bitmaps;
-	void createSpritesFromBitmaps();
+	int spriteGroupSize;
+	int totalSpriteGroups;
+	vector<shared_ptr<SpriteGroup>> spriteGroups;
+	unordered_map<string, shared_ptr<SpriteGroup>> spriteGroupsByHash;
+	unordered_map<int, VoxelSprite> sprites;
+	unordered_map<int, VoxelMesh> meshes;
+	vector<BitmapSprite> bitmaps;		// | Does any of this need to be stored after loading?
+	void createSpritesFromBitmaps();	// | Doesn't seem like it...
 	void buildAllMeshes();
 	void grabBitmapSprites(const void * gameData);
 	static VoxelMesh getSharedMesh(int zArray[32]);
-	static void releaseSharedMesh(std::string hash);
+	static void releaseSharedMesh(string hash);
 	CartridgeInfo cartridgeInfo;
 	void unload();
+	void exportToJSON();
 private:
-	static std::unordered_map<std::string, SharedMesh> sharedMeshes;
+	static unordered_map<string, SharedMesh> sharedMeshes;
 };
 
 CartridgeInfo getCartidgeInfo(char * data);

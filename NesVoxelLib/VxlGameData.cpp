@@ -1,5 +1,9 @@
 #include "stdafx.h"
 #include "VxlGameData.h"
+#include <iostream>
+#include <fstream>
+#include <algorithm>
+
 
 CartridgeInfo getCartidgeInfo(char * data)
 {
@@ -87,6 +91,33 @@ void VoxelSprite::renderPartial(int x, int y, int palette, int xOffset, int widt
 	}
 }
 
+json VoxelSprite::getJSON()
+{
+	json j;
+
+	j["name"] = "Sprite Name";
+	j["border"] = 3;
+	j["flip z"] = false;
+	j["offset"] = 0;
+	
+	for (int z = 0; z < 32; z++)
+	{
+		string s = "";
+		for (int y = 0; y < 8; y++)
+		{
+			for (int x = 0; x < 8; x++)
+			{
+				s.append(to_string(getVoxel(x, y, z).color));
+			}
+			if (y < 7)
+				s += "|";
+		}
+		j["data"].push_back(s);
+	}
+
+	return j;
+}
+
 Voxel VoxelSprite::getVoxel(int x, int y, int z)
 {
 	int voxelSlot = x + (y * spriteWidth) + (z * (spriteHeight * spriteWidth));
@@ -136,7 +167,7 @@ void VoxelSprite::randomizeSprite() {
 bool VoxelSprite::buildMesh()
 {
 	mesh = VoxelMesh();
-	std::vector<ColorVertex> vertices;
+	vector<ColorVertex> vertices;
 	int sideCount = 0;
 	for (int z = 0; z < spriteDepth; z++)
 	{
@@ -215,7 +246,7 @@ void VoxelSprite::buildZMeshes()
 VoxelMesh VoxelSprite::buildZMesh(int zArray[32])
 {
 	VoxelMesh mesh = VoxelMesh();
-	std::vector<ColorVertex> vertices;
+	vector<ColorVertex> vertices;
 	int sideCount = 0;
 	for (int z = 0; z < spriteDepth; z++)
 	{
@@ -249,7 +280,7 @@ VoxelMesh VoxelSprite::buildZMesh(int zArray[32])
 	return mesh;
 }
 
-void VoxelSprite::buildSide(std::vector<ColorVertex> * vertices, int x, int y, int z, int color, VoxelSide side) {
+void VoxelSprite::buildSide(vector<ColorVertex> * vertices, int x, int y, int z, int color, VoxelSide side) {
 	// Translate voxel-space xyz into model-space based on pixel size in 3d space, phew
 	float xf = x * pixelSizeW;
 	float yf = y * -pixelSizeH;
@@ -326,22 +357,55 @@ void VoxelSprite::buildSide(std::vector<ColorVertex> * vertices, int x, int y, i
 	vertices->push_back(v4);
 }
 
-VoxelGameData::VoxelGameData(char * data)
+VoxelGameData::VoxelGameData(char * data, int spriteGroupSize) : spriteGroupSize(spriteGroupSize)
 {
 	cartridgeInfo = getCartidgeInfo(data);
-	totalSprites = cartridgeInfo.chrSize * 512;
+	// Grab char data, which is offset by 16 bytes due to iNES header
 	chrData = data + 16 + (cartridgeInfo.prgSize * 16384);
-	// Initialize sprite list
-	sprites.reserve(totalSprites);
-	bitmaps.reserve(totalSprites);
-	// Build all sprites, no meshes yet
-	for (int i = 0; i < totalSprites; i++) {
-		sprites.push_back(VoxelSprite());
-		// bitmaps.push_back(BitmapSprite());
+	totalSprites = cartridgeInfo.chrSize * 512;
+	totalSpriteGroups = totalSprites / spriteGroupSize;
+	int spriteGroupBytes = spriteGroupSize * 16;
+	int hashSize = 32;
+	// Make sure hash size isn't somehow larger than sprite group bytes
+	if (hashSize > spriteGroupBytes)
+		hashSize = spriteGroupBytes;
+	bool insertDuplicateSprites = true;	// Assuming for now
+	unordered_set<string> hashSet;	// Set of unique hashes to check for duplicates
+	unordered_map<string, int> spriteGroupStartingSprites;	// Keep track of which sprites in CHR ROM each sprite group starts at
+	// Load sprite group hashes
+	for (int i = 0; i < totalSpriteGroups; i++)
+	{
+		string hash = simpleHash(chrData + (spriteGroupBytes * i), spriteGroupBytes, hashSize);
+		if (hashSet.count(hash) < 1)
+		{
+			hashSet.insert(hash);
+			shared_ptr<SpriteGroup> spriteGroup = shared_ptr<SpriteGroup>(new SpriteGroup(hash, spriteGroupSize));
+			spriteGroups.push_back(spriteGroup);
+			spriteGroupsByHash[hash] = spriteGroup;
+			spriteGroupStartingSprites[hash] = i * spriteGroupSize;
+		}
+	}
+	// Load all sprites into unique sprite groups
+	hashSet.clear();
+	for each (auto kv in spriteGroupStartingSprites)
+	{
+		
 	}
 }
 
-std::unordered_map<std::string, SharedMesh> VoxelGameData::sharedMeshes;
+VoxelGameData::VoxelGameData(json json)
+{
+	spriteGroups = vector<shared_ptr<SpriteGroup>>();
+	spriteGroupsByHash = unordered_map<string, shared_ptr<SpriteGroup>>();
+	sprites = unordered_map<int, VoxelSprite>();
+	meshes = unordered_map<int, VoxelMesh>();
+
+	// Load metadata
+
+	//
+}
+
+unordered_map<string, SharedMesh> VoxelGameData::sharedMeshes;
 
 void VoxelGameData::createSpritesFromBitmaps()
 {
@@ -367,7 +431,7 @@ void VoxelGameData::grabBitmapSprites(const void * gameData)
 VoxelMesh VoxelGameData::getSharedMesh(int zArray[32])
 {
 	// Create simple string hash from the voxels
-	std::string hash = "";
+	string hash = "";
 	char digits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 	for (int z = 0; z < 31; z++)
 	{
@@ -393,7 +457,7 @@ VoxelMesh VoxelGameData::getSharedMesh(int zArray[32])
 	}
 }
 
-void VoxelGameData::releaseSharedMesh(std::string hash)
+void VoxelGameData::releaseSharedMesh(string hash)
 {
 	// Make sure this actually exists
 	if (sharedMeshes.count(hash) > 0)
@@ -424,6 +488,30 @@ void VoxelGameData::unload()
 	sharedMeshes.clear();
 }
 
+void VoxelGameData::exportToJSON()
+{
+	json j;
+
+	// Get Metadata
+
+	// Get data
+	for each(VoxelSprite v in sprites)
+	{
+		j["data"].push_back(v.getJSON());
+	}
+
+	ofstream myfile;
+	myfile.open("example.json");
+	string s = j.dump(4);
+	//replace(s.begin(), s.end(), '|', '\n');
+	//replace(s.begin(), s.end(), '~', '\t');
+	//s = s.replace(s.begin(), s.end(), '|', '\n');
+	//s = s.replace(s.begin(), s.end(), '~', '\t');
+	myfile << s;
+	myfile.close();
+		
+}
+
 // Create blank sprite
 BitmapSprite::BitmapSprite()
 {
@@ -431,7 +519,7 @@ BitmapSprite::BitmapSprite()
 	{
 		pixels[i] = 0;
 	}
-}
+ }
 
 // Create sprite from data
 BitmapSprite::BitmapSprite(char * data)
@@ -474,4 +562,9 @@ bool BitmapSprite::getBit(char byte, int position)
 bool BitmapSprite::getBitLeftSide(char byte, int position)
 {
 	return (byte << position) & 0x80;
+}
+
+SpriteGroup::SpriteGroup(string hash, int size)
+{
+	// TODO allocate capacity ahead of time
 }
