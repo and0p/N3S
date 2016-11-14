@@ -52,9 +52,6 @@
     <ClInclude Include="VxlCamera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="VxlGameData.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="VxlUtil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -79,6 +76,12 @@
     <ClInclude Include="VxlHash.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="N3SGameData.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VxlGameData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -96,9 +99,6 @@
     <ClCompile Include="VxlCamera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="VxlGameData.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="VxlUtil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -112,6 +112,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="VxlAudio.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="N3SGameData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VxlGameData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

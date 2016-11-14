@@ -51,13 +51,6 @@ public:
 	int referenceCount;
 };
 
-class SpriteGroup {
-public:
-	SpriteGroup(string hash, int size);
-	string hash;
-	vector<shared_ptr<VoxelSprite>> sprites;
-};
-
 class VoxelSprite {
 public:
 	VoxelSprite();
@@ -66,7 +59,6 @@ public:
 	VoxelMesh zMeshes[64];
 	bool buildMesh();
 	void buildZMeshes();
-	static VoxelMesh buildZMesh(int zArray[32]);
 	bool meshExists;
 	void randomizeSprite();
 	void setVoxel(int, int, int, int);
@@ -74,6 +66,7 @@ public:
 	void render(int x, int y, int palette, bool mirrorH, bool mirrorV);
 	void renderPartial(int x, int y, int palette, int xOffset, int width, int yOffset, int height, bool mirrorH, bool mirrorV);
 	json getJSON();
+	static VoxelMesh buildZMesh(int zArray[32]);
 private:
 	Voxel getVoxel(int, int, int);
 	static void buildSide(vector<ColorVertex> * vertices, int x, int y, int z, int color, VoxelSide side);
@@ -88,8 +81,6 @@ public:
 	int totalSprites;
 	int spriteGroupSize;
 	int totalSpriteGroups;
-	vector<shared_ptr<SpriteGroup>> spriteGroups;
-	unordered_map<string, shared_ptr<SpriteGroup>> spriteGroupsByHash;
 	unordered_map<int, VoxelSprite> sprites;
 	unordered_map<int, VoxelMesh> meshes;
 	vector<BitmapSprite> bitmaps;		// | Does any of this need to be stored after loading?

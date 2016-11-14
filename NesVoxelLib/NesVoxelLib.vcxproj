@@ -244,14 +244,15 @@
   <ItemGroup>
     <ClInclude Include="json.hpp" />
     <ClInclude Include="libretro.h" />
+    <ClInclude Include="N3SGameData.hpp" />
     <ClInclude Include="NesEmulator.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="VxlAudio.h" />
-    <ClInclude Include="VxlGameData.h" />
     <ClInclude Include="VxlD3DContext.h" />
     <ClInclude Include="VxlApp.h" />
+    <ClInclude Include="VxlGameData.h" />
     <ClInclude Include="VxlHash.hpp" />
     <ClInclude Include="VxlInput.h" />
     <ClInclude Include="VxlPalette.h" />
@@ -262,6 +263,7 @@
     <ClInclude Include="VxlRawPPU.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="N3SGameData.cpp" />
     <ClCompile Include="NesEmulator.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -274,8 +276,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Hololens Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="VxlAudio.cpp" />
-    <ClCompile Include="VxlGameData.cpp" />
     <ClCompile Include="VxlApp.cpp" />
+    <ClCompile Include="VxlGameData.cpp" />
     <ClCompile Include="VxlInput.cpp" />
     <ClCompile Include="VxlPalette.cpp" />
     <ClCompile Include="VxlPatternTable.cpp" />
