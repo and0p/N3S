@@ -82,6 +82,9 @@
     <ClInclude Include="VxlGameData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="N3SPatternTable.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -118,6 +121,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="VxlGameData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="N3SPatternTable.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

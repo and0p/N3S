@@ -20,7 +20,7 @@ SpriteMesh::SpriteMesh(char* spriteData)
 	{
 		setVoxelColors(*(spriteData + (i * 2)), *(spriteData + (i * 2) + 1), &voxels->voxels[voxelStart + (i * 8)]);
 	}
-	buildMesh();
+	meshExists = buildMesh();
 }
 
 SpriteMesh::SpriteMesh(json data, bool edit)
@@ -29,7 +29,7 @@ SpriteMesh::SpriteMesh(json data, bool edit)
 	// Load voxels
 	
 	// Build mesh
-	buildMesh();
+	meshExists = buildMesh();
 	// If we're not in editor mode, don't keep the voxel array loaded
 	// voxels.release();
 }
@@ -185,57 +185,64 @@ GameData::GameData(char * data)
 	totalSprites = romInfo.chrSize * 512;
 	bool ignoreDuplicateSprites = true; // Temporary, this will eventually get specified by user
 	// Create maps to ignore duplicate sprites
-	unordered_map<string, int> previousSprites;
+	unordered_set<string> previousSprites;
 	int spritesIgnored = 0;
 	// Loop through and create all static sprites
 	for (int i = 0; i < totalSprites; i++)
 	{
-		if (ignoreDuplicateSprites)
+		// Build a string that contains the 16 bytes of current sprite
+		char* current = chrData + (i * 16);
+		string spriteData = "";
+		for (int i = 0; i < 16; i++)
 		{
-			// Build a string that contains the 16 bytes of current sprite
-			char* current = chrData + (i * 16);
-			string spriteData;
-			for (int c = 0; c < 16; c++)
-			{
-				spriteData += *(current + c);
-			}
-			// Check for duplicate 2d sprite
-			if (previousSprites.count(spriteData) < 1)
-			{
-				int currentMesh = i - spritesIgnored;
-				// Add the ID of the sprite we're going to generate to the map of duplicates
-				previousSprites[spriteData] = currentMesh;
-				// Build mesh and add to list
-				meshes[currentMesh] = SpriteMesh(chrData + (i * 16));
-				// Build the static sprite
-				sprites[i] = StaticSprite(currentMesh);
-			}
-			else
-			{
-				// Create static sprite that references duplicate
-				sprites[i] = StaticSprite(previousSprites[spriteData]);
-			}
+			spriteData += *(current + i);
+		}
+		// Check for duplicate
+		if (previousSprites.count(spriteData) < 1)
+		{
+			int currentMesh = i - spritesIgnored;
+			// Add the data of the sprite we're going to generate to the map of duplicates
+			previousSprites.insert(spriteData);
+			// Build mesh and add to list
+			meshes[currentMesh] = shared_ptr<SpriteMesh>(new SpriteMesh(current));
+			// Build the static sprite
+			shared_ptr<StaticSprite> staticSprite = shared_ptr<StaticSprite>(new StaticSprite(spriteData, meshes[currentMesh]));
+			sprites[i] = staticSprite;
 		}
 		else
 		{
-			// Build mesh and add to list
-			meshes[i] = SpriteMesh(chrData + (i * 16));
-			// Build the static sprite
-			sprites[i] = StaticSprite(i);
+			spritesIgnored++;
 		}
 	}
 }
+
+
 
 GameData::GameData(json data)
 {
 	// Load metadata
 	// Load meshes
-	map<int, VoxelMesh> meshes;
-	for (int i = 0; i < data["meshes"].size(); i++)
+	//map<int, VoxelMesh> meshes;
+	//for (int i = 0; i < data["meshes"].size(); i++)
+	//{
+	//	// SpriteMesh mesh = SpriteMesh(data["meshes"][i]["voxels"]);
+	//	//VoxelMesh mesh;
+	//}
+}
+
+shared_ptr<VirtualSprite> GameData::getSpriteByChrData(char * data)
+{
+	// Get string of CHR data
+	string s = "";
+	for (int i = 0; i < 16; i++)
 	{
-		SpriteMesh mesh = SpriteMesh(data["meshes"][i]["voxels"]);
-		//VoxelMesh mesh;
+		s += *(data + i);
 	}
+	// Return from sprites if it exists, otherwise return sprite 0 :(
+	if (spritesByChrData.count(s) > 0)
+		return spritesByChrData[s];
+	else
+		return sprites[0];
 }
 
 VoxelMesh GameData::getSharedMesh(int zArray[32])
@@ -274,8 +281,11 @@ void GameData::releaseSharedMesh(string hash)
 	{
 		sharedMeshes[hash].referenceCount--;
 		// Delete this mesh if it is no longer in use
-		sharedMeshes[hash].mesh.buffer->Release();
-		sharedMeshes.erase(hash);
+		if (sharedMeshes[hash].referenceCount <= 0)
+		{
+			sharedMeshes[hash].mesh.buffer->Release();
+			sharedMeshes.erase(hash);
+		}
 	}
 }
 
@@ -338,11 +348,6 @@ bool SpriteMesh::buildMesh()
 	}
 }
 
-void SpriteMesh::buildZMeshes()
-{
-
-}
-
 VoxelCollection::VoxelCollection()
 {
 	clear();
@@ -357,7 +362,7 @@ VoxelCollection::VoxelCollection(char * sprite)
 	{
 		for (int y = 0; y < 8; y++)
 		{
-			setVoxel(x, y,)
+			// setVoxel(x, y,)
 		}
 	}
 }
@@ -406,4 +411,67 @@ bool getBit(char byte, int position)
 bool getBitLeftSide(char byte, int position)
 {
 	return (byte << position) & 0x80;
+}
+
+VirtualSprite::VirtualSprite()
+{
+}
+
+VirtualSprite::VirtualSprite(string data) : data (data)
+{
+}
+
+
+StaticSprite::StaticSprite(string data, shared_ptr<SpriteMesh> mesh)
+	: VirtualSprite(data), mesh(mesh)
+{
+
+}
+
+void SpriteMesh::render(int x, int y, int palette, bool mirrorH, bool mirrorV)
+{
+	if (meshExists)
+	{
+		VxlUtil::selectPalette(palette);
+		float posX, posY;
+		posX = -1.0f + (pixelSizeW * x);
+		posY = 1.0f - (pixelSizeH * y);
+		VxlUtil::updateMirroring(mirrorH, mirrorV);
+		if (mirrorH)
+			posX += (pixelSizeW * 8);
+		if (mirrorV)
+			posY -= (pixelSizeH * 8);
+		VxlUtil::updateWorldMatrix(posX, posY, 0);
+		VxlUtil::renderMesh(&mesh);
+	}
+}
+
+void SpriteMesh::renderPartial(int x, int y, int palette, int xOffset, int width, int yOffset, int height, bool mirrorH, bool mirrorV)
+{
+	if (meshExists)
+	{
+		VxlUtil::selectPalette(palette);
+		for (int posY = 0; posY < height; posY++)
+		{
+			for (int posX = 0; posX < width; posX++)
+			{
+				// Grab different zMeshes based on mirroring
+				int meshX, meshY;
+				if (mirrorH)
+					meshX = 7 - (posX + xOffset);
+				else
+					meshX = posX + xOffset;
+				if (mirrorV)
+					meshY = 7 - (posY + yOffset);
+				else
+					meshY = posY + yOffset;
+				if (zMeshes[(meshY * 8) + meshX].buffer != nullptr)
+				{
+					VxlUtil::updateWorldMatrix(-1.0f + ((x + posX) * pixelSizeW), 1.0f - ((y + posY) * pixelSizeH), 0);
+					VxlUtil::renderMesh(&zMeshes[(meshY * 8) + meshX]);
+				}
+			}
+		}
+	}
+
 }

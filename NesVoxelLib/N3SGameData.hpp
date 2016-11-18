@@ -24,26 +24,6 @@ struct Voxel {
 	int8_t color;
 };
 
-class VirtualSprite
-{
-public:
-	virtual json getJSON() = 0;
-};
-
-class StaticSprite : public VirtualSprite
-{
-public:
-	StaticSprite(int mesh);
-	int mesh;
-	json getJSON();
-};
-
-class DynamicSprite
-{
-public:
-	// json getJSON();
-};
-
 class VoxelCollection
 {
 public:
@@ -65,8 +45,35 @@ public:
 	VoxelMesh zMeshes[64];
 	void setVoxel(int x, int y, int z, int color);
 	bool buildMesh();
+	bool meshExists = false;
+	void render(int x, int y, int palette, bool mirrorH, bool mirrorV);
+	void renderPartial(int x, int y, int palette, int xOffset, int width, int yOffset, int height, bool mirrorH, bool mirrorV);
 private:
 	void buildZMeshes();
+	// void rebuildZMesh(int x, int y);
+};
+
+class VirtualSprite
+{
+public:
+	VirtualSprite();
+	VirtualSprite(string data);
+	string data;
+	// virtual json getJSON() = 0;
+};
+
+class StaticSprite : public VirtualSprite
+{
+public:
+	StaticSprite(string data, shared_ptr<SpriteMesh> mesh);
+	shared_ptr<SpriteMesh> mesh;
+	// json getJSON();
+};
+
+class DynamicSprite
+{
+public:
+	// json getJSON();
 };
 
 struct RomInfo
@@ -84,8 +91,10 @@ class GameData
 public:
 	GameData(char* data);
 	GameData(json data);
-	map<int, VirtualSprite> sprites;
-	map<int, SpriteMesh> meshes;
+	map<int, shared_ptr<VirtualSprite>> sprites;
+	map<string, shared_ptr<VirtualSprite>> spritesByChrData;
+	map<int, shared_ptr<SpriteMesh>> meshes;
+	shared_ptr<VirtualSprite> getSpriteByChrData(char* data);
 	RomInfo romInfo;
 	int totalSprites;
 	static VoxelMesh getSharedMesh(int zArray[32]);

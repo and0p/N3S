@@ -245,6 +245,7 @@
     <ClInclude Include="json.hpp" />
     <ClInclude Include="libretro.h" />
     <ClInclude Include="N3SGameData.hpp" />
+    <ClInclude Include="N3SPatternTable.hpp" />
     <ClInclude Include="NesEmulator.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
@@ -264,6 +265,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="N3SGameData.cpp" />
+    <ClCompile Include="N3SPatternTable.cpp" />
     <ClCompile Include="NesEmulator.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
