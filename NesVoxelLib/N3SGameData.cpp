@@ -22,11 +22,11 @@ SpriteMesh::SpriteMesh(char* spriteData)
 	meshExists = buildMesh();
 }
 
-SpriteMesh::SpriteMesh(json data, bool edit)
+SpriteMesh::SpriteMesh(json j)
 {
-	voxels.reset(new VoxelCollection());
-	// Load voxels
 	
+	// Load voxels
+	voxels.reset(new VoxelCollection(j["voxels"]));
 	// Build mesh
 	meshExists = buildMesh();
 	// If we're not in editor mode, don't keep the voxel array loaded
@@ -205,14 +205,19 @@ GameData::GameData(char * data)
 			// Add the data of the sprite we're going to generate to the map of duplicates
 			previousSprites.insert(spriteData);
 			// Build mesh and add to list
-			meshes[currentMesh] = shared_ptr<SpriteMesh>(new SpriteMesh(current));
+			shared_ptr<SpriteMesh> mesh = shared_ptr<SpriteMesh>(new SpriteMesh(current));
+			mesh->id = currentMesh;
+			meshes[currentMesh] = mesh;
 			// Build the static sprite
 			shared_ptr<VirtualSprite> vSprite = shared_ptr<VirtualSprite>(new VirtualSprite(spriteData, meshes[currentMesh]));
+			vSprite->appearancesInRomChr.push_back(i);	// Record where this sprite occured in CHR data
 			sprites[i] = vSprite;
 			spritesByChrData[spriteData] = vSprite;
 		}
 		else
 		{
+			// Record appreance in CHR data but don't bother building new sprite/mesh
+			spritesByChrData[spriteData]->appearancesInRomChr.push_back(i);
 			spritesIgnored++;
 		}
 	}
@@ -220,16 +225,26 @@ GameData::GameData(char * data)
 
 
 
-GameData::GameData(json data)
+GameData::GameData(char* data, json j)
 {
-	// Load metadata
+	// Get ROM metadata
+	romInfo = getRomInfo(data);
 	// Load meshes
-	//map<int, VoxelMesh> meshes;
-	//for (int i = 0; i < data["meshes"].size(); i++)
-	//{
-	//	// SpriteMesh mesh = SpriteMesh(data["meshes"][i]["voxels"]);
-	//	//VoxelMesh mesh;
-	//}
+	for each (json jM in j["meshes"])
+	{
+		// Get ID from (probably padded) string
+		int id = stoi(jM.value);
+		// Build mesh from JSON and add to map of meshes by ID
+		shared_ptr<SpriteMesh> mesh = shared_ptr<SpriteMesh>(new SpriteMesh(jM));
+		mesh->id = id;
+		meshes[id] = mesh;
+	}
+	// Load VirtualSprites
+	for each (json jS in j["sprites"])
+	{
+		int id = jS.value;
+		VirtualSprite sprite = VirtualSprite(jS, meshes);
+	}
 }
 
 shared_ptr<VirtualSprite> GameData::getSpriteByChrData(char * data)
@@ -310,6 +325,27 @@ void GameData::unload()
 	sharedMeshes.clear();
 }
 
+string GameData::getJSON()
+{
+	json j;
+	j["info"]["prgSize"] = romInfo.prgSize;
+	j["info"]["chrSize"] = romInfo.chrSize;
+	j["info"]["mapper"] = romInfo.mapper;
+	j["info"]["trainer"] = romInfo.trainer;
+	j["info"]["playChoice10"] = romInfo.playChoice10;
+	j["info"]["PAL;"] = romInfo.PAL;
+	for each (auto kvp in meshes)
+	{
+		// Create string from ID, pad to 5 digits to enforce proper order
+		j["meshes"][getPaddedStringFromInt(kvp.first, 5)] = kvp.second->getJSON();
+	}
+	for each (auto kvp in sprites)
+	{
+		j["sprites"][getPaddedStringFromInt(kvp.first, 5)] = kvp.second->getJSON();
+	}
+	return j.dump(4);
+}
+
 bool SpriteMesh::buildMesh()
 {
 	vector<ColorVertex> vertices;
@@ -388,6 +424,21 @@ VoxelCollection::VoxelCollection(char * sprite)
 	}
 }
 
+VoxelCollection::VoxelCollection(json j)
+{
+	for (int z = 0; z < 32; z++)
+	{
+		for (int y = 0; y < 8; y++)
+		{
+			for (int x = 0; x < 8; x++)
+			{
+				int color = j[y].value[z * 9 + x];
+				setVoxel(x, y, z, { color });
+			}
+		}
+	}
+}
+
 Voxel VoxelCollection::getVoxel(int x, int y, int z)
 {
 	int voxelSlot = x + (y * spriteWidth) + (z * (spriteHeight * spriteWidth));
@@ -406,6 +457,31 @@ void VoxelCollection::clear()
 	{
 		voxels[i].color = 0;
 	}
+}
+
+json VoxelCollection::getJSON()
+{
+	json j;
+	string s[8] = { "", "", "", "", "", "", "", "" };
+	// The data is staggered in a weird way
+	// I want a json string for each row, where the sprite's 8 y-axis layers are on top of eachother the same way in text
+	for (int z = 0; z < 32; z++)
+	{
+		for (int y = 0; y < 8; y++)
+		{
+			for (int x = 0; x < 8; x++)
+			{
+				s[y] += intChars[getVoxel(x, y, z).color];
+			}
+			s[y] += '|'; // Horizontal divider
+		}
+	}
+	for (int y = 0; y < 8; y++)
+	{
+		s[y].pop_back();	// Trim last | delimiter
+		j.push_back(s[y]);	// Push string to json structure
+	}
+	return j;
 }
 
 // Set the color of 8 consecutive voxels using CHR sprite data
@@ -429,12 +505,48 @@ bool getBitLeftSide(char byte, int position)
 	return (byte << position) & 0x80;
 }
 
+string getPaddedStringFromInt(int value, int length)
+{
+	string s;
+	for (int i = to_string(value).length(); i < length; i++)
+	{
+		s += '0';
+	}
+	s.append(to_string(value));
+	return s;
+}
+
+int charToInt(char c)
+{
+	// Thanks Niels: http://stackoverflow.com/questions/17261798/converting-a-hex-string-to-a-byte-array
+	if (c >= '0' && c <= '9')
+		return c - '0';
+	if (c >= 'A' && c <= 'F')
+		return c - 'A' + 10;
+	return 0;
+}
+
 VirtualSprite::VirtualSprite()
 {
 }
 
-VirtualSprite::VirtualSprite(string data, shared_ptr<SpriteMesh> defaultMesh) : data (data), defaultMesh(defaultMesh)
+VirtualSprite::VirtualSprite(string chrData, shared_ptr<SpriteMesh> defaultMesh) : chrData(chrData), defaultMesh(defaultMesh)
 {
+}
+
+VirtualSprite::VirtualSprite(json j, map<int, shared_ptr<SpriteMesh>> meshes)
+{
+	// Get the CHR data (convert from hex string to byte/char string)
+	getChrStringFromText(j["chrData"].value);
+	// Snag default mesh from passed map
+	int mesh = j["defaultMesh"].value;
+	defaultMesh = meshes[mesh];
+	// Get other values
+	for each (int i in j["appearancesInRomChr"])
+	{
+		appearancesInRomChr.push_back(i);
+	}
+	description = j["description"].value;
 }
 
 void VirtualSprite::renderOAM(shared_ptr<VxlPPUSnapshot> snapshot, int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop)
@@ -447,6 +559,43 @@ void VirtualSprite::renderNametable(shared_ptr<VxlPPUSnapshot> snapshot, int x, 
 {
 	// TODO: Check dynamic stuff
 	defaultMesh->render(x, y, palette, false, false, crop);
+}
+
+json VirtualSprite::getJSON()
+{
+	json j;
+	j["chrData"] = serializeChrDataAsText();
+	j["appreancesInRomChr"] = appearancesInRomChr;
+	j["description"] = description;
+	j["defaultMesh"] = defaultMesh->id;
+	return j;
+}
+
+string VirtualSprite::serializeChrDataAsText()
+{
+	string s = "";
+	for (int i = 0; i < 16; i++)
+	{
+		unsigned char c = chrData[i];
+		int a = (int)c >> 4;
+		int b = (int)c & 15;
+		s += hexCodes[a];
+		s += hexCodes[b];
+	}
+	return s;
+}
+
+void VirtualSprite::getChrStringFromText(string s)
+{
+	for (int i = 0; i < 16; i)
+	{
+		int position = i * 2;
+		// Grab both characters for each value
+		int a = charToInt(s[i]);
+		int b = charToInt(s[i + 1]);
+		// Assuming "a" is leftmost 4 bits, multiply by 16 and add B to get original "byte"
+		chrData += (char)((a * 16) + b);
+	}
 }
 
 void SpriteMesh::render(int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop)
@@ -498,4 +647,11 @@ void SpriteMesh::render(int x, int y, int palette, bool mirrorH, bool mirrorV, C
 		}
 
 	}
+}
+
+json SpriteMesh::getJSON()
+{
+	json j;
+	j["voxels"] = voxels->getJSON();
+	return j;
 }

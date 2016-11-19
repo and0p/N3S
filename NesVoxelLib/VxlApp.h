@@ -11,6 +11,8 @@
 #include "N3SPatternTable.hpp"
 #include "VxlAudio.h"
 #include <memory>
+#include <iostream>
+#include <fstream>
 
 class VxlApp {
 public:

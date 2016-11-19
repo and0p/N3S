@@ -14,6 +14,9 @@ const int spriteHeight = 8;
 const int spriteDepth = 32;
 const int spriteSize = 8 * 8 * 32;
 
+const char hexCodes[16] = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
+const char intChars[10] = { '0','1','2','3','4','5','6','7','8','9' };
+
 enum VoxelSide { left, right, top, bottom, front, back };
 
 struct SharedMesh {
@@ -30,17 +33,20 @@ class VoxelCollection
 public:
 	VoxelCollection();
 	VoxelCollection(char* sprite);
+	VoxelCollection(json j);
 	Voxel getVoxel(int x, int y, int z);
 	void setVoxel(int x, int y, int z, Voxel v);
 	void clear();
 	Voxel voxels[spriteSize];
+	json getJSON();
 };
 
 class SpriteMesh
 {
 public:
 	SpriteMesh(char* spriteData);
-	SpriteMesh(json data, bool edit);
+	SpriteMesh(json j);
+	int id;
 	unique_ptr<VoxelCollection> voxels;
 	VoxelMesh mesh;
 	VoxelMesh zMeshes[64];
@@ -48,6 +54,7 @@ public:
 	bool buildMesh();
 	bool meshExists = false;
 	void render(int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop);
+	json getJSON();
 private:
 	void buildZMeshes();
 	// void rebuildZMesh(int x, int y);
@@ -57,12 +64,18 @@ class VirtualSprite
 {
 public:
 	VirtualSprite();
-	VirtualSprite(string data, shared_ptr<SpriteMesh> mesh);
+	VirtualSprite(string chrData, shared_ptr<SpriteMesh> mesh);
+	VirtualSprite(json j, map<int, shared_ptr<SpriteMesh>> meshes);
 	void renderOAM(shared_ptr<VxlPPUSnapshot> snapshot, int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop);
 	void renderNametable(shared_ptr<VxlPPUSnapshot> snapshot, int x, int y, int palette, int nametableX, int nametableY, Crop crop);
+	json getJSON();
+	vector<int> appearancesInRomChr;	// Where does this sprite appear in CHR data? For reference.
+private:
+	string chrData;
+	string description = "";
 	shared_ptr<SpriteMesh> defaultMesh;
-	string data;
-	// virtual json getJSON() = 0;
+	string serializeChrDataAsText();
+	void getChrStringFromText(string s);
 };
 
 struct RomInfo
@@ -79,7 +92,7 @@ class GameData
 {
 public:
 	GameData(char* data);
-	GameData(json data);
+	GameData(char* data, json j);
 	map<int, shared_ptr<VirtualSprite>> sprites;
 	map<string, shared_ptr<VirtualSprite>> spritesByChrData;
 	map<int, shared_ptr<SpriteMesh>> meshes;
@@ -89,7 +102,7 @@ public:
 	static VoxelMesh getSharedMesh(int zArray[32]);
 	static void releaseSharedMesh(string hash);
 	void unload();
-	void getJSON();
+	string getJSON();
 private:
 	static unordered_map<string, SharedMesh> sharedMeshes;
 };
@@ -98,3 +111,5 @@ static VoxelMesh buildZMesh(int zArray[32]);
 static void buildSide(vector<ColorVertex> * vertices, int x, int y, int z, int color, VoxelSide side);
 void setVoxelColors(char a, char b, Voxel* row);
 bool getBitLeftSide(char byte, int position);
+string getPaddedStringFromInt(int i, int length);
+int charToInt(char c);

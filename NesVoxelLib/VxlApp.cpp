@@ -103,7 +103,12 @@ void VxlApp::update(bool runThisNesFrame)
 			camera.SetPosition(0, 0, -2);
 			camera.SetRotation(0, 0, 0);
 		}
-		//gameData->exportToJSON();
+		// TEST output json
+		/*string output = gameData->getJSON();
+		ofstream myfile;
+		myfile.open("json.n3s");
+		myfile << output;
+		myfile.close();	*/
 	}
 }
 
