@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "N3SGameData.hpp"
 
-
 RomInfo getRomInfo(char * data)
 {
 	RomInfo r;
@@ -18,7 +17,7 @@ SpriteMesh::SpriteMesh(char* spriteData)
 	int voxelStart = spriteSize / 2;
 	for (int i = 0; i < 8; i++)
 	{
-		setVoxelColors(*(spriteData + (i * 2)), *(spriteData + (i * 2) + 1), &voxels->voxels[voxelStart + (i * 8)]);
+		setVoxelColors(*(spriteData + i), *(spriteData + i + 8), &voxels->voxels[voxelStart + (i * 8)]);
 	}
 	meshExists = buildMesh();
 }
@@ -176,6 +175,8 @@ void buildSide(vector<ColorVertex> * vertices, int x, int y, int z, int color, V
 	vertices->push_back(v4);
 }
 
+unordered_map<string, SharedMesh> GameData::sharedMeshes;
+
 GameData::GameData(char * data)
 {
 	// Get ROM metadata
@@ -206,8 +207,9 @@ GameData::GameData(char * data)
 			// Build mesh and add to list
 			meshes[currentMesh] = shared_ptr<SpriteMesh>(new SpriteMesh(current));
 			// Build the static sprite
-			shared_ptr<StaticSprite> staticSprite = shared_ptr<StaticSprite>(new StaticSprite(spriteData, meshes[currentMesh]));
-			sprites[i] = staticSprite;
+			shared_ptr<VirtualSprite> vSprite = shared_ptr<VirtualSprite>(new VirtualSprite(spriteData, meshes[currentMesh]));
+			sprites[i] = vSprite;
+			spritesByChrData[spriteData] = vSprite;
 		}
 		else
 		{
@@ -287,6 +289,25 @@ void GameData::releaseSharedMesh(string hash)
 			sharedMeshes.erase(hash);
 		}
 	}
+}
+
+void GameData::unload()
+{
+	// Release all full meshes
+	for (auto kvp : meshes)
+	{
+		if (kvp.second->meshExists)
+		{
+			kvp.second->mesh.buffer->Release();
+		}
+	}
+	// Release all partial meshes
+	for (auto kv : sharedMeshes)
+	{
+		if (kv.second.mesh.buffer != nullptr)
+			kv.second.mesh.buffer->Release();
+	}
+	sharedMeshes.clear();
 }
 
 bool SpriteMesh::buildMesh()
@@ -403,11 +424,6 @@ void setVoxelColors(char a, char b, Voxel* row)
 	}
 }
 
-bool getBit(char byte, int position)
-{
-	return (byte >> position) & 0x1;
-}
-
 bool getBitLeftSide(char byte, int position)
 {
 	return (byte << position) & 0x80;
@@ -417,61 +433,69 @@ VirtualSprite::VirtualSprite()
 {
 }
 
-VirtualSprite::VirtualSprite(string data) : data (data)
+VirtualSprite::VirtualSprite(string data, shared_ptr<SpriteMesh> defaultMesh) : data (data), defaultMesh(defaultMesh)
 {
 }
 
-
-StaticSprite::StaticSprite(string data, shared_ptr<SpriteMesh> mesh)
-	: VirtualSprite(data), mesh(mesh)
+void VirtualSprite::renderOAM(shared_ptr<VxlPPUSnapshot> snapshot, int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop)
 {
-
+	// TODO: Check dynamic stuff
+	defaultMesh->render(x, y, palette, mirrorH, mirrorV, crop);
 }
 
-void SpriteMesh::render(int x, int y, int palette, bool mirrorH, bool mirrorV)
+void VirtualSprite::renderNametable(shared_ptr<VxlPPUSnapshot> snapshot, int x, int y, int palette, int nametableX, int nametableY, Crop crop)
+{
+	// TODO: Check dynamic stuff
+	defaultMesh->render(x, y, palette, false, false, crop);
+}
+
+void SpriteMesh::render(int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop)
 {
 	if (meshExists)
 	{
-		VxlUtil::selectPalette(palette);
-		float posX, posY;
-		posX = -1.0f + (pixelSizeW * x);
-		posY = 1.0f - (pixelSizeH * y);
-		VxlUtil::updateMirroring(mirrorH, mirrorV);
-		if (mirrorH)
-			posX += (pixelSizeW * 8);
-		if (mirrorV)
-			posY -= (pixelSizeH * 8);
-		VxlUtil::updateWorldMatrix(posX, posY, 0);
-		VxlUtil::renderMesh(&mesh);
-	}
-}
-
-void SpriteMesh::renderPartial(int x, int y, int palette, int xOffset, int width, int yOffset, int height, bool mirrorH, bool mirrorV)
-{
-	if (meshExists)
-	{
-		VxlUtil::selectPalette(palette);
-		for (int posY = 0; posY < height; posY++)
+		// Check if we're cropping
+		if (crop.zeroed())
 		{
-			for (int posX = 0; posX < width; posX++)
+			VxlUtil::selectPalette(palette);
+			float posX, posY;
+			posX = -1.0f + (pixelSizeW * x);
+			posY = 1.0f - (pixelSizeH * y);
+			VxlUtil::updateMirroring(mirrorH, mirrorV);
+			if (mirrorH)
+				posX += (pixelSizeW * 8);
+			if (mirrorV)
+				posY -= (pixelSizeH * 8);
+			VxlUtil::updateWorldMatrix(posX, posY, 0);
+			VxlUtil::renderMesh(&mesh);
+		}
+		else
+		{
+			// Render the cropped version with zMeshes
+			VxlUtil::selectPalette(palette);
+			int height = 8 - crop.top - crop.bottom;
+			int width = 8 - crop.left - crop.right;
+			for (int posY = 0; posY < height; posY++)
 			{
-				// Grab different zMeshes based on mirroring
-				int meshX, meshY;
-				if (mirrorH)
-					meshX = 7 - (posX + xOffset);
-				else
-					meshX = posX + xOffset;
-				if (mirrorV)
-					meshY = 7 - (posY + yOffset);
-				else
-					meshY = posY + yOffset;
-				if (zMeshes[(meshY * 8) + meshX].buffer != nullptr)
+				for (int posX = 0; posX < width; posX++)
 				{
-					VxlUtil::updateWorldMatrix(-1.0f + ((x + posX) * pixelSizeW), 1.0f - ((y + posY) * pixelSizeH), 0);
-					VxlUtil::renderMesh(&zMeshes[(meshY * 8) + meshX]);
+					// Grab different zMeshes based on mirroring
+					int meshX, meshY;
+					if (mirrorH)
+						meshX = 7 - (posX + crop.left);
+					else
+						meshX = posX + crop.left;
+					if (mirrorV)
+						meshY = 7 - (posY + crop.top);
+					else
+						meshY = posY + crop.top;
+					if (zMeshes[(meshY * 8) + meshX].buffer != nullptr)
+					{
+						VxlUtil::updateWorldMatrix(-1.0f + ((x + posX) * pixelSizeW), 1.0f - ((y + posY) * pixelSizeH), 0);
+						VxlUtil::renderMesh(&zMeshes[(meshY * 8) + meshX]);
+					}
 				}
 			}
 		}
-	}
 
+	}
 }

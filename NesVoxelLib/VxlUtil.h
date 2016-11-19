@@ -41,8 +41,9 @@ struct ShaderSet
 	ID3D11PixelShader *pixelShader;
 };
 
-struct Sides
+struct Crop
 {
+	bool zeroed();
 	int top;
 	int left;
 	int bottom;

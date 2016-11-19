@@ -4,6 +4,7 @@
 #include "json.hpp"
 #include "VxlUtil.h"
 #include <unordered_set>
+#include "VxlPPUSnapshot.h"
 
 using json = nlohmann::json;
 using namespace std;
@@ -46,8 +47,7 @@ public:
 	void setVoxel(int x, int y, int z, int color);
 	bool buildMesh();
 	bool meshExists = false;
-	void render(int x, int y, int palette, bool mirrorH, bool mirrorV);
-	void renderPartial(int x, int y, int palette, int xOffset, int width, int yOffset, int height, bool mirrorH, bool mirrorV);
+	void render(int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop);
 private:
 	void buildZMeshes();
 	// void rebuildZMesh(int x, int y);
@@ -57,23 +57,12 @@ class VirtualSprite
 {
 public:
 	VirtualSprite();
-	VirtualSprite(string data);
+	VirtualSprite(string data, shared_ptr<SpriteMesh> mesh);
+	void renderOAM(shared_ptr<VxlPPUSnapshot> snapshot, int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop);
+	void renderNametable(shared_ptr<VxlPPUSnapshot> snapshot, int x, int y, int palette, int nametableX, int nametableY, Crop crop);
+	shared_ptr<SpriteMesh> defaultMesh;
 	string data;
 	// virtual json getJSON() = 0;
-};
-
-class StaticSprite : public VirtualSprite
-{
-public:
-	StaticSprite(string data, shared_ptr<SpriteMesh> mesh);
-	shared_ptr<SpriteMesh> mesh;
-	// json getJSON();
-};
-
-class DynamicSprite
-{
-public:
-	// json getJSON();
 };
 
 struct RomInfo
@@ -108,5 +97,4 @@ private:
 static VoxelMesh buildZMesh(int zArray[32]);
 static void buildSide(vector<ColorVertex> * vertices, int x, int y, int z, int color, VoxelSide side);
 void setVoxelColors(char a, char b, Voxel* row);
-bool getBit(char byte, int position);
 bool getBitLeftSide(char byte, int position);

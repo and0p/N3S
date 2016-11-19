@@ -37,10 +37,10 @@ void VxlApp::load(char *path)
 		unload();
 	NesEmulator::Initialize(path);
 	info = NesEmulator::getGameInfo();
-	gameData = std::shared_ptr<VoxelGameData>(new VoxelGameData((char*)info->data));
-	virtualPatternTable.load(gameData->totalSprites, 8, gameData->chrData);
-	gameData->grabBitmapSprites(info->data);
-	gameData->createSpritesFromBitmaps();
+	gameData = std::shared_ptr<GameData>(new GameData((char*)info->data));
+	virtualPatternTable = shared_ptr<VirtualPatternTable>(new VirtualPatternTable(gameData));
+	// gameData->grabBitmapSprites(info->data);
+	// gameData->createSpritesFromBitmaps();
 	loaded = true;
 	unpause();
 }
@@ -93,7 +93,7 @@ void VxlApp::update(bool runThisNesFrame)
 		if (!runThisNesFrame)
 		{
 			snapshot.reset(new VxlPPUSnapshot((VxlRawPPU*)NesEmulator::getVRam()));
-			virtualPatternTable.update(snapshot->patternTable);
+			virtualPatternTable->update(snapshot->patternTable);
 		}
 		float zoomAmount = inputState.gamePads[0].triggerStates[lTrigger] - inputState.gamePads[0].triggerStates[rTrigger];
 		camera.AdjustPosition(inputState.gamePads[0].analogStickStates[lStick].x * 0.05f, inputState.gamePads[0].analogStickStates[lStick].y * 0.05f, zoomAmount * 0.05f);
@@ -103,7 +103,7 @@ void VxlApp::update(bool runThisNesFrame)
 			camera.SetPosition(0, 0, -2);
 			camera.SetRotation(0, 0, 0);
 		}
-		gameData->exportToJSON();
+		//gameData->exportToJSON();
 	}
 }
 
@@ -200,14 +200,14 @@ void VxlApp::renderSprites()
 			if (sprite.vFlip)
 				y += 8;
 			// Get true tile #
-			tile = virtualPatternTable.getTrueTileIndex(tile);
+			shared_ptr<VirtualSprite> vSprite = virtualPatternTable->getSprite(tile);
 			// Render the first sprite
-			renderSprite(tile, x, y, sprite.palette, sprite.hFlip, sprite.vFlip);
+			renderSprite(vSprite, x, y, sprite.palette, sprite.hFlip, sprite.vFlip);
 			// Render the second sprite, which swaps place with vertical flip
 			if(sprite.vFlip)
-				renderSprite(tile + 1, x, y - 8, sprite.palette, sprite.hFlip, sprite.vFlip);
+				renderSprite(virtualPatternTable->getSprite(tile + 1), x, y - 8, sprite.palette, sprite.hFlip, sprite.vFlip);
 			else
-				renderSprite(tile + 1, x, y + 8, sprite.palette, sprite.hFlip, sprite.vFlip);
+				renderSprite(virtualPatternTable->getSprite(tile + 1), x, y + 8, sprite.palette, sprite.hFlip, sprite.vFlip);
 		}
 		else
 		{
@@ -220,29 +220,23 @@ void VxlApp::renderSprites()
 			{
 				tile += 256;
 			}
-			renderSprite(tile, x, y, sprite.palette, sprite.hFlip, sprite.vFlip);
+			renderSprite(virtualPatternTable->getSprite(tile), x, y, sprite.palette, sprite.hFlip, sprite.vFlip);
 		}
 	}
 }
 
-void VxlApp::renderSprite(int tile, int x, int y, int palette, bool flipX, bool flipY)
+void VxlApp::renderSprite(shared_ptr<VirtualSprite> vSprite, int x, int y, int palette, bool flipX, bool flipY)
 {
-	// Check that sprite is on renderable line (sprites with Y of 0 are ignored)
-	if (y > 0 && y < 240) {
-		// See if sprite is partially off-screen
-		if (x >= 248 || y >= 232)
-		{
-			// Use partial rendering
-			int width = 8;
-			int height = 8;
-			if (x >= 248)
-				width = 256 - x;
-			if (y >= 232)
-				height = 240 - y;
-			gameData->sprites[tile].renderPartial(x, y, palette, 0, width, 0, height, flipX, flipY);
-		}
-		else
-			gameData->sprites[tile].render(x, y, palette, flipX, flipY);
+	// Check that sprite is on renderable line (sprites with Y of 0 are ignored) or X position
+	if (y > 0 && y < 240 && x >= 0 && x < 256) {
+		// See if this needs to be cropped at all due to right / bottom screen edge
+		Crop crop = { 0, 0, 0 ,0 };
+		if (x > 248)
+			crop.right = 256 - x;
+		if (y > 232)
+			crop.bottom = 240 - y;
+		// Render
+		vSprite->renderOAM(snapshot, x, y, palette, flipX, flipY, crop);
 	}
 }
 
@@ -317,61 +311,49 @@ void VxlApp::renderRow(int y, int height, int xOffset, int yOffset, int nametabl
 	int x = 0;
 	int tileX = floor(nametableX / 8);
 	int tileY = floor(nametableY / 8);
+	int tile;
+	int palette;
+	Crop crop = { yOffset, xOffset, 8 - yOffset - height, 0 };
 	// Branch based on whether or not there is any X offset / partial sprite
 	if (xOffset > 0)
 	{
 		int i = 0;
 		// Render partial first sprite
-		int tile = snapshot->background.getTile(tileX + i, tileY, nameTable).tile;
+		tile = snapshot->background.getTile(tileX + i, tileY, nameTable).tile;
 		if (patternSelect)
 			tile += 256;
-		int palette = snapshot->background.getTile(tileX + i, tileY, nameTable).palette;
-		gameData->sprites[virtualPatternTable.getTrueTileIndex(tile)].renderPartial(x, y, palette, xOffset, (8 - xOffset), yOffset, height, false, false);
+		palette = snapshot->background.getTile(tileX + i, tileY, nameTable).palette;
+		virtualPatternTable->getSprite(tile)->renderNametable(snapshot, x, y, palette, tileX + i, tileY, crop);
 		x += 8 - xOffset;
 		i++;
 		// Render middle sprites
+		crop.left = 0;
 		for (i; i < 32; i++)
 		{
 			tile = snapshot->background.getTile(tileX + i, tileY, nameTable).tile;
 			if (patternSelect)
 				tile += 256;
 			palette = snapshot->background.getTile(tileX + i, tileY, nameTable).palette;
-			if (height < 8)
-			{
-				// Render partial sprite
-				gameData->sprites[virtualPatternTable.getTrueTileIndex(tile)].renderPartial(x, y, palette, 0, 8, yOffset, height, false, false);
-			}
-			else
-			{
-				gameData->sprites[virtualPatternTable.getTrueTileIndex(tile)].render(x, y, palette, false, false);
-			}
+			virtualPatternTable->getSprite(tile)->renderNametable(snapshot, x, y, palette, tileX + i, tileY, crop);
 			x += 8;
 		}
-		// Render parital last sprite
+		// Render partial last sprite
+		crop.right = 8 - xOffset;
 		tile = snapshot->background.getTile(tileX + i, tileY, nameTable).tile;
 		if (patternSelect)
 			tile += 256;
 		palette = snapshot->background.getTile(tileX + i, tileY, nameTable).palette;
-		gameData->sprites[virtualPatternTable.getTrueTileIndex(tile)].renderPartial(x, y, palette, 0, xOffset, yOffset, height, false, false);
+		virtualPatternTable->getSprite(tile)->renderNametable(snapshot, x, y, palette, tileX + i, tileY, crop);
 	}
 	else
 	{
-		// Render all full sprites
 		for (int i = 0; i < 32; i++)
 		{
-			int tile = snapshot->background.getTile(tileX + i, tileY, nameTable).tile;
+			tile = snapshot->background.getTile(tileX + i, tileY, nameTable).tile;
 			if (patternSelect)
 				tile += 256;
-			int palette = snapshot->background.getTile(tileX + i, tileY, nameTable).palette;
-			if (height < 8)
-			{
-				// Render partial sprite
-				gameData->sprites[virtualPatternTable.getTrueTileIndex(tile)].renderPartial(x, y, palette, 0, 8, yOffset, height, false, false);
-			}
-			else
-			{
-				gameData->sprites[virtualPatternTable.getTrueTileIndex(tile)].render(x, y, palette, false, false);
-			}
+			palette = snapshot->background.getTile(tileX + i, tileY, nameTable).palette;
+			virtualPatternTable->getSprite(tile)->renderNametable(snapshot, x, y, palette, tileX + i, tileY, crop);
 			x += 8;
 		}
 	}

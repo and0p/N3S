@@ -9,6 +9,7 @@ public:
 	VirtualPatternTable(shared_ptr<GameData> gameData);
 	void update(char* patternTable);
 	void copyBuffer(char * patternTable);
+	shared_ptr<VirtualSprite> getSprite(int i);
 	void reset();
 private:
 	shared_ptr<GameData> gameData;

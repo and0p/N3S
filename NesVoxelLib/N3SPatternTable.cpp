@@ -20,7 +20,6 @@ void VirtualPatternTable::update(char * patternTable)
 	}
 	else
 	{
-		string chrData = "";
 		int position = 0;
 		// Loop through remote pattern table
 		for (int i = 0; i < 512; i++)
@@ -55,6 +54,11 @@ void VirtualPatternTable::update(char * patternTable)
 void VirtualPatternTable::copyBuffer(char * patternTable)
 {
 	memcpy(&patternTableCache, patternTable, 8192);
+}
+
+shared_ptr<VirtualSprite> VirtualPatternTable::getSprite(int i)
+{
+	return sprites[i];
 }
 
 void VirtualPatternTable::reset()

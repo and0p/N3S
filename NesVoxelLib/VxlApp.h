@@ -1,14 +1,14 @@
 #pragma once
 
 #include "VxlUtil.h"
-#include "VxlGameData.h"
+#include "N3SGameData.hpp"
 #include "VxlPPUSnapshot.h"
 #include "NesEmulator.h"
 #include "VxlD3DContext.h"
 #include "VxlCamera.h"
 #include "libretro.h"
 #include "VxlInput.h"
-#include "VxlPatternTable.h"
+#include "N3SPatternTable.hpp"
 #include "VxlAudio.h"
 #include <memory>
 
@@ -31,7 +31,7 @@ public:
 	XMVECTORF32 getBackgroundColor();
 	retro_game_info *info;
 	VxlCamera camera;
-	std::shared_ptr<VoxelGameData> gameData;
+	std::shared_ptr<GameData> gameData;
 	bool loaded;
 private:
 	SoundDriver *audioEngine;
@@ -42,10 +42,10 @@ private:
 	bool muted;
 	std::shared_ptr<VxlPPUSnapshot> snapshot;
 	InputState inputState;
-	VxlVirtualPatternTable virtualPatternTable;
+	shared_ptr<VirtualPatternTable> virtualPatternTable;
 	void updatePalette();
 	void renderSprites();
-	void renderSprite(int tile, int x, int y, int palette, bool flipX, bool flipY);
+	void renderSprite(shared_ptr<VirtualSprite> vSprite, int x, int y, int palette, bool flipX, bool flipY);
 	void renderNameTables();
 	void renderScrollSection(ScrollSection section);
 	void renderRow(int y, int height, int xOffset, int yOffset, int nametableX, int nametableY, int nameTable, bool patternSelect);

@@ -612,3 +612,11 @@ bool toggleBool(bool b)
 	else
 		return false;;
 }
+
+bool Crop::zeroed()
+{
+	if (top + left + right + bottom == 0)
+		return true;
+	else
+		return false;
+}
