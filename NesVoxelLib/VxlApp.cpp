@@ -37,7 +37,26 @@ void VxlApp::load(char *path)
 		unload();
 	NesEmulator::Initialize(path);
 	info = NesEmulator::getGameInfo();
-	gameData = std::shared_ptr<GameData>(new GameData((char*)info->data));
+	// See if a matching N3S file exists with same name as ROM
+	if (true)
+	{
+		// TODO: Doing it in a really dumb way at the moment, stripping nes and replacing with n3s
+		string s = (path);
+		int length = s.length();
+		s[length - 2] = '3';
+		ifstream n3sFile(s.c_str());
+		json input(n3sFile);
+		s = input.dump(4);
+		//n3sFile >> input;
+		n3sFile.close();
+		gameData = shared_ptr<GameData>(new GameData((char*)info->data, input));
+	}
+	else
+	{
+		// TODO: Ask if user wants to find N3S file, generate data, or cancel
+
+	}
+	// gameData = std::shared_ptr<GameData>(new GameData((char*)info->data));
 	virtualPatternTable = shared_ptr<VirtualPatternTable>(new VirtualPatternTable(gameData));
 	// gameData->grabBitmapSprites(info->data);
 	// gameData->createSpritesFromBitmaps();
@@ -104,11 +123,11 @@ void VxlApp::update(bool runThisNesFrame)
 			camera.SetRotation(0, 0, 0);
 		}
 		// TEST output json
-		/*string output = gameData->getJSON();
-		ofstream myfile;
-		myfile.open("json.n3s");
-		myfile << output;
-		myfile.close();	*/
+		//string output = gameData->getJSON();
+		//ofstream myfile;
+		//myfile.open("json.n3s");
+		//myfile << output;
+		//myfile.close();	
 	}
 }
 

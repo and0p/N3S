@@ -69,9 +69,10 @@ public:
 	void renderOAM(shared_ptr<VxlPPUSnapshot> snapshot, int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop);
 	void renderNametable(shared_ptr<VxlPPUSnapshot> snapshot, int x, int y, int palette, int nametableX, int nametableY, Crop crop);
 	json getJSON();
+	int id;
 	vector<int> appearancesInRomChr;	// Where does this sprite appear in CHR data? For reference.
-private:
 	string chrData;
+private:
 	string description = "";
 	shared_ptr<SpriteMesh> defaultMesh;
 	string serializeChrDataAsText();
