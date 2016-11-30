@@ -206,11 +206,11 @@ GameData::GameData(char * data)
 			// Add the data of the sprite we're going to generate to the map of duplicates
 			previousSprites.insert(spriteData);
 			// Build mesh and add to list
-			shared_ptr<SpriteMesh> mesh = shared_ptr<SpriteMesh>(new SpriteMesh(current));
+			shared_ptr<SpriteMesh> mesh = make_shared<SpriteMesh>(current);
 			mesh->id = uniqueCount;
 			meshes[uniqueCount] = mesh;
 			// Build the static sprite
-			shared_ptr<VirtualSprite> vSprite = shared_ptr<VirtualSprite>(new VirtualSprite(spriteData, meshes[uniqueCount]));
+			shared_ptr<VirtualSprite> vSprite = make_shared<VirtualSprite>(spriteData, meshes[uniqueCount]);
 			vSprite->appearancesInRomChr.push_back(i);	// Record where this sprite occured in CHR data
 			vSprite->id = uniqueCount;
 			sprites[i] = vSprite;
@@ -236,14 +236,14 @@ GameData::GameData(char* data, json j)
 		const string s = jM["id"];
 		int id = stoi(s);
 		// Build mesh from JSON and add to map of meshes by ID
-		shared_ptr<SpriteMesh> mesh = shared_ptr<SpriteMesh>(new SpriteMesh(jM));
+		shared_ptr<SpriteMesh> mesh = make_shared<SpriteMesh>(jM);
 		mesh->id = id;
 		meshes[id] = mesh;
 	}
 	// Load VirtualSprites
 	for each (json jS in j["sprites"])
 	{
-		shared_ptr<VirtualSprite> sprite = shared_ptr<VirtualSprite>(new VirtualSprite(jS, meshes));
+		shared_ptr<VirtualSprite> sprite = make_shared<VirtualSprite>(jS, meshes);
 		sprites[sprite->id] = sprite;
 		spritesByChrData[sprite->chrData] = sprite;
 	}
@@ -324,6 +324,8 @@ void GameData::unload()
 		if (kv.second.mesh.buffer != nullptr)
 			kv.second.mesh.buffer->Release();
 	}
+	meshes.clear();
+	sprites.clear();
 	sharedMeshes.clear();
 }
 
@@ -571,7 +573,7 @@ json VirtualSprite::getJSON()
 	json j;
 	j["id"] = getPaddedStringFromInt(id, 5);
 	j["chrData"] = serializeChrDataAsText();
-	j["appreancesInRomChr"] = appearancesInRomChr;
+	j["appearancesInRomChr"] = appearancesInRomChr;
 	j["description"] = description;
 	j["defaultMesh"] = defaultMesh->id;
 	return j;

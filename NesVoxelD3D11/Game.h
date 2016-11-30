@@ -62,3 +62,6 @@ private:
 	// Voxel NES app
 	VxlApp									app;
 };
+
+string getFilePathWithDialog();
+string getSavePathWithDialog();

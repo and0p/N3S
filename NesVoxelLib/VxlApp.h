@@ -19,7 +19,8 @@ public:
 	VxlApp();
 	void assignD3DContext(VxlD3DContext);
 	void initDirectAudio(HWND hwnd);
-	void load(char *path);
+	void load(string path);
+	void loadGameData(string path);
 	void unload();
 	void reset();
 	void update(bool runThisFrame);
@@ -35,7 +36,11 @@ public:
 	VxlCamera camera;
 	std::shared_ptr<GameData> gameData;
 	bool loaded;
+	bool save();
+	bool saveAs(string path);
 private:
+	string romPath;
+	string n3sPath;
 	SoundDriver *audioEngine;
 	HWND hwnd;
 	bool emulationPaused;

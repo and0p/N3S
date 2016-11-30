@@ -172,62 +172,36 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam)
 		{
 		case ID_FILE_LOAD:
 		{
-			HRESULT hr = CoInitializeEx(NULL, COINITBASE_MULTITHREADED |
-				COINIT_DISABLE_OLE1DDE);
-			if (SUCCEEDED(hr))
-			{
-				IFileOpenDialog *pFileOpen;
-
-				// Create the FileOpenDialog object.
-				hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
-					IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
-
-				if (SUCCEEDED(hr))
-				{
-					// Show the Open dialog box.
-					hr = pFileOpen->Show(NULL);
-
-					// Get the file name from the dialog box.
-					if (SUCCEEDED(hr))
-					{
-						IShellItem *pItem;
-						hr = pFileOpen->GetResult(&pItem);
-						if (SUCCEEDED(hr))
-						{
-							PWSTR pszFilePath;
-							hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
-
-							// Display the file name to the user.
-							if (SUCCEEDED(hr))
-							{
-								//MessageBox(NULL, pszFilePath, L"File Path", MB_OK);
-								char buffer[500];
-								wcstombs(buffer, pszFilePath, 500);
-								app.load(&buffer[0]);
-								CoTaskMemFree(pszFilePath);
-							}
-							pItem->Release();
-						}
-					}
-					pFileOpen->Release();
-				}
-				CoUninitialize();
-			}
+			string path = getFilePathWithDialog();
+			if (path != "")
+				app.load(path);
 			break;
 		}
-		case ID_FILE_UNLOAD:
-			app.unload();
-			break;
-		case ID_NES_RESET:
-			app.reset();
+		case ID_3D_SAVE:
+		{
+			app.save();
 			break;
 		}
-		break;
-	}
+		case ID_3D_SAVE40015:
+		{
+			string path = getSavePathWithDialog();
+			if (path != "")
+				app.saveAs(path);
+			break;
+		}
+		case ID_3D_LOAD:
+		{
+			// MessageBox(NULL, L"ahh", L"File Path", MB_OK);
+			string path = getFilePathWithDialog();
+			if (path != "")
+				app.loadGameData(path);
+			break;
+		}
+		}
 	case WM_KEYDOWN:
 	{
 		bool previouslyDown = (int)lParam >> 30 & 1;
-		if(!previouslyDown)
+		if (!previouslyDown)
 			app.recieveKeyInput(wParam, true);
 		break;
 	}
@@ -235,7 +209,7 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam)
 		app.recieveKeyInput(wParam, false);
 		break;
 	}
-
+	}
 }
 #pragma endregion
 
@@ -267,3 +241,99 @@ void Game::OnDeviceRestored()
     CreateWindowSizeDependentResources();
 }
 #pragma endregion
+
+string getFilePathWithDialog()
+{
+	string path = "";
+	HRESULT hr = CoInitializeEx(NULL, COINITBASE_MULTITHREADED |
+		COINIT_DISABLE_OLE1DDE);
+	if (SUCCEEDED(hr))
+	{
+		IFileOpenDialog *pFileOpen;
+
+		// Create the FileOpenDialog object.
+		hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
+			IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+
+		if (SUCCEEDED(hr))
+		{
+			// Show the Open dialog box.
+			hr = pFileOpen->Show(NULL);
+
+			// Get the file name from the dialog box.
+			if (SUCCEEDED(hr))
+			{
+				IShellItem *pItem;
+				hr = pFileOpen->GetResult(&pItem);
+				if (SUCCEEDED(hr))
+				{
+					PWSTR pszFilePath;
+					hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+					// Display the file name to the user.
+					if (SUCCEEDED(hr))
+					{
+						//MessageBox(NULL, pszFilePath, L"File Path", MB_OK);
+						char buffer[500];
+						wcstombs(buffer, pszFilePath, 500);
+						path = buffer;
+						CoTaskMemFree(pszFilePath);
+					}
+					pItem->Release();
+				}
+			}
+			pFileOpen->Release();
+		}
+		CoUninitialize();
+	}
+	return path;
+}
+
+string getSavePathWithDialog()
+{
+	string path = "";
+	HRESULT hr = CoInitializeEx(NULL, COINITBASE_MULTITHREADED |
+		COINIT_DISABLE_OLE1DDE);
+	if (SUCCEEDED(hr))
+	{
+		IFileSaveDialog *pFileSave;
+
+		// Create the FileOpenDialog object.
+		hr = CoCreateInstance(CLSID_FileSaveDialog, NULL, CLSCTX_ALL,
+			IID_IFileSaveDialog, reinterpret_cast<void**>(&pFileSave));
+		if (SUCCEEDED(hr))
+		{
+			// Set default extension
+			hr = pFileSave->SetDefaultExtension(L"n3s");
+			if (SUCCEEDED(hr))
+			{
+				// Show the Open dialog box.
+				hr = pFileSave->Show(NULL);
+
+				// Get the file name from the dialog box.
+				if (SUCCEEDED(hr))
+				{
+					IShellItem *pItem;
+					hr = pFileSave->GetResult(&pItem);
+					if (SUCCEEDED(hr))
+					{
+						PWSTR pszFilePath;
+						hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+						// Display the file name to the user.
+						if (SUCCEEDED(hr))
+						{
+							//MessageBox(NULL, pszFilePath, L"File Path", MB_OK);
+							char buffer[500];
+							wcstombs(buffer, pszFilePath, 500);
+							path = buffer;
+							CoTaskMemFree(pszFilePath);
+						}
+						pItem->Release();
+					}
+				}
+				pFileSave->Release();
+			}
+		}
+		CoUninitialize();
+	}
+	return path;
+}

@@ -31,35 +31,62 @@ void VxlApp::initDirectAudio(HWND hwnd)
 }
 
 
-void VxlApp::load(char *path)
+void VxlApp::load(string path)
 {
 	if (loaded)
 		unload();
-	NesEmulator::Initialize(path);
+	// Convert string to char * for libretro loading function
+	const char* cPath = path.c_str(); // TODO leak?
+	NesEmulator::Initialize(cPath);
+	romPath = path;
 	info = NesEmulator::getGameInfo();
 	// See if a matching N3S file exists with same name as ROM
 	// TODO: Doing it in a really dumb way at the moment, stripping nes and replacing with n3s
-	string s = (path);
+	string s = path;
 	int length = s.length();
 	s[length - 2] = '3';
 	ifstream n3sFile(s.c_str());
 	if (n3sFile.good())
 	{
+		n3sPath = s;
 		json input(n3sFile);
-		s = input.dump(4);
+		// s = input.dump(4);
 		n3sFile.close();
-		gameData = shared_ptr<GameData>(new GameData((char*)info->data, input));
+		gameData = make_shared<GameData>((char*)info->data, input);
 	}
 	else
 	{
 		// TODO: Ask if user wants to find N3S file, generate data, or cancel
-		gameData = std::shared_ptr<GameData>(new GameData((char*)info->data));
+		gameData = make_shared<GameData>((char*)info->data);
+		n3sPath = replaceExt(romPath, "n3s");
 	}
 	virtualPatternTable = shared_ptr<VirtualPatternTable>(new VirtualPatternTable(gameData));
 	// gameData->grabBitmapSprites(info->data);
 	// gameData->createSpritesFromBitmaps();
 	loaded = true;
 	unpause();
+}
+
+void VxlApp::loadGameData(string path)
+{
+	// Make sure game is loaded first
+	if (loaded)
+	{
+		ifstream n3sFile(path.c_str());
+		// Make sure file exists
+		if (n3sFile.good())
+		{
+			// Unload all old assets
+			gameData->unload();
+			// Load the file into json
+			json input(n3sFile);
+			// Close file
+			n3sFile.close();
+			// Make GameData from json
+			gameData.reset(new GameData((char*)info->data, input));
+			virtualPatternTable.reset(new VirtualPatternTable(gameData));	// Reset to reference new game data
+		}
+	}
 }
 
 void VxlApp::unload()
@@ -120,12 +147,6 @@ void VxlApp::update(bool runThisNesFrame)
 			camera.SetPosition(0, 0, -2);
 			camera.SetRotation(0, 0, 0);
 		}
-		// TEST output json
-		//string output = gameData->getJSON();
-		//ofstream myfile;
-		//myfile.open("json.n3s");
-		//myfile << output;
-		//myfile.close();	
 	}
 }
 
@@ -196,6 +217,40 @@ XMVECTORF32 VxlApp::getBackgroundColor()
 	return{ hue.red, hue.green, hue.blue, 1.0f };
 }
 
+bool VxlApp::save()
+{
+	if (loaded)
+	{
+		// Get output JSON
+		string output = gameData->getJSON();
+		// Save to file with path specified
+		ofstream myfile;
+		myfile.open(n3sPath);
+		myfile << output;
+		myfile.close();
+		return true;
+	}
+	return false;
+}
+
+bool VxlApp::saveAs(string path)
+{
+	if (loaded)
+	{
+		// Get output JSON
+		string output = gameData->getJSON();
+		// Save to file with path specified
+		ofstream myfile;
+		myfile.open(path);
+		myfile << output;
+		myfile.close();
+		// Replace path to "loaded" N3S file
+		n3sPath = path;
+		return true;
+	}
+	return false;
+}
+
 void VxlApp::renderSprites()
 {
 	for (int i = 0; i < 64; i++) {
@@ -261,8 +316,6 @@ void VxlApp::renderSprite(shared_ptr<VirtualSprite> vSprite, int x, int y, int p
 		vSprite->renderOAM(snapshot, x, y, palette, flipX, flipY, crop);
 	}
 }
-
-
 
 void VxlApp::updatePalette()
 {
