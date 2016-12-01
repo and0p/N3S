@@ -310,7 +310,7 @@ libc_error:
 	exit(0);
 }
 
-void NesEmulator::Initialize(char * romPath) {
+void NesEmulator::Initialize(const char * romPath) {
 	core_load();
 	core_load_game(romPath);
 }

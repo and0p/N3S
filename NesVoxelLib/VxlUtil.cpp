@@ -612,3 +612,21 @@ bool toggleBool(bool b)
 	else
 		return false;;
 }
+
+// thx https://www.safaribooksonline.com/library/view/c-cookbook/0596007612/ch10s17.html
+string replaceExt(string input, string newExt) {
+	string::size_type i = input.rfind('.', input.length());
+
+	if (i != string::npos) {
+		input.replace(i + 1, newExt.length(), newExt);
+	}
+	return input;
+}
+
+bool Crop::zeroed()
+{
+	if (top + left + right + bottom == 0)
+		return true;
+	else
+		return false;
+}

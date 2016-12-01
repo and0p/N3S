@@ -11,6 +11,7 @@ static float pixelSizeW = (2.0f / 256.0f);
 static float pixelSizeH = (2.0f / 240.0f);
 
 using namespace DirectX;
+using namespace std;
 
 enum ShaderType { color, texture };
 
@@ -41,8 +42,9 @@ struct ShaderSet
 	ID3D11PixelShader *pixelShader;
 };
 
-struct Sides
+struct Crop
 {
+	bool zeroed();
 	int top;
 	int left;
 	int bottom;
@@ -108,3 +110,4 @@ private:
 };
 
 bool toggleBool(bool b);
+string replaceExt(string input, string newExt);
