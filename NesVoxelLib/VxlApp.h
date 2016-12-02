@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VxlUtil.h"
+#include "N3s3d.hpp"
 #include "N3SGameData.hpp"
 #include "VxlPPUSnapshot.h"
 #include "NesEmulator.h"

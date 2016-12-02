@@ -244,9 +244,10 @@
   <ItemGroup>
     <ClInclude Include="json.hpp" />
     <ClInclude Include="libretro.h" />
-    <ClInclude Include="N3SGameData.hpp" />
-    <ClInclude Include="N3SOverlay.hpp" />
-    <ClInclude Include="N3SPatternTable.hpp" />
+    <ClInclude Include="N3s3d.hpp" />
+    <ClInclude Include="N3sGameData.hpp" />
+    <ClInclude Include="N3sOverlay.hpp" />
+    <ClInclude Include="N3sPatternTable.hpp" />
     <ClInclude Include="NesEmulator.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
@@ -259,14 +260,14 @@
     <ClInclude Include="VxlPalette.h" />
     <ClInclude Include="VxlPatternTable.h" />
     <ClInclude Include="VxlPPUSnapshot.h" />
-    <ClInclude Include="VxlUtil.h" />
     <ClInclude Include="VxlCamera.h" />
     <ClInclude Include="VxlRawPPU.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="N3SGameData.cpp" />
-    <ClCompile Include="N3SOverlay.cpp" />
-    <ClCompile Include="N3SPatternTable.cpp" />
+    <ClCompile Include="N3s3d.cpp" />
+    <ClCompile Include="N3sGameData.cpp" />
+    <ClCompile Include="N3sOverlay.cpp" />
+    <ClCompile Include="N3sPatternTable.cpp" />
     <ClCompile Include="NesEmulator.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -285,7 +286,6 @@
     <ClCompile Include="VxlPalette.cpp" />
     <ClCompile Include="VxlPatternTable.cpp" />
     <ClCompile Include="VxlPPUSnapshot.cpp" />
-    <ClCompile Include="VxlUtil.cpp" />
     <ClCompile Include="VxlCamera.cpp" />
   </ItemGroup>
   <ItemGroup>

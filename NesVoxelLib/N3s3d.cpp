@@ -4,40 +4,40 @@
 #include "stdafx.h"
 #include <iostream>
 #include <fstream>
-#include "VxlUtil.h"
+#include "N3s3d.hpp"
 
 using namespace std;
-Microsoft::WRL::ComPtr<ID3D11Device>            VxlUtil::device;
-Microsoft::WRL::ComPtr<ID3D11Device1>           VxlUtil::device1;
-Microsoft::WRL::ComPtr<ID3D11DeviceContext>     VxlUtil::context;
-Microsoft::WRL::ComPtr<ID3D11DeviceContext1>    VxlUtil::context1;
-ID3D11SamplerState *VxlUtil::sampleState;
-ID3D11Buffer *VxlUtil::worldMatrixBuffer;
-ID3D11Buffer *VxlUtil::viewMatrixBuffer;
-ID3D11Buffer *VxlUtil::projectionMatrixBuffer;
-ID3D11Buffer *VxlUtil::mirrorBuffer;
-ID3D11Buffer *VxlUtil::paletteBuffer;
-ID3D11Buffer *VxlUtil::paletteSelectionBuffer;
-ID3D11Buffer *VxlUtil::indexBuffer;
-int VxlUtil::paletteBufferNumber;
-int VxlUtil::paletteSelectionBufferNumber;
-ShaderSet VxlUtil::shaderSets[2];
-ID3D11InputLayout *VxlUtil::inputLayouts[2];
-ID3D11Texture2D *VxlUtil::texture2d;
-ID3D11ShaderResourceView *VxlUtil::textureView;
-ShaderType VxlUtil::activeShader;
-D3D11_SUBRESOURCE_DATA VxlUtil::subData;
-MirrorState VxlUtil::mirrorState;
-D3D11_DEPTH_STENCIL_DESC VxlUtil::depthStencilDesc;
-D3D11_DEPTH_STENCIL_DESC VxlUtil::depthDisabledStencilDesc;
-ID3D11DepthStencilState* VxlUtil::m_depthStencilState;
-ID3D11DepthStencilState* VxlUtil::m_depthDisabledStencilState;
-PPUHueStandardCollection VxlUtil::ppuHueStandardCollection;
-ID3D11DepthStencilView* VxlUtil::m_depthStencilView;
-int VxlUtil::selectedPalette;
-int VxlUtil::mirrorBufferNumber;
+Microsoft::WRL::ComPtr<ID3D11Device>            N3S3d::device;
+Microsoft::WRL::ComPtr<ID3D11Device1>           N3S3d::device1;
+Microsoft::WRL::ComPtr<ID3D11DeviceContext>     N3S3d::context;
+Microsoft::WRL::ComPtr<ID3D11DeviceContext1>    N3S3d::context1;
+ID3D11SamplerState *N3S3d::sampleState;
+ID3D11Buffer *N3S3d::worldMatrixBuffer;
+ID3D11Buffer *N3S3d::viewMatrixBuffer;
+ID3D11Buffer *N3S3d::projectionMatrixBuffer;
+ID3D11Buffer *N3S3d::mirrorBuffer;
+ID3D11Buffer *N3S3d::paletteBuffer;
+ID3D11Buffer *N3S3d::paletteSelectionBuffer;
+ID3D11Buffer *N3S3d::indexBuffer;
+int N3S3d::paletteBufferNumber;
+int N3S3d::paletteSelectionBufferNumber;
+ShaderSet N3S3d::shaderSets[2];
+ID3D11InputLayout *N3S3d::inputLayouts[2];
+ID3D11Texture2D *N3S3d::texture2d;
+ID3D11ShaderResourceView *N3S3d::textureView;
+ShaderType N3S3d::activeShader;
+D3D11_SUBRESOURCE_DATA N3S3d::subData;
+MirrorState N3S3d::mirrorState;
+D3D11_DEPTH_STENCIL_DESC N3S3d::depthStencilDesc;
+D3D11_DEPTH_STENCIL_DESC N3S3d::depthDisabledStencilDesc;
+ID3D11DepthStencilState* N3S3d::m_depthStencilState;
+ID3D11DepthStencilState* N3S3d::m_depthDisabledStencilState;
+PPUHueStandardCollection N3S3d::ppuHueStandardCollection;
+ID3D11DepthStencilView* N3S3d::m_depthStencilView;
+int N3S3d::selectedPalette;
+int N3S3d::mirrorBufferNumber;
 
-void VxlUtil::initPipeline(VxlD3DContext c)
+void N3S3d::initPipeline(VxlD3DContext c)
 {
 	device = c.device;
 	context = c.context;
@@ -168,7 +168,7 @@ void VxlUtil::initPipeline(VxlD3DContext c)
 #endif
 }
 
-void VxlUtil::initShaders() {
+void N3S3d::initShaders() {
 	ifstream s_stream;
 	size_t s_size;
 	char* s_data;
@@ -203,7 +203,7 @@ void VxlUtil::initShaders() {
 	updateMirroring(true, true); // TODO: Make mirror cbuffer init cleaner
 }
 
-void VxlUtil::setShader(ShaderType type) {
+void N3S3d::setShader(ShaderType type) {
 	switch (type)
 	{
 	case color:
@@ -216,7 +216,7 @@ void VxlUtil::setShader(ShaderType type) {
 	}
 }
 
-ID3D11Buffer* VxlUtil::createBufferFromColorVertices(ColorVertex vertices[], int arraySize)
+ID3D11Buffer* N3S3d::createBufferFromColorVertices(ColorVertex vertices[], int arraySize)
 {
 	// create the vertex buffer
 	D3D11_BUFFER_DESC bd;
@@ -238,7 +238,7 @@ ID3D11Buffer* VxlUtil::createBufferFromColorVertices(ColorVertex vertices[], int
 	return pVBuffer;
 }
 
-ID3D11Buffer* VxlUtil::createBufferFromColorVerticesV(std::vector<ColorVertex>  * vertices, int arraySize)
+ID3D11Buffer* N3S3d::createBufferFromColorVerticesV(std::vector<ColorVertex>  * vertices, int arraySize)
 {
 	if (vertices->size() == 0) {
 		return nullptr;
@@ -259,7 +259,7 @@ ID3D11Buffer* VxlUtil::createBufferFromColorVerticesV(std::vector<ColorVertex>  
 	return pVBuffer;
 }
 
-void VxlUtil::updateWorldMatrix(float x, float y, float z) {
+void N3S3d::updateWorldMatrix(float x, float y, float z) {
 	XMMATRIX worldMatrix = XMMatrixIdentity();
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	MatrixBuffer* dataPtr;
@@ -278,7 +278,7 @@ void VxlUtil::updateWorldMatrix(float x, float y, float z) {
 	context1->VSSetConstantBuffers(0, 1, &worldMatrixBuffer);
 }
 
-void VxlUtil::updateMirroring(bool horizontal, bool vertical) {
+void N3S3d::updateMirroring(bool horizontal, bool vertical) {
 	int x, y;
 	if (horizontal)
 		x = -1;
@@ -308,7 +308,7 @@ void VxlUtil::updateMirroring(bool horizontal, bool vertical) {
 	}
 }
 
-void VxlUtil::updatePalette(float palette[72])
+void N3S3d::updatePalette(float palette[72])
 {
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	float* dataPtr;
@@ -335,7 +335,7 @@ void VxlUtil::updatePalette(float palette[72])
 	context1->VSSetConstantBuffers(paletteBufferNumber, 1, &paletteBuffer);
 }
 
-void VxlUtil::selectPalette(int palette)
+void N3S3d::selectPalette(int palette)
 {
 	if (palette != selectedPalette)
 	{
@@ -355,7 +355,7 @@ void VxlUtil::selectPalette(int palette)
 	}
 }
 
-void VxlUtil::updateMatricesWithCamera(VxlCamera * camera) {
+void N3S3d::updateMatricesWithCamera(VxlCamera * camera) {
 
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -404,7 +404,7 @@ void VxlUtil::updateMatricesWithCamera(VxlCamera * camera) {
 	context1->VSSetConstantBuffers(2, 1, &projectionMatrixBuffer);
 }
 
-void VxlUtil::updateViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
+void N3S3d::updateViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
 {
 	XMMATRIX viewMatrix, projectionMatrix;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -436,7 +436,7 @@ void VxlUtil::updateViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
 	context1->VSSetConstantBuffers(2, 1, &projectionMatrixBuffer);
 }
 
-XMMATRIX VxlUtil::getProjectionMatrix(const float near_plane, const float far_plane, const float fov_horiz, const float fov_vert)
+XMMATRIX N3S3d::getProjectionMatrix(const float near_plane, const float far_plane, const float fov_horiz, const float fov_vert)
 {
 	float    h, w, Q;
 
@@ -458,7 +458,7 @@ XMMATRIX VxlUtil::getProjectionMatrix(const float near_plane, const float far_pl
 	return XMLoadFloat4x4(&tmp);
 }
 
-void VxlUtil::setIndexBuffer()
+void N3S3d::setIndexBuffer()
 {
 	context->IASetIndexBuffer(
 		indexBuffer,
@@ -467,17 +467,17 @@ void VxlUtil::setIndexBuffer()
 	);
 }
 
-void VxlUtil::enabledDepthBuffer()
+void N3S3d::enabledDepthBuffer()
 {
 	context->OMSetDepthStencilState(m_depthStencilState, 1);
 }
 
-void VxlUtil::disableDepthBuffer()
+void N3S3d::disableDepthBuffer()
 {
 	context->OMSetDepthStencilState(m_depthDisabledStencilState, 1);
 }
 
-void VxlUtil::renderMesh(VoxelMesh *voxelMesh) {
+void N3S3d::renderMesh(VoxelMesh *voxelMesh) {
 	ShaderType type = voxelMesh->type;
 	UINT stride = sizeof(ColorVertex); // TODO optimize
 	UINT offset = 0;
@@ -497,7 +497,7 @@ void VxlUtil::renderMesh(VoxelMesh *voxelMesh) {
 #endif
 }
 
-void VxlUtil::initSampleState() {
+void N3S3d::initSampleState() {
 	D3D11_SAMPLER_DESC samplerDesc;
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -515,7 +515,7 @@ void VxlUtil::initSampleState() {
 	device->CreateSamplerState(&samplerDesc, &sampleState);
 }
 
-void VxlUtil::createIndexBuffer()
+void N3S3d::createIndexBuffer()
 {
 	unsigned short indices[73728];
 	for (int i = 0; i < 73728; i++)
@@ -534,7 +534,7 @@ void VxlUtil::createIndexBuffer()
 		);
 }
 
-bool VxlUtil::initDepthStencils()
+bool N3S3d::initDepthStencils()
 {
 	// Thanks http://www.rastertek.com/dx11tut11.html
 	HRESULT result = false;

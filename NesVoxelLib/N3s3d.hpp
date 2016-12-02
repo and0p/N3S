@@ -56,7 +56,7 @@ struct MirrorState
 	int y;
 };
 
-class VxlUtil {
+class N3S3d {
 public:
 	static void initPipeline(VxlD3DContext context);
 	static ID3D11Buffer* createBufferFromColorVertices(ColorVertex vertices[], int arraySize);

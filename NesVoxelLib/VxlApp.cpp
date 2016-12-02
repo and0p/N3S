@@ -18,7 +18,7 @@ VxlApp::VxlApp()
 
 void VxlApp::assignD3DContext(VxlD3DContext context)
 {
-	VxlUtil::initPipeline(context);
+	N3S3d::initPipeline(context);
 	
 }
 
@@ -154,12 +154,12 @@ void VxlApp::render()
 {
 	if (loaded)
 	{
-		VxlUtil::setShader(color);
+		N3S3d::setShader(color);
 		camera.Render();
-		VxlUtil::updateMatricesWithCamera(&camera);
-		VxlUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
-		VxlUtil::updateMirroring(true, true);
-		VxlUtil::updateMirroring(false, false);
+		N3S3d::updateMatricesWithCamera(&camera);
+		N3S3d::updateWorldMatrix(0.0f, 0.0f, 0.0f);
+		N3S3d::updateMirroring(true, true);
+		N3S3d::updateMirroring(false, false);
 		updatePalette();
 		if (snapshot->mask.renderSprites)
 			renderSprites();
@@ -191,7 +191,7 @@ void VxlApp::setMute(bool mute)
 
 void VxlApp::updateCameraViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
 {
-	VxlUtil::updateViewMatrices(view, projection);
+	N3S3d::updateViewMatrices(view, projection);
 }
 
 void VxlApp::updateGameOriginPosition(float x, float y, float z)
@@ -211,7 +211,7 @@ XMVECTORF32 VxlApp::getBackgroundColor()
 {
 	Hue hue;
 	if (loaded)
-		hue = VxlUtil::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->backgroundColor);
+		hue = N3S3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->backgroundColor);
 	else
 		hue = { 0.0f, 0.0f, 0.0f };
 	return{ hue.red, hue.green, hue.blue, 1.0f };
@@ -324,19 +324,19 @@ void VxlApp::updatePalette()
 	{
 		for (int h = 0; h < 3; h++)
 		{
-			palette[(p * 9) + (h * 3)] = VxlUtil::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).red;
-			palette[(p * 9) + (h * 3) + 1] = VxlUtil::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).green;
-			palette[(p * 9) + (h * 3) + 2] = VxlUtil::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).blue;
+			palette[(p * 9) + (h * 3)] = N3S3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).red;
+			palette[(p * 9) + (h * 3) + 1] = N3S3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).green;
+			palette[(p * 9) + (h * 3) + 2] = N3S3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).blue;
 		}
 	}
-	Hue hue = VxlUtil::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[0].colors[2]);
-	VxlUtil::updatePalette(palette);
+	Hue hue = N3S3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[0].colors[2]);
+	N3S3d::updatePalette(palette);
 }
 
 void VxlApp::renderNameTables()
 {
 	// Reset tile mirroring, as Nametable cannot use it
-	VxlUtil::updateMirroring(false, false);
+	N3S3d::updateMirroring(false, false);
 	// Render each scroll section
 	for (ScrollSection scrollSection : snapshot->scrollSections)
 	{

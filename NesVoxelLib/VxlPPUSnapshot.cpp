@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "VxlPPUSnapshot.h"
-#include "VxlUtil.h"
+#include "N3s3d.hpp"
 
 //VxlPPUSnapshot::VxlPPUSnapshot(const void *vram): nameTables(new std::vector<NameTable>)
 //{

@@ -48,17 +48,17 @@
 //{
 //	if (meshExists)
 //	{
-//		VxlUtil::selectPalette(palette);
+//		N3S3d::selectPalette(palette);
 //		float posX, posY;
 //		posX = -1.0f + (pixelSizeW * x);
 //		posY = 1.0f - (pixelSizeH * y);
-//		VxlUtil::updateMirroring(mirrorH, mirrorV);
+//		N3S3d::updateMirroring(mirrorH, mirrorV);
 //		if(mirrorH)
 //			posX += (pixelSizeW * 8);
 //		if (mirrorV)
 //			posY -= (pixelSizeH * 8);
-//		VxlUtil::updateWorldMatrix(posX, posY, 0);
-//		VxlUtil::renderMesh(&mesh);
+//		N3S3d::updateWorldMatrix(posX, posY, 0);
+//		N3S3d::renderMesh(&mesh);
 //	}
 //}
 //
@@ -66,7 +66,7 @@
 //{
 //	if (meshExists)
 //	{
-//		VxlUtil::selectPalette(palette);
+//		N3S3d::selectPalette(palette);
 //		for (int posY = 0; posY < height; posY++)
 //		{
 //			for (int posX = 0; posX < width; posX++)
@@ -83,8 +83,8 @@
 //					meshY = posY + yOffset;
 //				if (zMeshes[(meshY * 8) + meshX].buffer != nullptr)
 //				{
-//					VxlUtil::updateWorldMatrix(-1.0f + ((x + posX) * pixelSizeW), 1.0f - ((y + posY) * pixelSizeH), 0);
-//					VxlUtil::renderMesh(&zMeshes[(meshY * 8) + meshX]);
+//					N3S3d::updateWorldMatrix(-1.0f + ((x + posX) * pixelSizeW), 1.0f - ((y + posY) * pixelSizeH), 0);
+//					N3S3d::renderMesh(&zMeshes[(meshY * 8) + meshX]);
 //				}
 //			}
 //		}
@@ -214,7 +214,7 @@
 //	// Return true if there is an actual mesh to render
 //	if (vertices.size() > 0)
 //	{
-//		mesh.buffer = VxlUtil::createBufferFromColorVerticesV(&vertices, mesh.size);
+//		mesh.buffer = N3S3d::createBufferFromColorVerticesV(&vertices, mesh.size);
 //		meshExists = true;
 //		return true;
 //	}
@@ -276,7 +276,7 @@
 //	}
 //	mesh.size = sideCount * 6;
 //	mesh.type = color;
-//	mesh.buffer = VxlUtil::createBufferFromColorVerticesV(&vertices, mesh.size);
+//	mesh.buffer = N3S3d::createBufferFromColorVerticesV(&vertices, mesh.size);
 //	return mesh;
 //}
 //
