@@ -13,16 +13,15 @@ static float pixelSizeH = (2.0f / 240.0f);
 using namespace DirectX;
 using namespace std;
 
-enum ShaderType { color, texture };
+enum ShaderType { color, overlay };
 
 struct ColorVertex {
 	XMFLOAT4 Pos;
 	XMFLOAT4 Col;
 };
 
-struct TextureVertex {
+struct OverlayVertex {
 	XMFLOAT4 Pos;
-	XMFLOAT2 UV;
 };
 
 struct VoxelMesh {
@@ -62,9 +61,6 @@ public:
 	static void initPipeline(VxlD3DContext context);
 	static ID3D11Buffer* createBufferFromColorVertices(ColorVertex vertices[], int arraySize);
 	static ID3D11Buffer* createBufferFromColorVerticesV(std::vector<ColorVertex> * vertices, int arraySize);
-	static ID3D11Buffer* createBufferFromTextureVertices(TextureVertex vertices[], int arraySize);
-	static VoxelMesh* CreateRectangle(ShaderType type);
-	static VoxelMesh* CreateSpriteMarker();
 	static void updateMatricesWithCamera(VxlCamera * camera);
 	static void updateViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 perspective);
 	static void updateWorldMatrix(float, float, float);
@@ -74,9 +70,10 @@ public:
 	static XMMATRIX getProjectionMatrix(const float near_plane, const float far_plane, const float fov_horiz, const float fov_vert);
 	static void setShader(ShaderType type);
 	static void renderMesh(VoxelMesh *voxelMesh);
-	static void updateGameTexture(const void *data);
 	static PPUHueStandardCollection ppuHueStandardCollection;
 	static void setIndexBuffer();
+	static void enabledDepthBuffer();
+	static void disableDepthBuffer();
 private:
 	static Microsoft::WRL::ComPtr<ID3D11Device>            device;
 	static Microsoft::WRL::ComPtr<ID3D11Device1>           device1;
@@ -85,6 +82,7 @@ private:
 	static void initShaders();
 	static void initSampleState();
 	static void createIndexBuffer();
+	static bool initDepthStencils();
 	static ShaderSet shaderSets[2];
 	static ID3D11InputLayout *inputLayouts[2];
 	static ID3D11Buffer *worldMatrixBuffer;
@@ -103,6 +101,12 @@ private:
 	static ShaderType activeShader;
 	static D3D11_SUBRESOURCE_DATA subData;
 	static MirrorState mirrorState;
+	static D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
+	static D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc;
+	static ID3D11DepthStencilState* m_depthDisabledStencilState;
+	static ID3D11DepthStencilState* m_depthStencilState;
+
+	static ID3D11DepthStencilView* m_depthStencilView;
 	static int selectedPalette;
 	static int mirrorBufferNumber;
 	static int paletteBufferNumber;

@@ -73,9 +73,6 @@
     <ClInclude Include="json.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="VxlHash.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="N3SGameData.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -83,6 +80,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="N3SPatternTable.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="N3SOverlay.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -126,6 +126,9 @@
     <ClCompile Include="N3SPatternTable.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="N3SOverlay.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="color_pixel.hlsl">
@@ -134,10 +137,10 @@
     <FxCompile Include="color_vertex.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="texture_pixel.hlsl">
+    <FxCompile Include="overlay_pixel.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="texture_vertex.hlsl">
+    <FxCompile Include="overlay_vertex.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

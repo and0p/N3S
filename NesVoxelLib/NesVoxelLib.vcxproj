@@ -245,6 +245,7 @@
     <ClInclude Include="json.hpp" />
     <ClInclude Include="libretro.h" />
     <ClInclude Include="N3SGameData.hpp" />
+    <ClInclude Include="N3SOverlay.hpp" />
     <ClInclude Include="N3SPatternTable.hpp" />
     <ClInclude Include="NesEmulator.h" />
     <ClInclude Include="resource.h" />
@@ -254,7 +255,6 @@
     <ClInclude Include="VxlD3DContext.h" />
     <ClInclude Include="VxlApp.h" />
     <ClInclude Include="VxlGameData.h" />
-    <ClInclude Include="VxlHash.hpp" />
     <ClInclude Include="VxlInput.h" />
     <ClInclude Include="VxlPalette.h" />
     <ClInclude Include="VxlPatternTable.h" />
@@ -265,6 +265,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="N3SGameData.cpp" />
+    <ClCompile Include="N3SOverlay.cpp" />
     <ClCompile Include="N3SPatternTable.cpp" />
     <ClCompile Include="NesEmulator.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -306,21 +307,25 @@
       <EnableDebuggingInformation Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</EnableDebuggingInformation>
       <DisableOptimizations Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DisableOptimizations>
     </FxCompile>
-    <FxCompile Include="texture_pixel.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+    <FxCompile Include="overlay_pixel.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='HoloLens Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='HoloLens Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Hololens Release|Win32'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Hololens Release|Win32'">4.0_level_9_3</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Hololens Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4.0_level_9_3</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
     </FxCompile>
-    <FxCompile Include="texture_vertex.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+    <FxCompile Include="overlay_vertex.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='HoloLens Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='HoloLens Debug|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Hololens Release|Win32'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Hololens Release|Win32'">4.0_level_9_3</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Hololens Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4.0_level_9_3</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

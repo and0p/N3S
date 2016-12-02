@@ -28,7 +28,12 @@ ID3D11ShaderResourceView *VxlUtil::textureView;
 ShaderType VxlUtil::activeShader;
 D3D11_SUBRESOURCE_DATA VxlUtil::subData;
 MirrorState VxlUtil::mirrorState;
+D3D11_DEPTH_STENCIL_DESC VxlUtil::depthStencilDesc;
+D3D11_DEPTH_STENCIL_DESC VxlUtil::depthDisabledStencilDesc;
+ID3D11DepthStencilState* VxlUtil::m_depthStencilState;
+ID3D11DepthStencilState* VxlUtil::m_depthDisabledStencilState;
 PPUHueStandardCollection VxlUtil::ppuHueStandardCollection;
+ID3D11DepthStencilView* VxlUtil::m_depthStencilView;
 int VxlUtil::selectedPalette;
 int VxlUtil::mirrorBufferNumber;
 
@@ -83,6 +88,9 @@ void VxlUtil::initPipeline(VxlD3DContext c)
 	paletteSelectionBufferDesc.StructureByteStride = 0;
 
 	device1->CreateBuffer(&paletteSelectionBufferDesc, NULL, &paletteSelectionBuffer);
+
+	initDepthStencils();
+	enabledDepthBuffer();
 
 #ifndef HOLOLENS
 	initShaders();
@@ -208,60 +216,6 @@ void VxlUtil::setShader(ShaderType type) {
 	}
 }
 
-VoxelMesh* VxlUtil::CreateRectangle(ShaderType type)
-{
-	VoxelMesh *rectangle;
-	rectangle = new VoxelMesh;
-
-	if (type == color)
-	{
-		ColorVertex *vertices = new ColorVertex[6]
-		{
-			{ XMFLOAT4(-1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
-			{ XMFLOAT4(-1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
-			{ XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) },
-			{ XMFLOAT4(-1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
-			{ XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) },
-			{ XMFLOAT4(1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) }
-		};
-		rectangle->buffer = createBufferFromColorVertices(vertices, 192);
-		rectangle->type = color;
-		
-	}
-	else if (type == texture)
-	{
-		TextureVertex *vertices = new TextureVertex[6]
-		{
-			{ XMFLOAT4(-1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT2(0.0f, 1.0f) },
-			{ XMFLOAT4(-1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT2(0.0f, 0.0f) },
-			{ XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT2(1.0f, 0.0f) },
-			{ XMFLOAT4(-1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT2(0.0f, 1.0f) },
-			{ XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT2(1.0f, 0.0f) },
-			{ XMFLOAT4(1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT2(1.0f, 1.0f) }
-		};
-		rectangle->buffer = createBufferFromTextureVertices(vertices, 144);
-		rectangle->type = texture;
-	}
-
-	rectangle->size = 6;
-	return rectangle;
-}
-
-VoxelMesh *VxlUtil::CreateSpriteMarker() {
-	VoxelMesh *marker;
-	marker = new VoxelMesh;
-	marker->size = 3;
-	marker->type = color;
-	ColorVertex *vertices = new ColorVertex[3]
-	{
-		{ XMFLOAT4(0.0f, (pixelSizeH * -8), 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
-		{ XMFLOAT4((pixelSizeW * 4), 0.0f, 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
-		{ XMFLOAT4((pixelSizeW * 8), (pixelSizeH * -8), 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) }
-	};
-	marker->buffer = createBufferFromColorVertices(vertices, 96);
-	return marker;
-}
-
 ID3D11Buffer* VxlUtil::createBufferFromColorVertices(ColorVertex vertices[], int arraySize)
 {
 	// create the vertex buffer
@@ -302,28 +256,6 @@ ID3D11Buffer* VxlUtil::createBufferFromColorVerticesV(std::vector<ColorVertex>  
 	D3D11_SUBRESOURCE_DATA vData;
 	vData.pSysMem = &(vertices->data()[0]);
 	device1->CreateBuffer(&bd, &vData, &pVBuffer);		// create the buffer
-	return pVBuffer;
-}
-
-ID3D11Buffer* VxlUtil::createBufferFromTextureVertices(TextureVertex vertices[], int arraySize)
-{
-	// create the vertex buffer
-	D3D11_BUFFER_DESC bd;
-	ZeroMemory(&bd, sizeof(bd));
-
-	bd.Usage = D3D11_USAGE_DEFAULT;                // write access access by CPU and GPU
-	bd.ByteWidth = sizeof(TextureVertex) * arraySize;             // size is the VERTEX struct * 3in
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;       // use as a vertex buffer
-	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;    // allow CPU to write in buffer
-
-	ID3D11Buffer *pVBuffer;								// the vertex buffer
-	device1->CreateBuffer(&bd, NULL, &pVBuffer);		// create the buffer
-
-	// copy the vertices into the buffer
-	D3D11_MAPPED_SUBRESOURCE ms;
-	HRESULT result = context1->Map(pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);		// map the buffer
-	memcpy(ms.pData, vertices, arraySize);													// copy the data
-	context1->Unmap(pVBuffer, NULL);														// unmap the buffer
 	return pVBuffer;
 }
 
@@ -535,6 +467,16 @@ void VxlUtil::setIndexBuffer()
 	);
 }
 
+void VxlUtil::enabledDepthBuffer()
+{
+	context->OMSetDepthStencilState(m_depthStencilState, 1);
+}
+
+void VxlUtil::disableDepthBuffer()
+{
+	context->OMSetDepthStencilState(m_depthDisabledStencilState, 1);
+}
+
 void VxlUtil::renderMesh(VoxelMesh *voxelMesh) {
 	ShaderType type = voxelMesh->type;
 	UINT stride = sizeof(ColorVertex); // TODO optimize
@@ -592,17 +534,74 @@ void VxlUtil::createIndexBuffer()
 		);
 }
 
-void VxlUtil::updateGameTexture(const void *data) {
+bool VxlUtil::initDepthStencils()
+{
+	// Thanks http://www.rastertek.com/dx11tut11.html
+	HRESULT result = false;
 	
-	//data = ((char*)data) + 2;
-	setShader(texture);
-	D3D11_MAPPED_SUBRESOURCE ms;
-	HRESULT result = context1->Map(texture2d, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);
-	//memcpy(ms.pData, data, 144480);
-	memcpy(ms.pData, data, 245760);
-	context1->Unmap(texture2d, NULL);
-	context->PSSetSamplers(0, 1, &sampleState);
-	context->PSSetShaderResources(0, 1, &textureView);
+	// Initialize the description of the stencil state.
+	ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
+
+	// Set up the description of the stencil state.
+	depthStencilDesc.DepthEnable = true;
+	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+
+	depthStencilDesc.StencilEnable = true;
+	depthStencilDesc.StencilReadMask = 0xFF;
+	depthStencilDesc.StencilWriteMask = 0xFF;
+
+	// Stencil operations if pixel is front-facing.
+	depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+	depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+	// Stencil operations if pixel is back-facing.
+	depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+	depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+	// Create the depth stencil state.
+	result = device->CreateDepthStencilState(&depthStencilDesc, &m_depthStencilState);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	// Clear the second depth stencil state before setting the parameters.
+	ZeroMemory(&depthDisabledStencilDesc, sizeof(depthDisabledStencilDesc));
+
+	// Now create a second depth stencil state which turns off the Z buffer for 2D rendering.  The only difference is 
+	// that DepthEnable is set to false, all other parameters are the same as the other depth stencil state.
+	depthDisabledStencilDesc.DepthEnable = false;
+	depthDisabledStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthDisabledStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	depthDisabledStencilDesc.StencilEnable = true;
+	depthDisabledStencilDesc.StencilReadMask = 0xFF;
+	depthDisabledStencilDesc.StencilWriteMask = 0xFF;
+	depthDisabledStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+	depthDisabledStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	depthDisabledStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+	depthDisabledStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+	// Create the state using the device.
+	result = device->CreateDepthStencilState(&depthDisabledStencilDesc, &m_depthDisabledStencilState);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	// Set the z-buffer enabled depth stencil state
+	context->OMSetDepthStencilState(m_depthStencilState, 1);
+	
+	// If it all succeeded, return true
+	return true;
 }
 
 bool toggleBool(bool b)
