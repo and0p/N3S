@@ -1,9 +1,9 @@
 // Also shamelessly stolen from http://www.rastertek.com/dx11tut04.html
 
 #include "stdafx.h"
-#include "VxlCamera.h"
+#include "Camera.hpp"
 
-VxlCamera::VxlCamera()
+Camera::Camera()
 {
 	m_viewMatrix = (XMMATRIX*)_aligned_malloc(sizeof(XMMATRIX), alignof(XMMATRIX));
 	*m_viewMatrix = XMMatrixIdentity();
@@ -16,16 +16,16 @@ VxlCamera::VxlCamera()
 	m_rotationZ = 0.0f;
 }
 
-VxlCamera::VxlCamera(const VxlCamera& other)
+Camera::Camera(const Camera& other)
 {
 }
 
 
-VxlCamera::~VxlCamera()
+Camera::~Camera()
 {
 }
 
-void VxlCamera::SetPosition(float x, float y, float z)
+void Camera::SetPosition(float x, float y, float z)
 {
 	m_positionX = x;
 	m_positionY = y;
@@ -33,7 +33,7 @@ void VxlCamera::SetPosition(float x, float y, float z)
 	return;
 }
 
-void VxlCamera::SetRotation(float x, float y, float z)
+void Camera::SetRotation(float x, float y, float z)
 {
 	m_rotationX = x;
 	m_rotationY = y;
@@ -41,14 +41,14 @@ void VxlCamera::SetRotation(float x, float y, float z)
 	return;
 }
 
-void VxlCamera::AdjustPosition(float x, float y, float z)
+void Camera::AdjustPosition(float x, float y, float z)
 {
 	m_positionX += x;
 	m_positionY += y;
 	m_positionZ += z;
 }
 
-void VxlCamera::AdjustRotation(float x, float y, float z)
+void Camera::AdjustRotation(float x, float y, float z)
 {
 	m_rotationX += x;
 	m_rotationY += y;
@@ -59,18 +59,18 @@ void VxlCamera::AdjustRotation(float x, float y, float z)
 		m_rotationX += 360.0f;
 }
 
-XMFLOAT3 VxlCamera::GetPosition()
+XMFLOAT3 Camera::GetPosition()
 {
 	return XMFLOAT3(m_positionX, m_positionY, m_positionZ);
 }
 
 
-XMFLOAT3 VxlCamera::GetRotation()
+XMFLOAT3 Camera::GetRotation()
 {
 	return XMFLOAT3(m_rotationX, m_rotationY, m_rotationZ);
 }
 
-void VxlCamera::Render()
+void Camera::Render()
 {
 	XMVECTOR up, position, lookAt;
 	float yaw, pitch, roll;
@@ -107,7 +107,7 @@ void VxlCamera::Render()
 	*m_viewMatrix = XMMatrixLookAtLH(position, lookAt, up);
 }
 
-XMMATRIX VxlCamera::GetViewMatrix()
+XMMATRIX Camera::GetViewMatrix()
 {
 	return *m_viewMatrix;
 }

@@ -1,6 +1,6 @@
 #pragma once
-#include "VxlPPUSnapshot.h"
-#include "VxlAudio.h"
+#include "PpuSnapshot.hpp"
+#include "Audio.hpp"
 
 class NesEmulator {
 public:

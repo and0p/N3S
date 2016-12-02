@@ -37,7 +37,7 @@ ID3D11DepthStencilView* N3S3d::m_depthStencilView;
 int N3S3d::selectedPalette;
 int N3S3d::mirrorBufferNumber;
 
-void N3S3d::initPipeline(VxlD3DContext c)
+void N3S3d::initPipeline(N3sD3dContext c)
 {
 	device = c.device;
 	context = c.context;
@@ -355,7 +355,7 @@ void N3S3d::selectPalette(int palette)
 	}
 }
 
-void N3S3d::updateMatricesWithCamera(VxlCamera * camera) {
+void N3S3d::updateMatricesWithCamera(Camera * camera) {
 
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;

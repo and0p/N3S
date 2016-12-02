@@ -242,33 +242,37 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.hpp" />
+    <ClInclude Include="GameData.hpp" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="libretro.h" />
     <ClInclude Include="N3s3d.hpp" />
-    <ClInclude Include="N3sGameData.hpp" />
-    <ClInclude Include="N3sOverlay.hpp" />
+    <ClInclude Include="N3sApp.hpp" />
+    <ClInclude Include="Audio.hpp" />
+    <ClInclude Include="Input.hpp" />
+    <ClInclude Include="N3sD3DContext.h" />
+    <ClInclude Include="N3sPalette.hpp" />
     <ClInclude Include="N3sPatternTable.hpp" />
-    <ClInclude Include="NesEmulator.h" />
+    <ClInclude Include="N3sRawPPU.h" />
+    <ClInclude Include="NesEmulator.hpp" />
+    <ClInclude Include="Overlay.hpp" />
+    <ClInclude Include="PpuSnapshot.hpp" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="VxlAudio.h" />
-    <ClInclude Include="VxlD3DContext.h" />
-    <ClInclude Include="VxlApp.h" />
-    <ClInclude Include="VxlGameData.h" />
-    <ClInclude Include="VxlInput.h" />
-    <ClInclude Include="VxlPalette.h" />
-    <ClInclude Include="VxlPatternTable.h" />
-    <ClInclude Include="VxlPPUSnapshot.h" />
-    <ClInclude Include="VxlCamera.h" />
-    <ClInclude Include="VxlRawPPU.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="GameData.cpp" />
     <ClCompile Include="N3s3d.cpp" />
-    <ClCompile Include="N3sGameData.cpp" />
-    <ClCompile Include="N3sOverlay.cpp" />
+    <ClCompile Include="N3sApp.cpp" />
+    <ClCompile Include="Audio.cpp" />
+    <ClCompile Include="Input.cpp" />
+    <ClCompile Include="N3sPalette.cpp" />
     <ClCompile Include="N3sPatternTable.cpp" />
     <ClCompile Include="NesEmulator.cpp" />
+    <ClCompile Include="Overlay.cpp" />
+    <ClCompile Include="PpuSnapshot.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='HoloLens Debug|Win32'">Create</PrecompiledHeader>
@@ -279,14 +283,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Hololens Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="VxlAudio.cpp" />
-    <ClCompile Include="VxlApp.cpp" />
-    <ClCompile Include="VxlGameData.cpp" />
-    <ClCompile Include="VxlInput.cpp" />
-    <ClCompile Include="VxlPalette.cpp" />
-    <ClCompile Include="VxlPatternTable.cpp" />
-    <ClCompile Include="VxlPPUSnapshot.cpp" />
-    <ClCompile Include="VxlCamera.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="color_pixel.hlsl">

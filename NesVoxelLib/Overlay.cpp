@@ -1,12 +1,12 @@
 #include "stdafx.h"
-#include "N3SOverlay.hpp"
+#include "Overlay.hpp"
 
-void N3SOverlay::drawString(int x, int y, int scale, string s)
+void Overlay::drawString(int x, int y, int scale, string s)
 {
 
 }
 
-VoxelMesh N3SOverlay::createMeshFromBitmapCharacter(BitmapCharacter bitmap)
+VoxelMesh Overlay::createMeshFromBitmapCharacter(BitmapCharacter bitmap)
 {
 	vector<OverlayVertex> vertices;
 	int squarecount = 0;

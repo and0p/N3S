@@ -34,7 +34,7 @@ static BitmapCharacter bitmapCharacters[2] =
 	}
 };
 
-class N3SOverlay {
+class Overlay {
 public:
 	static void init();
 	static void unload();

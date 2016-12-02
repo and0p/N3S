@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "N3SGameData.hpp"
+#include "GameData.hpp"
 
 RomInfo getRomInfo(char * data)
 {
@@ -556,13 +556,13 @@ VirtualSprite::VirtualSprite(json j, map<int, shared_ptr<SpriteMesh>> meshes)
 	description = j["description"].get<string>();
 }
 
-void VirtualSprite::renderOAM(shared_ptr<VxlPPUSnapshot> snapshot, int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop)
+void VirtualSprite::renderOAM(shared_ptr<PpuSnapshot> snapshot, int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop)
 {
 	// TODO: Check dynamic stuff
 	defaultMesh->render(x, y, palette, mirrorH, mirrorV, crop);
 }
 
-void VirtualSprite::renderNametable(shared_ptr<VxlPPUSnapshot> snapshot, int x, int y, int palette, int nametableX, int nametableY, Crop crop)
+void VirtualSprite::renderNametable(shared_ptr<PpuSnapshot> snapshot, int x, int y, int palette, int nametableX, int nametableY, Crop crop)
 {
 	// TODO: Check dynamic stuff
 	defaultMesh->render(x, y, palette, false, false, crop);

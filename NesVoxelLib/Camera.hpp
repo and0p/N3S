@@ -12,14 +12,14 @@ using namespace DirectX;
 #define _CAMERACLASS_H_
 
 ////////////////////////////////////////////////////////////////////////////////
-// Class name: VxlCamera
+// Class name: Camera
 ////////////////////////////////////////////////////////////////////////////////
-class VxlCamera
+class Camera
 {
 public:
-	VxlCamera();
-	VxlCamera(const VxlCamera&);
-	~VxlCamera();
+	Camera();
+	Camera(const Camera&);
+	~Camera();
 
 	void SetPosition(float, float, float);
 	void SetRotation(float, float, float);

@@ -10,8 +10,8 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#include "NesEmulator.h"
-#include "VxlInput.h"
+#include "NesEmulator.hpp"
+#include "Input.hpp"
 
 static const void *pixelData;
 static retro_game_info *info;

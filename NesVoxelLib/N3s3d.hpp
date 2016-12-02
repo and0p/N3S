@@ -3,9 +3,13 @@
 
 #pragma once
 #include <vector>
-#include "VxlCamera.h"
-#include "VxlD3DContext.h"
-#include "VxlPalette.h"
+#include "Camera.hpp"
+#include "N3sPalette.hpp"
+#include <d3d11_1.h>
+#include <DirectXMath.h>
+#include <DirectXColors.h>
+#include <wrl/client.h>
+#include "N3sD3DContext.h"
 
 static float pixelSizeW = (2.0f / 256.0f);
 static float pixelSizeH = (2.0f / 240.0f);
@@ -58,10 +62,10 @@ struct MirrorState
 
 class N3S3d {
 public:
-	static void initPipeline(VxlD3DContext context);
+	static void initPipeline(N3sD3dContext context);
 	static ID3D11Buffer* createBufferFromColorVertices(ColorVertex vertices[], int arraySize);
 	static ID3D11Buffer* createBufferFromColorVerticesV(std::vector<ColorVertex> * vertices, int arraySize);
-	static void updateMatricesWithCamera(VxlCamera * camera);
+	static void updateMatricesWithCamera(Camera * camera);
 	static void updateViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 perspective);
 	static void updateWorldMatrix(float, float, float);
 	static void updateMirroring(bool horizontal, bool vertical);

@@ -4,7 +4,7 @@
 #include "json.hpp"
 #include "N3s3d.hpp"
 #include <unordered_set>
-#include "VxlPPUSnapshot.h"
+#include "PpuSnapshot.hpp"
 
 using json = nlohmann::json;
 using namespace std;
@@ -66,8 +66,8 @@ public:
 	VirtualSprite();
 	VirtualSprite(string chrData, shared_ptr<SpriteMesh> mesh);
 	VirtualSprite(json j, map<int, shared_ptr<SpriteMesh>> meshes);
-	void renderOAM(shared_ptr<VxlPPUSnapshot> snapshot, int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop);
-	void renderNametable(shared_ptr<VxlPPUSnapshot> snapshot, int x, int y, int palette, int nametableX, int nametableY, Crop crop);
+	void renderOAM(shared_ptr<PpuSnapshot> snapshot, int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop);
+	void renderNametable(shared_ptr<PpuSnapshot> snapshot, int x, int y, int palette, int nametableX, int nametableY, Crop crop);
 	json getJSON();
 	int id;
 	vector<int> appearancesInRomChr;	// Where does this sprite appear in CHR data? For reference.

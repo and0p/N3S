@@ -1,8 +1,8 @@
 #include "stdafx.h"
-#include "VxlPPUSnapshot.h"
+#include "PpuSnapshot.hpp"
 #include "N3s3d.hpp"
 
-//VxlPPUSnapshot::VxlPPUSnapshot(const void *vram): nameTables(new std::vector<NameTable>)
+//PpuSnapshot::PpuSnapshot(const void *vram): nameTables(new std::vector<NameTable>)
 //{
 //	unsigned char *vramStart = (unsigned char*)vram;
 //	for (int i = 0; i < 64; i++) {
@@ -16,7 +16,7 @@
 //	int test = 0;
 //}
 
-VxlPPUSnapshot::VxlPPUSnapshot(VxlRawPPU * rawPPU)
+PpuSnapshot::PpuSnapshot(N3sRawPpu * rawPPU)
 {
 	// Copy register options
 	ctrl.spriteNameTable = getBit(rawPPU->ctrl, 3);
@@ -124,11 +124,11 @@ VxlPPUSnapshot::VxlPPUSnapshot(VxlRawPPU * rawPPU)
 	}
 }
 
-VxlPPUSnapshot::~VxlPPUSnapshot()
+PpuSnapshot::~PpuSnapshot()
 {
 }
 
-bool VxlPPUSnapshot::getOAMSelectAtScanline(int scanline)
+bool PpuSnapshot::getOAMSelectAtScanline(int scanline)
 {
 	// Find which scroll section this sits in
 	bool passed = false;
@@ -149,7 +149,7 @@ bool VxlPPUSnapshot::getOAMSelectAtScanline(int scanline)
 	return value;
 }
 
-OamSprite VxlPPUSnapshot::buildSprite(unsigned char* ptr)
+OamSprite PpuSnapshot::buildSprite(unsigned char* ptr)
 {
 	OamSprite sprite;
 	sprite.y = *ptr;
@@ -165,7 +165,7 @@ OamSprite VxlPPUSnapshot::buildSprite(unsigned char* ptr)
 	return sprite;
 }
 
-int VxlPPUSnapshot::getTileAddress(unsigned char byte)
+int PpuSnapshot::getTileAddress(unsigned char byte)
 {
 	return (byte >> 1);
 }
