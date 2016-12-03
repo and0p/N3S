@@ -7,37 +7,43 @@
 #include "N3s3d.hpp"
 
 using namespace std;
-Microsoft::WRL::ComPtr<ID3D11Device>            N3S3d::device;
-Microsoft::WRL::ComPtr<ID3D11Device1>           N3S3d::device1;
-Microsoft::WRL::ComPtr<ID3D11DeviceContext>     N3S3d::context;
-Microsoft::WRL::ComPtr<ID3D11DeviceContext1>    N3S3d::context1;
-ID3D11SamplerState *N3S3d::sampleState;
-ID3D11Buffer *N3S3d::worldMatrixBuffer;
-ID3D11Buffer *N3S3d::viewMatrixBuffer;
-ID3D11Buffer *N3S3d::projectionMatrixBuffer;
-ID3D11Buffer *N3S3d::mirrorBuffer;
-ID3D11Buffer *N3S3d::paletteBuffer;
-ID3D11Buffer *N3S3d::paletteSelectionBuffer;
-ID3D11Buffer *N3S3d::indexBuffer;
-int N3S3d::paletteBufferNumber;
-int N3S3d::paletteSelectionBufferNumber;
-ShaderSet N3S3d::shaderSets[2];
-ID3D11InputLayout *N3S3d::inputLayouts[2];
-ID3D11Texture2D *N3S3d::texture2d;
-ID3D11ShaderResourceView *N3S3d::textureView;
-ShaderType N3S3d::activeShader;
-D3D11_SUBRESOURCE_DATA N3S3d::subData;
-MirrorState N3S3d::mirrorState;
-D3D11_DEPTH_STENCIL_DESC N3S3d::depthStencilDesc;
-D3D11_DEPTH_STENCIL_DESC N3S3d::depthDisabledStencilDesc;
-ID3D11DepthStencilState* N3S3d::m_depthStencilState;
-ID3D11DepthStencilState* N3S3d::m_depthDisabledStencilState;
-PPUHueStandardCollection N3S3d::ppuHueStandardCollection;
-ID3D11DepthStencilView* N3S3d::m_depthStencilView;
-int N3S3d::selectedPalette;
-int N3S3d::mirrorBufferNumber;
 
-void N3S3d::initPipeline(N3sD3dContext c)
+Microsoft::WRL::ComPtr<ID3D11Device>            device;
+Microsoft::WRL::ComPtr<ID3D11Device1>           device1;
+Microsoft::WRL::ComPtr<ID3D11DeviceContext>     context;
+Microsoft::WRL::ComPtr<ID3D11DeviceContext1>    context1;
+
+ShaderSet shaderSets[2];
+ID3D11InputLayout *inputLayouts[2];
+ID3D11Buffer *worldMatrixBuffer;
+ID3D11Buffer *viewMatrixBuffer;
+ID3D11Buffer *projectionMatrixBuffer;
+ID3D11Buffer *mirrorBuffer;
+ID3D11Buffer *paletteBuffer;
+ID3D11Buffer *paletteSelectionBuffer;
+ID3D11Buffer *indexBuffer;
+MatrixBuffer *worldMatrixPtr;
+MatrixBuffer *viewMatrixPtr;
+MatrixBuffer *projectionMatrixPtr;
+ID3D11SamplerState* sampleState;
+ID3D11Texture2D* texture2d;
+ID3D11ShaderResourceView* textureView;
+ShaderType activeShader;
+D3D11_SUBRESOURCE_DATA subData;
+MirrorState mirrorState;
+D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
+D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc;
+ID3D11DepthStencilState* m_depthDisabledStencilState;
+ID3D11DepthStencilState* m_depthStencilState;
+ID3D11DepthStencilView* m_depthStencilView;
+int selectedPalette;
+int mirrorBufferNumber;
+int paletteBufferNumber;
+int paletteSelectionBufferNumber;
+
+PPUHueStandardCollection N3s3d::ppuHueStandardCollection;
+
+void N3s3d::initPipeline(N3sD3dContext c)
 {
 	device = c.device;
 	context = c.context;
@@ -168,7 +174,7 @@ void N3S3d::initPipeline(N3sD3dContext c)
 #endif
 }
 
-void N3S3d::initShaders() {
+void N3s3d::initShaders() {
 	ifstream s_stream;
 	size_t s_size;
 	char* s_data;
@@ -203,7 +209,7 @@ void N3S3d::initShaders() {
 	updateMirroring(true, true); // TODO: Make mirror cbuffer init cleaner
 }
 
-void N3S3d::setShader(ShaderType type) {
+void N3s3d::setShader(ShaderType type) {
 	switch (type)
 	{
 	case color:
@@ -216,7 +222,7 @@ void N3S3d::setShader(ShaderType type) {
 	}
 }
 
-ID3D11Buffer* N3S3d::createBufferFromColorVertices(ColorVertex vertices[], int arraySize)
+ID3D11Buffer* N3s3d::createBufferFromColorVertices(ColorVertex vertices[], int arraySize)
 {
 	// create the vertex buffer
 	D3D11_BUFFER_DESC bd;
@@ -238,7 +244,7 @@ ID3D11Buffer* N3S3d::createBufferFromColorVertices(ColorVertex vertices[], int a
 	return pVBuffer;
 }
 
-ID3D11Buffer* N3S3d::createBufferFromColorVerticesV(std::vector<ColorVertex>  * vertices, int arraySize)
+ID3D11Buffer* N3s3d::createBufferFromColorVerticesV(std::vector<ColorVertex>  * vertices, int arraySize)
 {
 	if (vertices->size() == 0) {
 		return nullptr;
@@ -259,7 +265,7 @@ ID3D11Buffer* N3S3d::createBufferFromColorVerticesV(std::vector<ColorVertex>  * 
 	return pVBuffer;
 }
 
-void N3S3d::updateWorldMatrix(float x, float y, float z) {
+void N3s3d::updateWorldMatrix(float x, float y, float z) {
 	XMMATRIX worldMatrix = XMMatrixIdentity();
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	MatrixBuffer* dataPtr;
@@ -278,7 +284,7 @@ void N3S3d::updateWorldMatrix(float x, float y, float z) {
 	context1->VSSetConstantBuffers(0, 1, &worldMatrixBuffer);
 }
 
-void N3S3d::updateMirroring(bool horizontal, bool vertical) {
+void N3s3d::updateMirroring(bool horizontal, bool vertical) {
 	int x, y;
 	if (horizontal)
 		x = -1;
@@ -308,7 +314,7 @@ void N3S3d::updateMirroring(bool horizontal, bool vertical) {
 	}
 }
 
-void N3S3d::updatePalette(float palette[72])
+void N3s3d::updatePalette(float palette[72])
 {
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	float* dataPtr;
@@ -335,7 +341,7 @@ void N3S3d::updatePalette(float palette[72])
 	context1->VSSetConstantBuffers(paletteBufferNumber, 1, &paletteBuffer);
 }
 
-void N3S3d::selectPalette(int palette)
+void N3s3d::selectPalette(int palette)
 {
 	if (palette != selectedPalette)
 	{
@@ -355,7 +361,7 @@ void N3S3d::selectPalette(int palette)
 	}
 }
 
-void N3S3d::updateMatricesWithCamera(Camera * camera) {
+void N3s3d::updateMatricesWithCamera(Camera * camera) {
 
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -404,7 +410,7 @@ void N3S3d::updateMatricesWithCamera(Camera * camera) {
 	context1->VSSetConstantBuffers(2, 1, &projectionMatrixBuffer);
 }
 
-void N3S3d::updateViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
+void N3s3d::updateViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
 {
 	XMMATRIX viewMatrix, projectionMatrix;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -436,7 +442,7 @@ void N3S3d::updateViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
 	context1->VSSetConstantBuffers(2, 1, &projectionMatrixBuffer);
 }
 
-XMMATRIX N3S3d::getProjectionMatrix(const float near_plane, const float far_plane, const float fov_horiz, const float fov_vert)
+XMMATRIX N3s3d::getProjectionMatrix(const float near_plane, const float far_plane, const float fov_horiz, const float fov_vert)
 {
 	float    h, w, Q;
 
@@ -458,7 +464,7 @@ XMMATRIX N3S3d::getProjectionMatrix(const float near_plane, const float far_plan
 	return XMLoadFloat4x4(&tmp);
 }
 
-void N3S3d::setIndexBuffer()
+void N3s3d::setIndexBuffer()
 {
 	context->IASetIndexBuffer(
 		indexBuffer,
@@ -467,17 +473,17 @@ void N3S3d::setIndexBuffer()
 	);
 }
 
-void N3S3d::enabledDepthBuffer()
+void N3s3d::enabledDepthBuffer()
 {
 	context->OMSetDepthStencilState(m_depthStencilState, 1);
 }
 
-void N3S3d::disableDepthBuffer()
+void N3s3d::disableDepthBuffer()
 {
 	context->OMSetDepthStencilState(m_depthDisabledStencilState, 1);
 }
 
-void N3S3d::renderMesh(VoxelMesh *voxelMesh) {
+void N3s3d::renderMesh(VoxelMesh *voxelMesh) {
 	ShaderType type = voxelMesh->type;
 	UINT stride = sizeof(ColorVertex); // TODO optimize
 	UINT offset = 0;
@@ -497,7 +503,7 @@ void N3S3d::renderMesh(VoxelMesh *voxelMesh) {
 #endif
 }
 
-void N3S3d::initSampleState() {
+void N3s3d::initSampleState() {
 	D3D11_SAMPLER_DESC samplerDesc;
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -515,7 +521,7 @@ void N3S3d::initSampleState() {
 	device->CreateSamplerState(&samplerDesc, &sampleState);
 }
 
-void N3S3d::createIndexBuffer()
+void N3s3d::createIndexBuffer()
 {
 	unsigned short indices[73728];
 	for (int i = 0; i < 73728; i++)
@@ -534,7 +540,7 @@ void N3S3d::createIndexBuffer()
 		);
 }
 
-bool N3S3d::initDepthStencils()
+bool N3s3d::initDepthStencils()
 {
 	// Thanks http://www.rastertek.com/dx11tut11.html
 	HRESULT result = false;
@@ -602,24 +608,6 @@ bool N3S3d::initDepthStencils()
 	
 	// If it all succeeded, return true
 	return true;
-}
-
-bool toggleBool(bool b)
-{
-	if (b == false)
-		return true;
-	else
-		return false;;
-}
-
-// thx https://www.safaribooksonline.com/library/view/c-cookbook/0596007612/ch10s17.html
-string replaceExt(string input, string newExt) {
-	string::size_type i = input.rfind('.', input.length());
-
-	if (i != string::npos) {
-		input.replace(i + 1, newExt.length(), newExt);
-	}
-	return input;
 }
 
 bool Crop::zeroed()

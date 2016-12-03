@@ -44,3 +44,14 @@ namespace DX
 		}
 	}
 }
+
+// Simple utility functions
+
+bool toggleBool(bool b)
+{
+	if (b == false)
+		return true;
+	else
+		return false;;
+};
+

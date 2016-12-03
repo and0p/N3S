@@ -177,6 +177,10 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam)
 				app.load(path);
 			break;
 		}
+		case ID_FILE_UNLOAD:
+		{
+			app.unload();
+		}
 		case ID_3D_SAVE:
 		{
 			app.save();

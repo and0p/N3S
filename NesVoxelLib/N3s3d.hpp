@@ -60,7 +60,7 @@ struct MirrorState
 	int y;
 };
 
-class N3S3d {
+class N3s3d {
 public:
 	static void initPipeline(N3sD3dContext context);
 	static ID3D11Buffer* createBufferFromColorVertices(ColorVertex vertices[], int arraySize);
@@ -79,42 +79,10 @@ public:
 	static void enabledDepthBuffer();
 	static void disableDepthBuffer();
 private:
-	static Microsoft::WRL::ComPtr<ID3D11Device>            device;
-	static Microsoft::WRL::ComPtr<ID3D11Device1>           device1;
-	static Microsoft::WRL::ComPtr<ID3D11DeviceContext>     context;
-	static Microsoft::WRL::ComPtr<ID3D11DeviceContext1>    context1;
 	static void initShaders();
 	static void initSampleState();
 	static void createIndexBuffer();
 	static bool initDepthStencils();
-	static ShaderSet shaderSets[2];
-	static ID3D11InputLayout *inputLayouts[2];
-	static ID3D11Buffer *worldMatrixBuffer;
-	static ID3D11Buffer *viewMatrixBuffer;
-	static ID3D11Buffer *projectionMatrixBuffer;
-	static ID3D11Buffer *mirrorBuffer;
-	static ID3D11Buffer *paletteBuffer;
-	static ID3D11Buffer *paletteSelectionBuffer;
-	static ID3D11Buffer *indexBuffer;
-	static MatrixBuffer *worldMatrixPtr;
-	static MatrixBuffer *viewMatrixPtr;
-	static MatrixBuffer *projectionMatrixPtr;
-	static ID3D11SamplerState* sampleState;
-	static ID3D11Texture2D* texture2d;
-	static ID3D11ShaderResourceView* textureView;
-	static ShaderType activeShader;
-	static D3D11_SUBRESOURCE_DATA subData;
-	static MirrorState mirrorState;
-	static D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
-	static D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc;
-	static ID3D11DepthStencilState* m_depthDisabledStencilState;
-	static ID3D11DepthStencilState* m_depthStencilState;
-
-	static ID3D11DepthStencilView* m_depthStencilView;
-	static int selectedPalette;
-	static int mirrorBufferNumber;
-	static int paletteBufferNumber;
-	static int paletteSelectionBufferNumber;
 };
 
 bool toggleBool(bool b);

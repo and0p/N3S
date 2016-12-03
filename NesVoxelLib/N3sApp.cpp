@@ -18,7 +18,7 @@ N3sApp::N3sApp()
 
 void N3sApp::assignD3DContext(N3sD3dContext context)
 {
-	N3S3d::initPipeline(context);
+	N3s3d::initPipeline(context);
 	
 }
 
@@ -154,12 +154,12 @@ void N3sApp::render()
 {
 	if (loaded)
 	{
-		N3S3d::setShader(color);
+		N3s3d::setShader(color);
 		camera.Render();
-		N3S3d::updateMatricesWithCamera(&camera);
-		N3S3d::updateWorldMatrix(0.0f, 0.0f, 0.0f);
-		N3S3d::updateMirroring(true, true);
-		N3S3d::updateMirroring(false, false);
+		N3s3d::updateMatricesWithCamera(&camera);
+		N3s3d::updateWorldMatrix(0.0f, 0.0f, 0.0f);
+		N3s3d::updateMirroring(true, true);
+		N3s3d::updateMirroring(false, false);
 		updatePalette();
 		if (snapshot->mask.renderSprites)
 			renderSprites();
@@ -191,7 +191,7 @@ void N3sApp::setMute(bool mute)
 
 void N3sApp::updateCameraViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
 {
-	N3S3d::updateViewMatrices(view, projection);
+	N3s3d::updateViewMatrices(view, projection);
 }
 
 void N3sApp::updateGameOriginPosition(float x, float y, float z)
@@ -211,7 +211,7 @@ XMVECTORF32 N3sApp::getBackgroundColor()
 {
 	Hue hue;
 	if (loaded)
-		hue = N3S3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->backgroundColor);
+		hue = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->backgroundColor);
 	else
 		hue = { 0.0f, 0.0f, 0.0f };
 	return{ hue.red, hue.green, hue.blue, 1.0f };
@@ -324,19 +324,19 @@ void N3sApp::updatePalette()
 	{
 		for (int h = 0; h < 3; h++)
 		{
-			palette[(p * 9) + (h * 3)] = N3S3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).red;
-			palette[(p * 9) + (h * 3) + 1] = N3S3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).green;
-			palette[(p * 9) + (h * 3) + 2] = N3S3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).blue;
+			palette[(p * 9) + (h * 3)] = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).red;
+			palette[(p * 9) + (h * 3) + 1] = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).green;
+			palette[(p * 9) + (h * 3) + 2] = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).blue;
 		}
 	}
-	Hue hue = N3S3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[0].colors[2]);
-	N3S3d::updatePalette(palette);
+	Hue hue = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[0].colors[2]);
+	N3s3d::updatePalette(palette);
 }
 
 void N3sApp::renderNameTables()
 {
 	// Reset tile mirroring, as Nametable cannot use it
-	N3S3d::updateMirroring(false, false);
+	N3s3d::updateMirroring(false, false);
 	// Render each scroll section
 	for (ScrollSection scrollSection : snapshot->scrollSections)
 	{
@@ -433,3 +433,13 @@ void N3sApp::renderRow(int y, int height, int xOffset, int yOffset, int nametabl
 		}
 	}
 }
+
+// thx https://www.safaribooksonline.com/library/view/c-cookbook/0596007612/ch10s17.html
+string replaceExt(string input, string newExt) {
+	string::size_type i = input.rfind('.', input.length());
+
+	if (i != string::npos) {
+		input.replace(i + 1, newExt.length(), newExt);
+	}
+	return input;
+};
