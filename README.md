@@ -1,6 +1,7 @@
 # NesVoxel
 DirectX 3D NES Emulator for Windows
 
+More info and downloads:
 http://n3s.io
 
 https://twitter.com/n3semu
