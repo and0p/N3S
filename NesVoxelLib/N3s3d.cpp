@@ -4,35 +4,46 @@
 #include "stdafx.h"
 #include <iostream>
 #include <fstream>
-#include "VxlUtil.h"
+#include "N3s3d.hpp"
 
 using namespace std;
-Microsoft::WRL::ComPtr<ID3D11Device>            VxlUtil::device;
-Microsoft::WRL::ComPtr<ID3D11Device1>           VxlUtil::device1;
-Microsoft::WRL::ComPtr<ID3D11DeviceContext>     VxlUtil::context;
-Microsoft::WRL::ComPtr<ID3D11DeviceContext1>    VxlUtil::context1;
-ID3D11SamplerState *VxlUtil::sampleState;
-ID3D11Buffer *VxlUtil::worldMatrixBuffer;
-ID3D11Buffer *VxlUtil::viewMatrixBuffer;
-ID3D11Buffer *VxlUtil::projectionMatrixBuffer;
-ID3D11Buffer *VxlUtil::mirrorBuffer;
-ID3D11Buffer *VxlUtil::paletteBuffer;
-ID3D11Buffer *VxlUtil::paletteSelectionBuffer;
-ID3D11Buffer *VxlUtil::indexBuffer;
-int VxlUtil::paletteBufferNumber;
-int VxlUtil::paletteSelectionBufferNumber;
-ShaderSet VxlUtil::shaderSets[2];
-ID3D11InputLayout *VxlUtil::inputLayouts[2];
-ID3D11Texture2D *VxlUtil::texture2d;
-ID3D11ShaderResourceView *VxlUtil::textureView;
-ShaderType VxlUtil::activeShader;
-D3D11_SUBRESOURCE_DATA VxlUtil::subData;
-MirrorState VxlUtil::mirrorState;
-PPUHueStandardCollection VxlUtil::ppuHueStandardCollection;
-int VxlUtil::selectedPalette;
-int VxlUtil::mirrorBufferNumber;
 
-void VxlUtil::initPipeline(VxlD3DContext c)
+Microsoft::WRL::ComPtr<ID3D11Device>            device;
+Microsoft::WRL::ComPtr<ID3D11Device1>           device1;
+Microsoft::WRL::ComPtr<ID3D11DeviceContext>     context;
+Microsoft::WRL::ComPtr<ID3D11DeviceContext1>    context1;
+
+ShaderSet shaderSets[2];
+ID3D11InputLayout *inputLayouts[2];
+ID3D11Buffer *worldMatrixBuffer;
+ID3D11Buffer *viewMatrixBuffer;
+ID3D11Buffer *projectionMatrixBuffer;
+ID3D11Buffer *mirrorBuffer;
+ID3D11Buffer *paletteBuffer;
+ID3D11Buffer *paletteSelectionBuffer;
+ID3D11Buffer *indexBuffer;
+MatrixBuffer *worldMatrixPtr;
+MatrixBuffer *viewMatrixPtr;
+MatrixBuffer *projectionMatrixPtr;
+ID3D11SamplerState* sampleState;
+ID3D11Texture2D* texture2d;
+ID3D11ShaderResourceView* textureView;
+ShaderType activeShader;
+D3D11_SUBRESOURCE_DATA subData;
+MirrorState mirrorState;
+D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
+D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc;
+ID3D11DepthStencilState* m_depthDisabledStencilState;
+ID3D11DepthStencilState* m_depthStencilState;
+ID3D11DepthStencilView* m_depthStencilView;
+int selectedPalette;
+int mirrorBufferNumber;
+int paletteBufferNumber;
+int paletteSelectionBufferNumber;
+
+PPUHueStandardCollection N3s3d::ppuHueStandardCollection;
+
+void N3s3d::initPipeline(N3sD3dContext c)
 {
 	device = c.device;
 	context = c.context;
@@ -83,6 +94,9 @@ void VxlUtil::initPipeline(VxlD3DContext c)
 	paletteSelectionBufferDesc.StructureByteStride = 0;
 
 	device1->CreateBuffer(&paletteSelectionBufferDesc, NULL, &paletteSelectionBuffer);
+
+	initDepthStencils();
+	enabledDepthBuffer();
 
 #ifndef HOLOLENS
 	initShaders();
@@ -160,7 +174,7 @@ void VxlUtil::initPipeline(VxlD3DContext c)
 #endif
 }
 
-void VxlUtil::initShaders() {
+void N3s3d::initShaders() {
 	ifstream s_stream;
 	size_t s_size;
 	char* s_data;
@@ -195,7 +209,7 @@ void VxlUtil::initShaders() {
 	updateMirroring(true, true); // TODO: Make mirror cbuffer init cleaner
 }
 
-void VxlUtil::setShader(ShaderType type) {
+void N3s3d::setShader(ShaderType type) {
 	switch (type)
 	{
 	case color:
@@ -208,61 +222,7 @@ void VxlUtil::setShader(ShaderType type) {
 	}
 }
 
-VoxelMesh* VxlUtil::CreateRectangle(ShaderType type)
-{
-	VoxelMesh *rectangle;
-	rectangle = new VoxelMesh;
-
-	if (type == color)
-	{
-		ColorVertex *vertices = new ColorVertex[6]
-		{
-			{ XMFLOAT4(-1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
-			{ XMFLOAT4(-1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
-			{ XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) },
-			{ XMFLOAT4(-1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
-			{ XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) },
-			{ XMFLOAT4(1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) }
-		};
-		rectangle->buffer = createBufferFromColorVertices(vertices, 192);
-		rectangle->type = color;
-		
-	}
-	else if (type == texture)
-	{
-		TextureVertex *vertices = new TextureVertex[6]
-		{
-			{ XMFLOAT4(-1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT2(0.0f, 1.0f) },
-			{ XMFLOAT4(-1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT2(0.0f, 0.0f) },
-			{ XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT2(1.0f, 0.0f) },
-			{ XMFLOAT4(-1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT2(0.0f, 1.0f) },
-			{ XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), XMFLOAT2(1.0f, 0.0f) },
-			{ XMFLOAT4(1.0f, -1.0f, 0.0f, 1.0f), XMFLOAT2(1.0f, 1.0f) }
-		};
-		rectangle->buffer = createBufferFromTextureVertices(vertices, 144);
-		rectangle->type = texture;
-	}
-
-	rectangle->size = 6;
-	return rectangle;
-}
-
-VoxelMesh *VxlUtil::CreateSpriteMarker() {
-	VoxelMesh *marker;
-	marker = new VoxelMesh;
-	marker->size = 3;
-	marker->type = color;
-	ColorVertex *vertices = new ColorVertex[3]
-	{
-		{ XMFLOAT4(0.0f, (pixelSizeH * -8), 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
-		{ XMFLOAT4((pixelSizeW * 4), 0.0f, 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
-		{ XMFLOAT4((pixelSizeW * 8), (pixelSizeH * -8), 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) }
-	};
-	marker->buffer = createBufferFromColorVertices(vertices, 96);
-	return marker;
-}
-
-ID3D11Buffer* VxlUtil::createBufferFromColorVertices(ColorVertex vertices[], int arraySize)
+ID3D11Buffer* N3s3d::createBufferFromColorVertices(ColorVertex vertices[], int arraySize)
 {
 	// create the vertex buffer
 	D3D11_BUFFER_DESC bd;
@@ -284,7 +244,7 @@ ID3D11Buffer* VxlUtil::createBufferFromColorVertices(ColorVertex vertices[], int
 	return pVBuffer;
 }
 
-ID3D11Buffer* VxlUtil::createBufferFromColorVerticesV(std::vector<ColorVertex>  * vertices, int arraySize)
+ID3D11Buffer* N3s3d::createBufferFromColorVerticesV(std::vector<ColorVertex>  * vertices, int arraySize)
 {
 	if (vertices->size() == 0) {
 		return nullptr;
@@ -305,29 +265,7 @@ ID3D11Buffer* VxlUtil::createBufferFromColorVerticesV(std::vector<ColorVertex>  
 	return pVBuffer;
 }
 
-ID3D11Buffer* VxlUtil::createBufferFromTextureVertices(TextureVertex vertices[], int arraySize)
-{
-	// create the vertex buffer
-	D3D11_BUFFER_DESC bd;
-	ZeroMemory(&bd, sizeof(bd));
-
-	bd.Usage = D3D11_USAGE_DEFAULT;                // write access access by CPU and GPU
-	bd.ByteWidth = sizeof(TextureVertex) * arraySize;             // size is the VERTEX struct * 3in
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;       // use as a vertex buffer
-	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;    // allow CPU to write in buffer
-
-	ID3D11Buffer *pVBuffer;								// the vertex buffer
-	device1->CreateBuffer(&bd, NULL, &pVBuffer);		// create the buffer
-
-	// copy the vertices into the buffer
-	D3D11_MAPPED_SUBRESOURCE ms;
-	HRESULT result = context1->Map(pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);		// map the buffer
-	memcpy(ms.pData, vertices, arraySize);													// copy the data
-	context1->Unmap(pVBuffer, NULL);														// unmap the buffer
-	return pVBuffer;
-}
-
-void VxlUtil::updateWorldMatrix(float x, float y, float z) {
+void N3s3d::updateWorldMatrix(float x, float y, float z) {
 	XMMATRIX worldMatrix = XMMatrixIdentity();
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	MatrixBuffer* dataPtr;
@@ -346,7 +284,7 @@ void VxlUtil::updateWorldMatrix(float x, float y, float z) {
 	context1->VSSetConstantBuffers(0, 1, &worldMatrixBuffer);
 }
 
-void VxlUtil::updateMirroring(bool horizontal, bool vertical) {
+void N3s3d::updateMirroring(bool horizontal, bool vertical) {
 	int x, y;
 	if (horizontal)
 		x = -1;
@@ -376,7 +314,7 @@ void VxlUtil::updateMirroring(bool horizontal, bool vertical) {
 	}
 }
 
-void VxlUtil::updatePalette(float palette[72])
+void N3s3d::updatePalette(float palette[72])
 {
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	float* dataPtr;
@@ -403,7 +341,7 @@ void VxlUtil::updatePalette(float palette[72])
 	context1->VSSetConstantBuffers(paletteBufferNumber, 1, &paletteBuffer);
 }
 
-void VxlUtil::selectPalette(int palette)
+void N3s3d::selectPalette(int palette)
 {
 	if (palette != selectedPalette)
 	{
@@ -423,7 +361,7 @@ void VxlUtil::selectPalette(int palette)
 	}
 }
 
-void VxlUtil::updateMatricesWithCamera(VxlCamera * camera) {
+void N3s3d::updateMatricesWithCamera(Camera * camera) {
 
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -472,7 +410,7 @@ void VxlUtil::updateMatricesWithCamera(VxlCamera * camera) {
 	context1->VSSetConstantBuffers(2, 1, &projectionMatrixBuffer);
 }
 
-void VxlUtil::updateViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
+void N3s3d::updateViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
 {
 	XMMATRIX viewMatrix, projectionMatrix;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -504,7 +442,7 @@ void VxlUtil::updateViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
 	context1->VSSetConstantBuffers(2, 1, &projectionMatrixBuffer);
 }
 
-XMMATRIX VxlUtil::getProjectionMatrix(const float near_plane, const float far_plane, const float fov_horiz, const float fov_vert)
+XMMATRIX N3s3d::getProjectionMatrix(const float near_plane, const float far_plane, const float fov_horiz, const float fov_vert)
 {
 	float    h, w, Q;
 
@@ -526,7 +464,7 @@ XMMATRIX VxlUtil::getProjectionMatrix(const float near_plane, const float far_pl
 	return XMLoadFloat4x4(&tmp);
 }
 
-void VxlUtil::setIndexBuffer()
+void N3s3d::setIndexBuffer()
 {
 	context->IASetIndexBuffer(
 		indexBuffer,
@@ -535,7 +473,17 @@ void VxlUtil::setIndexBuffer()
 	);
 }
 
-void VxlUtil::renderMesh(VoxelMesh *voxelMesh) {
+void N3s3d::enabledDepthBuffer()
+{
+	context->OMSetDepthStencilState(m_depthStencilState, 1);
+}
+
+void N3s3d::disableDepthBuffer()
+{
+	context->OMSetDepthStencilState(m_depthDisabledStencilState, 1);
+}
+
+void N3s3d::renderMesh(VoxelMesh *voxelMesh) {
 	ShaderType type = voxelMesh->type;
 	UINT stride = sizeof(ColorVertex); // TODO optimize
 	UINT offset = 0;
@@ -555,7 +503,7 @@ void VxlUtil::renderMesh(VoxelMesh *voxelMesh) {
 #endif
 }
 
-void VxlUtil::initSampleState() {
+void N3s3d::initSampleState() {
 	D3D11_SAMPLER_DESC samplerDesc;
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -573,7 +521,7 @@ void VxlUtil::initSampleState() {
 	device->CreateSamplerState(&samplerDesc, &sampleState);
 }
 
-void VxlUtil::createIndexBuffer()
+void N3s3d::createIndexBuffer()
 {
 	unsigned short indices[73728];
 	for (int i = 0; i < 73728; i++)
@@ -592,35 +540,74 @@ void VxlUtil::createIndexBuffer()
 		);
 }
 
-void VxlUtil::updateGameTexture(const void *data) {
-	
-	//data = ((char*)data) + 2;
-	setShader(texture);
-	D3D11_MAPPED_SUBRESOURCE ms;
-	HRESULT result = context1->Map(texture2d, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);
-	//memcpy(ms.pData, data, 144480);
-	memcpy(ms.pData, data, 245760);
-	context1->Unmap(texture2d, NULL);
-	context->PSSetSamplers(0, 1, &sampleState);
-	context->PSSetShaderResources(0, 1, &textureView);
-}
-
-bool toggleBool(bool b)
+bool N3s3d::initDepthStencils()
 {
-	if (b == false)
-		return true;
-	else
-		return false;;
-}
+	// Thanks http://www.rastertek.com/dx11tut11.html
+	HRESULT result = false;
+	
+	// Initialize the description of the stencil state.
+	ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
 
-// thx https://www.safaribooksonline.com/library/view/c-cookbook/0596007612/ch10s17.html
-string replaceExt(string input, string newExt) {
-	string::size_type i = input.rfind('.', input.length());
+	// Set up the description of the stencil state.
+	depthStencilDesc.DepthEnable = true;
+	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
 
-	if (i != string::npos) {
-		input.replace(i + 1, newExt.length(), newExt);
+	depthStencilDesc.StencilEnable = true;
+	depthStencilDesc.StencilReadMask = 0xFF;
+	depthStencilDesc.StencilWriteMask = 0xFF;
+
+	// Stencil operations if pixel is front-facing.
+	depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+	depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+	// Stencil operations if pixel is back-facing.
+	depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+	depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+	// Create the depth stencil state.
+	result = device->CreateDepthStencilState(&depthStencilDesc, &m_depthStencilState);
+	if (FAILED(result))
+	{
+		return false;
 	}
-	return input;
+
+	// Clear the second depth stencil state before setting the parameters.
+	ZeroMemory(&depthDisabledStencilDesc, sizeof(depthDisabledStencilDesc));
+
+	// Now create a second depth stencil state which turns off the Z buffer for 2D rendering.  The only difference is 
+	// that DepthEnable is set to false, all other parameters are the same as the other depth stencil state.
+	depthDisabledStencilDesc.DepthEnable = false;
+	depthDisabledStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthDisabledStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	depthDisabledStencilDesc.StencilEnable = true;
+	depthDisabledStencilDesc.StencilReadMask = 0xFF;
+	depthDisabledStencilDesc.StencilWriteMask = 0xFF;
+	depthDisabledStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+	depthDisabledStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	depthDisabledStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+	depthDisabledStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+	// Create the state using the device.
+	result = device->CreateDepthStencilState(&depthDisabledStencilDesc, &m_depthDisabledStencilState);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	// Set the z-buffer enabled depth stencil state
+	context->OMSetDepthStencilState(m_depthStencilState, 1);
+	
+	// If it all succeeded, return true
+	return true;
 }
 
 bool Crop::zeroed()

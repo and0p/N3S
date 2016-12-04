@@ -1,10 +1,10 @@
 #include "stdafx.h"
-#include "VxlApp.h"
+#include "N3sApp.hpp"
 #include <time.h>
 
 extern SoundDriver *newDirectSound();
 
-VxlApp::VxlApp()
+N3sApp::N3sApp()
 {
 	this->hwnd = hwnd;
 	gameData = {};
@@ -16,13 +16,13 @@ VxlApp::VxlApp()
 	SoundDriver * drv = 0;
 }
 
-void VxlApp::assignD3DContext(VxlD3DContext context)
+void N3sApp::assignD3DContext(N3sD3dContext context)
 {
-	VxlUtil::initPipeline(context);
+	N3s3d::initPipeline(context);
 	
 }
 
-void VxlApp::initDirectAudio(HWND hwnd)
+void N3sApp::initDirectAudio(HWND hwnd)
 {
 	audioEngine = newDirectSound();
 	audioEngine->init(hwnd, 44100);
@@ -31,7 +31,7 @@ void VxlApp::initDirectAudio(HWND hwnd)
 }
 
 
-void VxlApp::load(string path)
+void N3sApp::load(string path)
 {
 	if (loaded)
 		unload();
@@ -67,7 +67,7 @@ void VxlApp::load(string path)
 	unpause();
 }
 
-void VxlApp::loadGameData(string path)
+void N3sApp::loadGameData(string path)
 {
 	// Make sure game is loaded first
 	if (loaded)
@@ -89,7 +89,7 @@ void VxlApp::loadGameData(string path)
 	}
 }
 
-void VxlApp::unload()
+void N3sApp::unload()
 {
 	if (loaded)
 	{
@@ -103,12 +103,12 @@ void VxlApp::unload()
 	}
 }
 
-void VxlApp::reset()
+void N3sApp::reset()
 {
 	NesEmulator::reset();
 }
 
-void VxlApp::update(bool runThisNesFrame)
+void N3sApp::update(bool runThisNesFrame)
 {
 	if (loaded)
 	{
@@ -136,7 +136,7 @@ void VxlApp::update(bool runThisNesFrame)
 			frameAdvanced = false;
 		if (!runThisNesFrame)
 		{
-			snapshot.reset(new VxlPPUSnapshot((VxlRawPPU*)NesEmulator::getVRam()));
+			snapshot.reset(new PpuSnapshot((N3sRawPpu*)NesEmulator::getVRam()));
 			virtualPatternTable->update(snapshot->patternTable);
 		}
 		float zoomAmount = inputState.gamePads[0].triggerStates[lTrigger] - inputState.gamePads[0].triggerStates[rTrigger];
@@ -150,16 +150,16 @@ void VxlApp::update(bool runThisNesFrame)
 	}
 }
 
-void VxlApp::render()
+void N3sApp::render()
 {
 	if (loaded)
 	{
-		VxlUtil::setShader(color);
+		N3s3d::setShader(color);
 		camera.Render();
-		VxlUtil::updateMatricesWithCamera(&camera);
-		VxlUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
-		VxlUtil::updateMirroring(true, true);
-		VxlUtil::updateMirroring(false, false);
+		N3s3d::updateMatricesWithCamera(&camera);
+		N3s3d::updateWorldMatrix(0.0f, 0.0f, 0.0f);
+		N3s3d::updateMirroring(true, true);
+		N3s3d::updateMirroring(false, false);
 		updatePalette();
 		if (snapshot->mask.renderSprites)
 			renderSprites();
@@ -168,19 +168,19 @@ void VxlApp::render()
 	}
 }
 
-void VxlApp::pause()
+void N3sApp::pause()
 {
 	emulationPaused = true;
 	audioEngine->pause();
 }
 
-void VxlApp::unpause()
+void N3sApp::unpause()
 {
 	emulationPaused = false;
 	audioEngine->resume();
 }
 
-void VxlApp::setMute(bool mute)
+void N3sApp::setMute(bool mute)
 {
 	muted = mute;
 	if (muted)
@@ -189,17 +189,17 @@ void VxlApp::setMute(bool mute)
 		audioEngine->resume();
 }
 
-void VxlApp::updateCameraViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
+void N3sApp::updateCameraViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
 {
-	VxlUtil::updateViewMatrices(view, projection);
+	N3s3d::updateViewMatrices(view, projection);
 }
 
-void VxlApp::updateGameOriginPosition(float x, float y, float z)
+void N3sApp::updateGameOriginPosition(float x, float y, float z)
 {
 
 }
 
-void VxlApp::recieveKeyInput(int key, bool down)
+void N3sApp::recieveKeyInput(int key, bool down)
 {
 	if (down)
 		inputState.keyboardState.setDown(key);
@@ -207,17 +207,17 @@ void VxlApp::recieveKeyInput(int key, bool down)
 		inputState.keyboardState.setUp(key);
 }
 
-XMVECTORF32 VxlApp::getBackgroundColor()
+XMVECTORF32 N3sApp::getBackgroundColor()
 {
 	Hue hue;
 	if (loaded)
-		hue = VxlUtil::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->backgroundColor);
+		hue = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->backgroundColor);
 	else
 		hue = { 0.0f, 0.0f, 0.0f };
 	return{ hue.red, hue.green, hue.blue, 1.0f };
 }
 
-bool VxlApp::save()
+bool N3sApp::save()
 {
 	if (loaded)
 	{
@@ -233,7 +233,7 @@ bool VxlApp::save()
 	return false;
 }
 
-bool VxlApp::saveAs(string path)
+bool N3sApp::saveAs(string path)
 {
 	if (loaded)
 	{
@@ -251,7 +251,7 @@ bool VxlApp::saveAs(string path)
 	return false;
 }
 
-void VxlApp::renderSprites()
+void N3sApp::renderSprites()
 {
 	for (int i = 0; i < 64; i++) {
 		OamSprite sprite = snapshot->sprites[i];
@@ -302,7 +302,7 @@ void VxlApp::renderSprites()
 	}
 }
 
-void VxlApp::renderSprite(shared_ptr<VirtualSprite> vSprite, int x, int y, int palette, bool flipX, bool flipY)
+void N3sApp::renderSprite(shared_ptr<VirtualSprite> vSprite, int x, int y, int palette, bool flipX, bool flipY)
 {
 	// Check that sprite is on renderable line (sprites with Y of 0 are ignored) or X position
 	if (y > 0 && y < 240 && x >= 0 && x < 256) {
@@ -317,26 +317,26 @@ void VxlApp::renderSprite(shared_ptr<VirtualSprite> vSprite, int x, int y, int p
 	}
 }
 
-void VxlApp::updatePalette()
+void N3sApp::updatePalette()
 {
 	float palette[72];
 	for (int p = 0; p < 8; p++)
 	{
 		for (int h = 0; h < 3; h++)
 		{
-			palette[(p * 9) + (h * 3)] = VxlUtil::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).red;
-			palette[(p * 9) + (h * 3) + 1] = VxlUtil::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).green;
-			palette[(p * 9) + (h * 3) + 2] = VxlUtil::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).blue;
+			palette[(p * 9) + (h * 3)] = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).red;
+			palette[(p * 9) + (h * 3) + 1] = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).green;
+			palette[(p * 9) + (h * 3) + 2] = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).blue;
 		}
 	}
-	Hue hue = VxlUtil::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[0].colors[2]);
-	VxlUtil::updatePalette(palette);
+	Hue hue = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[0].colors[2]);
+	N3s3d::updatePalette(palette);
 }
 
-void VxlApp::renderNameTables()
+void N3sApp::renderNameTables()
 {
 	// Reset tile mirroring, as Nametable cannot use it
-	VxlUtil::updateMirroring(false, false);
+	N3s3d::updateMirroring(false, false);
 	// Render each scroll section
 	for (ScrollSection scrollSection : snapshot->scrollSections)
 	{
@@ -344,7 +344,7 @@ void VxlApp::renderNameTables()
 	}
 }
 
-void VxlApp::renderScrollSection(ScrollSection section)
+void N3sApp::renderScrollSection(ScrollSection section)
 {
 	// Get offset of top-left pixel within top-left sprite referenced
 	int xOffset = section.x % 8;
@@ -381,7 +381,7 @@ void VxlApp::renderScrollSection(ScrollSection section)
 	}
 }
 
-void VxlApp::renderRow(int y, int height, int xOffset, int yOffset, int nametableX, int nametableY, int nameTable, bool patternSelect)
+void N3sApp::renderRow(int y, int height, int xOffset, int yOffset, int nametableX, int nametableY, int nameTable, bool patternSelect)
 {
 	int x = 0;
 	int tileX = floor(nametableX / 8);
@@ -433,3 +433,13 @@ void VxlApp::renderRow(int y, int height, int xOffset, int yOffset, int nametabl
 		}
 	}
 }
+
+// thx https://www.safaribooksonline.com/library/view/c-cookbook/0596007612/ch10s17.html
+string replaceExt(string input, string newExt) {
+	string::size_type i = input.rfind('.', input.length());
+
+	if (i != string::npos) {
+		input.replace(i + 1, newExt.length(), newExt);
+	}
+	return input;
+};

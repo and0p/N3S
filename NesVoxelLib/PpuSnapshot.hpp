@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "VxlRawPPU.h"
+#include "N3sRawPpu.h"
 
 struct Ctrl {
 	bool spriteNameTable;
@@ -89,10 +89,10 @@ struct ScrollSection {
 	bool patternSelect;
 };
 
-class VxlPPUSnapshot {
+class PpuSnapshot {
 public:
-	VxlPPUSnapshot(VxlRawPPU *rawPPU);
-	~VxlPPUSnapshot();
+	PpuSnapshot(N3sRawPpu *rawPPU);
+	~PpuSnapshot();
 	std::vector<OamSprite> sprites;
 	int backgroundColor;
 	Background background;

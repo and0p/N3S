@@ -1,5 +1,5 @@
 #pragma once
-#include "N3SGameData.hpp"
+#include "GameData.hpp"
 
 using namespace std;
 

@@ -102,7 +102,7 @@ inline int ScrollSnapshot::getTrueY()
 	return (v.coarseY * 8) + v.fineY;
 }
 
-struct VxlRawPPU {
+struct N3sRawPpu {
 public:
 	char ctrl;
 	char mask;
@@ -122,7 +122,7 @@ private:
 	int mostRecentOamPatternScanline = 0;
 };
 
-inline void VxlRawPPU::writeScrollValue(int scanline, int reg, bool toggle, int data) {
+inline void N3sRawPpu::writeScrollValue(int scanline, int reg, bool toggle, int data) {
 	// Increment the scanline, assuming these changes are applying to next line
 	scanline++;
 	int i = 0;
@@ -145,7 +145,7 @@ inline void VxlRawPPU::writeScrollValue(int scanline, int reg, bool toggle, int 
 	scrollSnapshots[scanline].poke(reg, toggle, data);
 }
 
-inline void VxlRawPPU::setOAMPatternSelect(int scanline, bool select) {
+inline void N3sRawPpu::setOAMPatternSelect(int scanline, bool select) {
 	// Increment the scanline, assuming these changes are applying to next line
 	scanline++;
 	// Set scanline to 0 if we are outside of visible range, as it will all wrap back to rendering at 0
@@ -159,7 +159,7 @@ inline void VxlRawPPU::setOAMPatternSelect(int scanline, bool select) {
 }
 
 // Reset the scroll history, but re-insert the most recent snapshot and set v to t
-inline void VxlRawPPU::reset(int mirrorType, bool oamPattern, bool namePattern)
+inline void N3sRawPpu::reset(int mirrorType, bool oamPattern, bool namePattern)
 {
 	ScrollSnapshot rollover = scrollSnapshots[mostRecentScanlineModified];
 	scrollSnapshots.clear();

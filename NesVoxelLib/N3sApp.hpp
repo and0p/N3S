@@ -1,23 +1,22 @@
 #pragma once
 
-#include "VxlUtil.h"
-#include "N3SGameData.hpp"
-#include "VxlPPUSnapshot.h"
-#include "NesEmulator.h"
-#include "VxlD3DContext.h"
-#include "VxlCamera.h"
+#include "N3s3d.hpp"
+#include "GameData.hpp"
+#include "PpuSnapshot.hpp"
+#include "NesEmulator.hpp"
+#include "Camera.hpp"
 #include "libretro.h"
-#include "VxlInput.h"
-#include "N3SPatternTable.hpp"
-#include "VxlAudio.h"
+#include "Input.hpp"
+#include "N3sPatternTable.hpp"
+#include "Audio.hpp"
 #include <memory>
 #include <iostream>
 #include <fstream>
 
-class VxlApp {
+class N3sApp {
 public:
-	VxlApp();
-	void assignD3DContext(VxlD3DContext);
+	N3sApp();
+	void assignD3DContext(N3sD3dContext);
 	void initDirectAudio(HWND hwnd);
 	void load(string path);
 	void loadGameData(string path);
@@ -33,7 +32,7 @@ public:
 	void recieveKeyInput(int key, bool down);
 	XMVECTORF32 getBackgroundColor();
 	retro_game_info *info;
-	VxlCamera camera;
+	Camera camera;
 	std::shared_ptr<GameData> gameData;
 	bool loaded;
 	bool save();
@@ -47,7 +46,7 @@ private:
 	bool pausedThisPress;
 	bool frameAdvanced;
 	bool muted;
-	std::shared_ptr<VxlPPUSnapshot> snapshot;
+	std::shared_ptr<PpuSnapshot> snapshot;
 	InputState inputState;
 	shared_ptr<VirtualPatternTable> virtualPatternTable;
 	void updatePalette();

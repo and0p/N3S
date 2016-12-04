@@ -7,7 +7,7 @@
 #include "DeviceResources.h"
 #include "StepTimer.h"
 #include "libretro.h"
-#include "VxlApp.h"
+#include "N3sApp.hpp"
 #include "resource.h"
 #include <shobjidl.h>
 
@@ -60,7 +60,7 @@ private:
     DX::StepTimer                           m_timer;
 
 	// Voxel NES app
-	VxlApp									app;
+	N3sApp									app;
 };
 
 string getFilePathWithDialog();

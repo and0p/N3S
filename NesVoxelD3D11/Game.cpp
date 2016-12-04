@@ -5,7 +5,7 @@
 #include "pch.h"
 #include "Game.h"
 #include <iostream>
-#include "VxlD3DContext.h"
+#include "N3sD3DContext.h"
 
 using namespace DirectX;
 
@@ -28,7 +28,7 @@ void Game::Initialize(HWND window, int width, int height)
     m_deviceResources->CreateWindowSizeDependentResources();
     CreateWindowSizeDependentResources();
 
-	VxlD3DContext c = { m_deviceResources->GetD3DDevice(), 
+	N3sD3dContext c = { m_deviceResources->GetD3DDevice(), 
 						m_deviceResources->GetD3DDevice1(), 
 						m_deviceResources->GetD3DDeviceContext(),
 						m_deviceResources->GetD3DDeviceContext1() };
@@ -176,6 +176,10 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam)
 			if (path != "")
 				app.load(path);
 			break;
+		}
+		case ID_FILE_UNLOAD:
+		{
+			app.unload();
 		}
 		case ID_3D_SAVE:
 		{
