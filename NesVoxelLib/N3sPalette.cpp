@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "VxlPalette.h"
+#include "N3sPalette.hpp"
 
 float getFloatColorValue(int color)
 {

@@ -1,23 +1,25 @@
 #pragma once
 
-#include "VxlUtil.h"
-#include "VxlGameData.h"
-#include "VxlPPUSnapshot.h"
-#include "NesEmulator.h"
-#include "VxlD3DContext.h"
-#include "VxlCamera.h"
+#include "N3s3d.hpp"
+#include "GameData.hpp"
+#include "PpuSnapshot.hpp"
+#include "NesEmulator.hpp"
+#include "Camera.hpp"
 #include "libretro.h"
-#include "VxlInput.h"
-#include "VxlPatternTable.h"
-#include "VxlAudio.h"
+#include "Input.hpp"
+#include "N3sPatternTable.hpp"
+#include "Audio.hpp"
 #include <memory>
+#include <iostream>
+#include <fstream>
 
-class VxlApp {
+class N3sApp {
 public:
-	VxlApp();
-	void assignD3DContext(VxlD3DContext);
+	N3sApp();
+	void assignD3DContext(N3sD3dContext);
 	void initDirectAudio(HWND hwnd);
-	void load(char *path);
+	void load(string path);
+	void loadGameData(string path);
 	void unload();
 	void reset();
 	void update(bool runThisFrame);
@@ -30,22 +32,26 @@ public:
 	void recieveKeyInput(int key, bool down);
 	XMVECTORF32 getBackgroundColor();
 	retro_game_info *info;
-	VxlCamera camera;
-	std::shared_ptr<VoxelGameData> gameData;
+	Camera camera;
+	std::shared_ptr<GameData> gameData;
 	bool loaded;
+	bool save();
+	bool saveAs(string path);
 private:
+	string romPath;
+	string n3sPath;
 	SoundDriver *audioEngine;
 	HWND hwnd;
 	bool emulationPaused;
 	bool pausedThisPress;
 	bool frameAdvanced;
 	bool muted;
-	std::shared_ptr<VxlPPUSnapshot> snapshot;
+	std::shared_ptr<PpuSnapshot> snapshot;
 	InputState inputState;
-	VxlVirtualPatternTable virtualPatternTable;
+	shared_ptr<VirtualPatternTable> virtualPatternTable;
 	void updatePalette();
 	void renderSprites();
-	void renderSprite(int tile, int x, int y, int palette, bool flipX, bool flipY);
+	void renderSprite(shared_ptr<VirtualSprite> vSprite, int x, int y, int palette, bool flipX, bool flipY);
 	void renderNameTables();
 	void renderScrollSection(ScrollSection section);
 	void renderRow(int y, int height, int xOffset, int yOffset, int nametableX, int nametableY, int nameTable, bool patternSelect);

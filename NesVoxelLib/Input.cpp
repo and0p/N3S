@@ -1,6 +1,6 @@
 #include "stdafx.h"
-#include "VxlInput.h"
-#include "NesEmulator.h"
+#include "Input.hpp"
+#include "NesEmulator.hpp"
 #include "libretro.h"
 
 ControllerState::ControllerState()

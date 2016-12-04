@@ -1,10 +1,10 @@
 #include "stdafx.h"
-#include "VxlApp.h"
+#include "N3sApp.hpp"
 #include <time.h>
 
 extern SoundDriver *newDirectSound();
 
-VxlApp::VxlApp()
+N3sApp::N3sApp()
 {
 	this->hwnd = hwnd;
 	gameData = {};
@@ -16,13 +16,13 @@ VxlApp::VxlApp()
 	SoundDriver * drv = 0;
 }
 
-void VxlApp::assignD3DContext(VxlD3DContext context)
+void N3sApp::assignD3DContext(N3sD3dContext context)
 {
-	VxlUtil::initPipeline(context);
+	N3s3d::initPipeline(context);
 	
 }
 
-void VxlApp::initDirectAudio(HWND hwnd)
+void N3sApp::initDirectAudio(HWND hwnd)
 {
 	audioEngine = newDirectSound();
 	audioEngine->init(hwnd, 44100);
@@ -31,21 +31,65 @@ void VxlApp::initDirectAudio(HWND hwnd)
 }
 
 
-void VxlApp::load(char *path)
+void N3sApp::load(string path)
 {
 	if (loaded)
 		unload();
-	NesEmulator::Initialize(path);
+	// Convert string to char * for libretro loading function
+	const char* cPath = path.c_str(); // TODO leak?
+	NesEmulator::Initialize(cPath);
+	romPath = path;
 	info = NesEmulator::getGameInfo();
-	gameData = std::shared_ptr<VoxelGameData>(new VoxelGameData((char*)info->data));
-	virtualPatternTable.load(gameData->totalSprites, 8, gameData->chrData);
-	gameData->grabBitmapSprites(info->data);
-	gameData->createSpritesFromBitmaps();
+	// See if a matching N3S file exists with same name as ROM
+	// TODO: Doing it in a really dumb way at the moment, stripping nes and replacing with n3s
+	string s = path;
+	int length = s.length();
+	s[length - 2] = '3';
+	ifstream n3sFile(s.c_str());
+	if (n3sFile.good())
+	{
+		n3sPath = s;
+		json input(n3sFile);
+		// s = input.dump(4);
+		n3sFile.close();
+		gameData = make_shared<GameData>((char*)info->data, input);
+	}
+	else
+	{
+		// TODO: Ask if user wants to find N3S file, generate data, or cancel
+		gameData = make_shared<GameData>((char*)info->data);
+		n3sPath = replaceExt(romPath, "n3s");
+	}
+	virtualPatternTable = shared_ptr<VirtualPatternTable>(new VirtualPatternTable(gameData));
+	// gameData->grabBitmapSprites(info->data);
+	// gameData->createSpritesFromBitmaps();
 	loaded = true;
 	unpause();
 }
 
-void VxlApp::unload()
+void N3sApp::loadGameData(string path)
+{
+	// Make sure game is loaded first
+	if (loaded)
+	{
+		ifstream n3sFile(path.c_str());
+		// Make sure file exists
+		if (n3sFile.good())
+		{
+			// Unload all old assets
+			gameData->unload();
+			// Load the file into json
+			json input(n3sFile);
+			// Close file
+			n3sFile.close();
+			// Make GameData from json
+			gameData.reset(new GameData((char*)info->data, input));
+			virtualPatternTable.reset(new VirtualPatternTable(gameData));	// Reset to reference new game data
+		}
+	}
+}
+
+void N3sApp::unload()
 {
 	if (loaded)
 	{
@@ -59,12 +103,12 @@ void VxlApp::unload()
 	}
 }
 
-void VxlApp::reset()
+void N3sApp::reset()
 {
 	NesEmulator::reset();
 }
 
-void VxlApp::update(bool runThisNesFrame)
+void N3sApp::update(bool runThisNesFrame)
 {
 	if (loaded)
 	{
@@ -92,8 +136,8 @@ void VxlApp::update(bool runThisNesFrame)
 			frameAdvanced = false;
 		if (!runThisNesFrame)
 		{
-			snapshot.reset(new VxlPPUSnapshot((VxlRawPPU*)NesEmulator::getVRam()));
-			virtualPatternTable.update(snapshot->patternTable);
+			snapshot.reset(new PpuSnapshot((N3sRawPpu*)NesEmulator::getVRam()));
+			virtualPatternTable->update(snapshot->patternTable);
 		}
 		float zoomAmount = inputState.gamePads[0].triggerStates[lTrigger] - inputState.gamePads[0].triggerStates[rTrigger];
 		camera.AdjustPosition(inputState.gamePads[0].analogStickStates[lStick].x * 0.05f, inputState.gamePads[0].analogStickStates[lStick].y * 0.05f, zoomAmount * 0.05f);
@@ -106,16 +150,16 @@ void VxlApp::update(bool runThisNesFrame)
 	}
 }
 
-void VxlApp::render()
+void N3sApp::render()
 {
 	if (loaded)
 	{
-		VxlUtil::setShader(color);
+		N3s3d::setShader(color);
 		camera.Render();
-		VxlUtil::updateMatricesWithCamera(&camera);
-		VxlUtil::updateWorldMatrix(0.0f, 0.0f, 0.0f);
-		VxlUtil::updateMirroring(true, true);
-		VxlUtil::updateMirroring(false, false);
+		N3s3d::updateMatricesWithCamera(&camera);
+		N3s3d::updateWorldMatrix(0.0f, 0.0f, 0.0f);
+		N3s3d::updateMirroring(true, true);
+		N3s3d::updateMirroring(false, false);
 		updatePalette();
 		if (snapshot->mask.renderSprites)
 			renderSprites();
@@ -124,19 +168,19 @@ void VxlApp::render()
 	}
 }
 
-void VxlApp::pause()
+void N3sApp::pause()
 {
 	emulationPaused = true;
 	audioEngine->pause();
 }
 
-void VxlApp::unpause()
+void N3sApp::unpause()
 {
 	emulationPaused = false;
 	audioEngine->resume();
 }
 
-void VxlApp::setMute(bool mute)
+void N3sApp::setMute(bool mute)
 {
 	muted = mute;
 	if (muted)
@@ -145,17 +189,17 @@ void VxlApp::setMute(bool mute)
 		audioEngine->resume();
 }
 
-void VxlApp::updateCameraViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
+void N3sApp::updateCameraViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
 {
-	VxlUtil::updateViewMatrices(view, projection);
+	N3s3d::updateViewMatrices(view, projection);
 }
 
-void VxlApp::updateGameOriginPosition(float x, float y, float z)
+void N3sApp::updateGameOriginPosition(float x, float y, float z)
 {
 
 }
 
-void VxlApp::recieveKeyInput(int key, bool down)
+void N3sApp::recieveKeyInput(int key, bool down)
 {
 	if (down)
 		inputState.keyboardState.setDown(key);
@@ -163,17 +207,51 @@ void VxlApp::recieveKeyInput(int key, bool down)
 		inputState.keyboardState.setUp(key);
 }
 
-XMVECTORF32 VxlApp::getBackgroundColor()
+XMVECTORF32 N3sApp::getBackgroundColor()
 {
 	Hue hue;
 	if (loaded)
-		hue = VxlUtil::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->backgroundColor);
+		hue = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->backgroundColor);
 	else
 		hue = { 0.0f, 0.0f, 0.0f };
 	return{ hue.red, hue.green, hue.blue, 1.0f };
 }
 
-void VxlApp::renderSprites()
+bool N3sApp::save()
+{
+	if (loaded)
+	{
+		// Get output JSON
+		string output = gameData->getJSON();
+		// Save to file with path specified
+		ofstream myfile;
+		myfile.open(n3sPath);
+		myfile << output;
+		myfile.close();
+		return true;
+	}
+	return false;
+}
+
+bool N3sApp::saveAs(string path)
+{
+	if (loaded)
+	{
+		// Get output JSON
+		string output = gameData->getJSON();
+		// Save to file with path specified
+		ofstream myfile;
+		myfile.open(path);
+		myfile << output;
+		myfile.close();
+		// Replace path to "loaded" N3S file
+		n3sPath = path;
+		return true;
+	}
+	return false;
+}
+
+void N3sApp::renderSprites()
 {
 	for (int i = 0; i < 64; i++) {
 		OamSprite sprite = snapshot->sprites[i];
@@ -199,14 +277,14 @@ void VxlApp::renderSprites()
 			if (sprite.vFlip)
 				y += 8;
 			// Get true tile #
-			tile = virtualPatternTable.getTrueTileIndex(tile);
+			shared_ptr<VirtualSprite> vSprite = virtualPatternTable->getSprite(tile);
 			// Render the first sprite
-			renderSprite(tile, x, y, sprite.palette, sprite.hFlip, sprite.vFlip);
+			renderSprite(vSprite, x, y, sprite.palette, sprite.hFlip, sprite.vFlip);
 			// Render the second sprite, which swaps place with vertical flip
 			if(sprite.vFlip)
-				renderSprite(tile + 1, x, y - 8, sprite.palette, sprite.hFlip, sprite.vFlip);
+				renderSprite(virtualPatternTable->getSprite(tile + 1), x, y - 8, sprite.palette, sprite.hFlip, sprite.vFlip);
 			else
-				renderSprite(tile + 1, x, y + 8, sprite.palette, sprite.hFlip, sprite.vFlip);
+				renderSprite(virtualPatternTable->getSprite(tile + 1), x, y + 8, sprite.palette, sprite.hFlip, sprite.vFlip);
 		}
 		else
 		{
@@ -219,54 +297,46 @@ void VxlApp::renderSprites()
 			{
 				tile += 256;
 			}
-			renderSprite(tile, x, y, sprite.palette, sprite.hFlip, sprite.vFlip);
+			renderSprite(virtualPatternTable->getSprite(tile), x, y, sprite.palette, sprite.hFlip, sprite.vFlip);
 		}
 	}
 }
 
-void VxlApp::renderSprite(int tile, int x, int y, int palette, bool flipX, bool flipY)
+void N3sApp::renderSprite(shared_ptr<VirtualSprite> vSprite, int x, int y, int palette, bool flipX, bool flipY)
 {
-	// Check that sprite is on renderable line (sprites with Y of 0 are ignored)
-	if (y > 0 && y < 240) {
-		// See if sprite is partially off-screen
-		if (x >= 248 || y >= 232)
-		{
-			// Use partial rendering
-			int width = 8;
-			int height = 8;
-			if (x >= 248)
-				width = 256 - x;
-			if (y >= 232)
-				height = 240 - y;
-			gameData->sprites[tile].renderPartial(x, y, palette, 0, width, 0, height, flipX, flipY);
-		}
-		else
-			gameData->sprites[tile].render(x, y, palette, flipX, flipY);
+	// Check that sprite is on renderable line (sprites with Y of 0 are ignored) or X position
+	if (y > 0 && y < 240 && x >= 0 && x < 256) {
+		// See if this needs to be cropped at all due to right / bottom screen edge
+		Crop crop = { 0, 0, 0 ,0 };
+		if (x > 248)
+			crop.right = 256 - x;
+		if (y > 232)
+			crop.bottom = 240 - y;
+		// Render
+		vSprite->renderOAM(snapshot, x, y, palette, flipX, flipY, crop);
 	}
 }
 
-
-
-void VxlApp::updatePalette()
+void N3sApp::updatePalette()
 {
 	float palette[72];
 	for (int p = 0; p < 8; p++)
 	{
 		for (int h = 0; h < 3; h++)
 		{
-			palette[(p * 9) + (h * 3)] = VxlUtil::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).red;
-			palette[(p * 9) + (h * 3) + 1] = VxlUtil::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).green;
-			palette[(p * 9) + (h * 3) + 2] = VxlUtil::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).blue;
+			palette[(p * 9) + (h * 3)] = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).red;
+			palette[(p * 9) + (h * 3) + 1] = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).green;
+			palette[(p * 9) + (h * 3) + 2] = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[p].colors[h]).blue;
 		}
 	}
-	Hue hue = VxlUtil::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[0].colors[2]);
-	VxlUtil::updatePalette(palette);
+	Hue hue = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->palette.palettes[0].colors[2]);
+	N3s3d::updatePalette(palette);
 }
 
-void VxlApp::renderNameTables()
+void N3sApp::renderNameTables()
 {
 	// Reset tile mirroring, as Nametable cannot use it
-	VxlUtil::updateMirroring(false, false);
+	N3s3d::updateMirroring(false, false);
 	// Render each scroll section
 	for (ScrollSection scrollSection : snapshot->scrollSections)
 	{
@@ -274,7 +344,7 @@ void VxlApp::renderNameTables()
 	}
 }
 
-void VxlApp::renderScrollSection(ScrollSection section)
+void N3sApp::renderScrollSection(ScrollSection section)
 {
 	// Get offset of top-left pixel within top-left sprite referenced
 	int xOffset = section.x % 8;
@@ -311,67 +381,65 @@ void VxlApp::renderScrollSection(ScrollSection section)
 	}
 }
 
-void VxlApp::renderRow(int y, int height, int xOffset, int yOffset, int nametableX, int nametableY, int nameTable, bool patternSelect)
+void N3sApp::renderRow(int y, int height, int xOffset, int yOffset, int nametableX, int nametableY, int nameTable, bool patternSelect)
 {
 	int x = 0;
 	int tileX = floor(nametableX / 8);
 	int tileY = floor(nametableY / 8);
+	int tile;
+	int palette;
+	Crop crop = { yOffset, xOffset, 8 - yOffset - height, 0 };
 	// Branch based on whether or not there is any X offset / partial sprite
 	if (xOffset > 0)
 	{
 		int i = 0;
 		// Render partial first sprite
-		int tile = snapshot->background.getTile(tileX + i, tileY, nameTable).tile;
+		tile = snapshot->background.getTile(tileX + i, tileY, nameTable).tile;
 		if (patternSelect)
 			tile += 256;
-		int palette = snapshot->background.getTile(tileX + i, tileY, nameTable).palette;
-		gameData->sprites[virtualPatternTable.getTrueTileIndex(tile)].renderPartial(x, y, palette, xOffset, (8 - xOffset), yOffset, height, false, false);
+		palette = snapshot->background.getTile(tileX + i, tileY, nameTable).palette;
+		virtualPatternTable->getSprite(tile)->renderNametable(snapshot, x, y, palette, tileX + i, tileY, crop);
 		x += 8 - xOffset;
 		i++;
 		// Render middle sprites
+		crop.left = 0;
 		for (i; i < 32; i++)
 		{
 			tile = snapshot->background.getTile(tileX + i, tileY, nameTable).tile;
 			if (patternSelect)
 				tile += 256;
 			palette = snapshot->background.getTile(tileX + i, tileY, nameTable).palette;
-			if (height < 8)
-			{
-				// Render partial sprite
-				gameData->sprites[virtualPatternTable.getTrueTileIndex(tile)].renderPartial(x, y, palette, 0, 8, yOffset, height, false, false);
-			}
-			else
-			{
-				gameData->sprites[virtualPatternTable.getTrueTileIndex(tile)].render(x, y, palette, false, false);
-			}
+			virtualPatternTable->getSprite(tile)->renderNametable(snapshot, x, y, palette, tileX + i, tileY, crop);
 			x += 8;
 		}
-		// Render parital last sprite
+		// Render partial last sprite
+		crop.right = 8 - xOffset;
 		tile = snapshot->background.getTile(tileX + i, tileY, nameTable).tile;
 		if (patternSelect)
 			tile += 256;
 		palette = snapshot->background.getTile(tileX + i, tileY, nameTable).palette;
-		gameData->sprites[virtualPatternTable.getTrueTileIndex(tile)].renderPartial(x, y, palette, 0, xOffset, yOffset, height, false, false);
+		virtualPatternTable->getSprite(tile)->renderNametable(snapshot, x, y, palette, tileX + i, tileY, crop);
 	}
 	else
 	{
-		// Render all full sprites
 		for (int i = 0; i < 32; i++)
 		{
-			int tile = snapshot->background.getTile(tileX + i, tileY, nameTable).tile;
+			tile = snapshot->background.getTile(tileX + i, tileY, nameTable).tile;
 			if (patternSelect)
 				tile += 256;
-			int palette = snapshot->background.getTile(tileX + i, tileY, nameTable).palette;
-			if (height < 8)
-			{
-				// Render partial sprite
-				gameData->sprites[virtualPatternTable.getTrueTileIndex(tile)].renderPartial(x, y, palette, 0, 8, yOffset, height, false, false);
-			}
-			else
-			{
-				gameData->sprites[virtualPatternTable.getTrueTileIndex(tile)].render(x, y, palette, false, false);
-			}
+			palette = snapshot->background.getTile(tileX + i, tileY, nameTable).palette;
+			virtualPatternTable->getSprite(tile)->renderNametable(snapshot, x, y, palette, tileX + i, tileY, crop);
 			x += 8;
 		}
 	}
 }
+
+// thx https://www.safaribooksonline.com/library/view/c-cookbook/0596007612/ch10s17.html
+string replaceExt(string input, string newExt) {
+	string::size_type i = input.rfind('.', input.length());
+
+	if (i != string::npos) {
+		input.replace(i + 1, newExt.length(), newExt);
+	}
+	return input;
+};

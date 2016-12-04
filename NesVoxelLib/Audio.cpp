@@ -1,7 +1,7 @@
 // DirectSound8
 #define DIRECTSOUND_VERSION 0x0800
 #include "stdafx.h"
-#include "VxlAudio.h"
+#include "Audio.hpp"
 
 
 bool soundBufferLow = false;

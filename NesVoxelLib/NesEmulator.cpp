@@ -10,8 +10,8 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#include "NesEmulator.h"
-#include "VxlInput.h"
+#include "NesEmulator.hpp"
+#include "Input.hpp"
 
 static const void *pixelData;
 static retro_game_info *info;
@@ -310,7 +310,7 @@ libc_error:
 	exit(0);
 }
 
-void NesEmulator::Initialize(char * romPath) {
+void NesEmulator::Initialize(const char * romPath) {
 	core_load();
 	core_load_game(romPath);
 }
