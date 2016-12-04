@@ -181,6 +181,10 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			app.unload();
 		}
+		case ID_NES_RESET:
+		{
+			app.reset();
+		}
 		case ID_3D_SAVE:
 		{
 			app.save();
