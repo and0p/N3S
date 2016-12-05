@@ -10,7 +10,10 @@ public:
 	static void init();
 	static void unload();
 	static void drawString(int x, int y, int scale, string s);
+	static void test();
 	static bool shadow;
+	static int width;
+	static int height;
 };
 
 struct BitmapCharacter

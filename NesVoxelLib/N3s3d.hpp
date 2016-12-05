@@ -18,6 +18,7 @@ using namespace DirectX;
 using namespace std;
 
 enum ShaderType { color = 0, overlay = 1 };
+const int shaderCount = 2;	// UPDATE THIS WHEN ADDING SHADERS
 
 struct ColorVertex {
 	XMFLOAT4 Pos;
@@ -39,10 +40,19 @@ struct MatrixBuffer
 	XMMATRIX matrix;
 };
 
-struct ShaderSet
+struct ShaderMatrixCollection
+{
+	ID3D11Buffer *worldMatrixBuffer;
+	ID3D11Buffer *viewMatrixBuffer;
+	ID3D11Buffer *projectionMatrixBuffer;
+};
+
+struct Shader
 {
 	ID3D11VertexShader *vertexShader;
 	ID3D11PixelShader *pixelShader;
+	ID3D11InputLayout *inputLayout;
+	ShaderMatrixCollection matrices;
 };
 
 struct Crop
@@ -67,7 +77,8 @@ public:
 	static ID3D11Buffer* createBufferFromOverlayVertices(std::vector<OverlayVertex> * vertices, int arraySize);
 	static void updateMatricesWithCamera(Camera * camera);
 	static void updateViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 perspective);
-	static void updateWorldMatrix(float, float, float);
+	static void updateWorldMatrix(float xPos, float yPos, float zPos);
+	static void updateWorldMatrix(float xPos, float yPos, float zPos, float xRot, float yRot, float zRot, float scale);
 	static void updateMirroring(bool horizontal, bool vertical);
 	static void updatePalette(float palette[72]);
 	static void selectPalette(int palette);
@@ -78,9 +89,13 @@ public:
 	static void setIndexBuffer();
 	static void enabledDepthBuffer();
 	static void disableDepthBuffer();
+	static void setGuiProjection();
+	static void updateViewport(D3D11_VIEWPORT viewport);
 private:
 	static void initShaders();
+	static void initPaletteShaderExtras();
 	static void initSampleState();
+	static void initRasterDesc();
 	static void createIndexBuffer();
 	static bool initDepthStencils();
 };

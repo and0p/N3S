@@ -142,10 +142,19 @@ void N3sApp::update(bool runThisNesFrame)
 		float zoomAmount = inputState.gamePads[0].triggerStates[lTrigger] - inputState.gamePads[0].triggerStates[rTrigger];
 		camera.AdjustPosition(inputState.gamePads[0].analogStickStates[lStick].x * 0.05f, inputState.gamePads[0].analogStickStates[lStick].y * 0.05f, zoomAmount * 0.05f);
 		camera.AdjustRotation(inputState.gamePads[0].analogStickStates[rStick].x, 0, inputState.gamePads[0].analogStickStates[rStick].y * -1);
+		// Looking with keyboard arrows
+		if (inputState.keyboardState.keyStates[37])
+			camera.AdjustRotation(-1, 0, 0);
+		if (inputState.keyboardState.keyStates[38])
+			camera.AdjustRotation(0, 0, -1);
+		if (inputState.keyboardState.keyStates[39])
+			camera.AdjustRotation(1, 0, 0);
+		if (inputState.keyboardState.keyStates[40])
+			camera.AdjustRotation(0, 0, 1);
 		if (inputState.gamePads[0].buttonStates[brb])
 		{
-			camera.SetPosition(0, 0, -2);
-			camera.SetRotation(0, 0, 0);
+			//camera.SetPosition(0, 0, -2);
+			//camera.SetRotation(0, 0, 0);
 		}
 	}
 }
@@ -154,17 +163,28 @@ void N3sApp::render()
 {
 	if (loaded)
 	{
-		N3s3d::setShader(color);
+		// "Render" camera to matrices
 		camera.Render();
+		// Enable depth buffer
+		N3s3d::enabledDepthBuffer();
+		// Render scene
+		N3s3d::setShader(color);
 		N3s3d::updateMatricesWithCamera(&camera);
-		N3s3d::updateWorldMatrix(0.0f, 0.0f, 0.0f);
-		N3s3d::updateMirroring(true, true);
+		N3s3d::updateWorldMatrix(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+		N3s3d::updateMirroring(true, true);				// TODO add N3s3d function to reset mirroring
 		N3s3d::updateMirroring(false, false);
 		updatePalette();
 		if (snapshot->mask.renderSprites)
 			renderSprites();
 		if (snapshot->mask.renderBackground)
 			renderNameTables();
+		// Overlay shader testing
+		N3s3d::disableDepthBuffer();
+		N3s3d::setShader(overlay);
+		N3s3d::updateMatricesWithCamera(&camera);
+		N3s3d::setGuiProjection();
+		N3s3d::updateWorldMatrix(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 10.0f);
+		Overlay::test();
 	}
 }
 
