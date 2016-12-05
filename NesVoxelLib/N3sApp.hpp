@@ -9,6 +9,7 @@
 #include "Input.hpp"
 #include "N3sPatternTable.hpp"
 #include "Audio.hpp"
+#include "Overlay.hpp"
 #include <memory>
 #include <iostream>
 #include <fstream>

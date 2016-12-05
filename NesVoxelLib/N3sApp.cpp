@@ -19,7 +19,7 @@ N3sApp::N3sApp()
 void N3sApp::assignD3DContext(N3sD3dContext context)
 {
 	N3s3d::initPipeline(context);
-	
+	Overlay::init();
 }
 
 void N3sApp::initDirectAudio(HWND hwnd)

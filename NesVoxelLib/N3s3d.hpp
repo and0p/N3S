@@ -17,7 +17,7 @@ static float pixelSizeH = (2.0f / 240.0f);
 using namespace DirectX;
 using namespace std;
 
-enum ShaderType { color, overlay };
+enum ShaderType { color = 0, overlay = 1 };
 
 struct ColorVertex {
 	XMFLOAT4 Pos;
@@ -63,8 +63,8 @@ struct MirrorState
 class N3s3d {
 public:
 	static void initPipeline(N3sD3dContext context);
-	static ID3D11Buffer* createBufferFromColorVertices(ColorVertex vertices[], int arraySize);
-	static ID3D11Buffer* createBufferFromColorVerticesV(std::vector<ColorVertex> * vertices, int arraySize);
+	static ID3D11Buffer* createBufferFromColorVertices(std::vector<ColorVertex> * vertices, int arraySize);
+	static ID3D11Buffer* createBufferFromOverlayVertices(std::vector<OverlayVertex> * vertices, int arraySize);
 	static void updateMatricesWithCamera(Camera * camera);
 	static void updateViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 perspective);
 	static void updateWorldMatrix(float, float, float);

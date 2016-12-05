@@ -178,6 +178,8 @@ void N3s3d::initShaders() {
 	ifstream s_stream;
 	size_t s_size;
 	char* s_data;
+
+	// Init palette shaders
 	s_stream.open(L"color_vertex.cso", ifstream::in | ifstream::binary);
 	s_stream.seekg(0, ios::end);
 	s_size = size_t(s_stream.tellg());
@@ -194,7 +196,7 @@ void N3s3d::initShaders() {
 		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
-	device1->CreateInputLayout(colorLayout, 2, &s_data[0], s_size, &inputLayouts[0]);
+	device1->CreateInputLayout(colorLayout, 2, &s_data[color], s_size, &inputLayouts[color]);
 
 	s_stream.open(L"color_pixel.cso", ifstream::in | ifstream::binary);
 	s_stream.seekg(0, ios::end);
@@ -204,7 +206,35 @@ void N3s3d::initShaders() {
 	s_stream.read(&s_data[0], s_size);
 	s_stream.close();
 
-	device1->CreatePixelShader(s_data, s_size, 0, &shaderSets[0].pixelShader);
+	device1->CreatePixelShader(s_data, s_size, 0, &shaderSets[color].pixelShader);
+
+	// Init overlay shaders
+	s_stream.open(L"overlay_vertex.cso", ifstream::in | ifstream::binary);
+	s_stream.seekg(0, ios::end);
+	s_size = size_t(s_stream.tellg());
+	s_data = new char[s_size];
+	s_stream.seekg(0, ios::beg);
+	s_stream.read(&s_data[0], s_size);
+	s_stream.close();
+
+	device1->CreateVertexShader(s_data, s_size, 0, &shaderSets[overlay].vertexShader);
+
+	D3D11_INPUT_ELEMENT_DESC overlayLayout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
+
+	device1->CreateInputLayout(overlayLayout, 1, &s_data[0], s_size, &inputLayouts[overlay]);
+
+	s_stream.open(L"overlay_pixel.cso", ifstream::in | ifstream::binary);
+	s_stream.seekg(0, ios::end);
+	s_size = size_t(s_stream.tellg());
+	s_data = new char[s_size];
+	s_stream.seekg(0, ios::beg);
+	s_stream.read(&s_data[0], s_size);
+	s_stream.close();
+
+	device1->CreatePixelShader(s_data, s_size, 0, &shaderSets[overlay].pixelShader);
 
 	updateMirroring(true, true); // TODO: Make mirror cbuffer init cleaner
 }
@@ -222,29 +252,7 @@ void N3s3d::setShader(ShaderType type) {
 	}
 }
 
-ID3D11Buffer* N3s3d::createBufferFromColorVertices(ColorVertex vertices[], int arraySize)
-{
-	// create the vertex buffer
-	D3D11_BUFFER_DESC bd;
-	ZeroMemory(&bd, sizeof(bd));
-
-	bd.Usage = D3D11_USAGE_DYNAMIC;						// write access access by CPU and GPU
-	bd.ByteWidth = sizeof(ColorVertex) * arraySize;     // size is the VERTEX struct * 3in
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;			// use as a vertex buffer
-	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;			// allow CPU to write in buffer
-
-	ID3D11Buffer *pVBuffer;								// the vertex buffer
-	device1->CreateBuffer(&bd, NULL, &pVBuffer);		// create the buffer
-
-	// copy the vertices into the buffer
-	D3D11_MAPPED_SUBRESOURCE ms;
-	HRESULT result = context1->Map(pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);    // map the buffer
-	memcpy(ms.pData, vertices, arraySize);							// copy the data
-	context1->Unmap(pVBuffer, NULL);                                         // unmap the buffer
-	return pVBuffer;
-}
-
-ID3D11Buffer* N3s3d::createBufferFromColorVerticesV(std::vector<ColorVertex>  * vertices, int arraySize)
+ID3D11Buffer* N3s3d::createBufferFromColorVertices(std::vector<ColorVertex> * vertices, int arraySize)
 {
 	if (vertices->size() == 0) {
 		return nullptr;
@@ -255,6 +263,27 @@ ID3D11Buffer* N3s3d::createBufferFromColorVerticesV(std::vector<ColorVertex>  * 
 
 	bd.Usage = D3D11_USAGE_DEFAULT;						// write access access by CPU and GPU
 	bd.ByteWidth = sizeof(ColorVertex) * arraySize;     // size is the VERTEX struct * 3in
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;			// use as a vertex buffer
+	bd.CPUAccessFlags = 0;								// disallow CPU to write in buffer
+
+	ID3D11Buffer *pVBuffer;								// the vertex buffer
+	D3D11_SUBRESOURCE_DATA vData;
+	vData.pSysMem = &(vertices->data()[0]);
+	device1->CreateBuffer(&bd, &vData, &pVBuffer);		// create the buffer
+	return pVBuffer;
+}
+
+ID3D11Buffer * N3s3d::createBufferFromOverlayVertices(std::vector<OverlayVertex>* vertices, int arraySize)
+{
+	if (vertices->size() == 0) {
+		return nullptr;
+	}
+	// create the vertex buffer
+	D3D11_BUFFER_DESC bd;
+	ZeroMemory(&bd, sizeof(bd));
+
+	bd.Usage = D3D11_USAGE_DEFAULT;						// write access access by CPU and GPU
+	bd.ByteWidth = sizeof(OverlayVertex) * arraySize;	// size is the VERTEX struct * 3in
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;			// use as a vertex buffer
 	bd.CPUAccessFlags = 0;								// disallow CPU to write in buffer
 
@@ -485,6 +514,11 @@ void N3s3d::disableDepthBuffer()
 
 void N3s3d::renderMesh(VoxelMesh *voxelMesh) {
 	ShaderType type = voxelMesh->type;
+	if (type != activeShader)
+	{
+		setShader(type);
+		activeShader = type;
+	}
 	UINT stride = sizeof(ColorVertex); // TODO optimize
 	UINT offset = 0;
 	context->IASetVertexBuffers(0, 1, &voxelMesh->buffer, &stride, &offset);
