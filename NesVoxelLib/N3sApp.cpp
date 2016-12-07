@@ -183,8 +183,9 @@ void N3sApp::render()
 		N3s3d::setShader(overlay);
 		N3s3d::updateMatricesWithCamera(&camera);
 		N3s3d::setGuiProjection();
-		N3s3d::updateWorldMatrix(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 10.0f);
-		Overlay::test();
+		//N3s3d::updateWorldMatrix(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 10.0f);
+		//Overlay::test();
+		Overlay::drawString(0, 0, 4, "!?\"#$%&\'()*+,-./0123456789 !!!??123 123 123");
 	}
 }
 

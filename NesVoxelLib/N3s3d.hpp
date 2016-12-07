@@ -90,6 +90,7 @@ public:
 	static void enabledDepthBuffer();
 	static void disableDepthBuffer();
 	static void setGuiProjection();
+	static D3D11_VIEWPORT viewport;
 	static void updateViewport(D3D11_VIEWPORT viewport);
 private:
 	static void initShaders();

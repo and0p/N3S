@@ -3,9 +3,24 @@
 
 VoxelMesh characterMeshes[characterCount];
 
+int getScreenX(int x)
+{
+	return x - (N3s3d::viewport.Width / 2);
+}
+
+int getScreenY(int y)
+{
+	return (N3s3d::viewport.Height / 2) - y;
+}
+
+int getScreenYFromBottom(int y)
+{
+	return (N3s3d::viewport.Width / 2) + y;
+}
+
 void Overlay::init()
 {
-	for (int i = 0; i < 2; i++)
+	for (int i = 0; i < 26; i++)
 	{
 		characterMeshes[i] = createMeshFromBitmapCharacter(bitmapCharacters[i]);
 	}
@@ -21,7 +36,26 @@ void Overlay::unload()
 
 void Overlay::drawString(int x, int y, int scale, string s)
 {
-
+	// Get screen-space coordinates
+	int screenX = getScreenX(x);
+	int screenY = getScreenY(y);
+	int currentX;
+	int characterSize = 8 * scale;
+	// Iterate over string chars
+	for (int i = 0; i < s.length(); i++)
+	{
+		int c = s[i] - 32;
+		// Check if it's a space (0) or the char is out of range
+		if (c > 0 && c < characterCount)
+		{
+			c--;	// offset because array of meshes doesn't include space
+			currentX = i * characterSize;
+			// Update world matrix
+			N3s3d::updateWorldMatrix(screenX + currentX, screenY, 0, 0, 0, 0, scale);
+			// Render character
+			N3s3d::renderMesh(&characterMeshes[c]);
+		}
+	}
 }
 
 void Overlay::test()
