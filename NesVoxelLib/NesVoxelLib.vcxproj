@@ -250,6 +250,7 @@
     <ClInclude Include="N3sApp.hpp" />
     <ClInclude Include="Audio.hpp" />
     <ClInclude Include="Input.hpp" />
+    <ClInclude Include="N3sConsole.hpp" />
     <ClInclude Include="N3sD3DContext.h" />
     <ClInclude Include="N3sPalette.hpp" />
     <ClInclude Include="N3sPatternTable.hpp" />
@@ -268,6 +269,7 @@
     <ClCompile Include="N3sApp.cpp" />
     <ClCompile Include="Audio.cpp" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="N3sConsole.cpp" />
     <ClCompile Include="N3sPalette.cpp" />
     <ClCompile Include="N3sPatternTable.cpp" />
     <ClCompile Include="NesEmulator.cpp" />

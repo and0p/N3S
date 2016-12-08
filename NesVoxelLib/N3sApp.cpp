@@ -14,6 +14,7 @@ N3sApp::N3sApp()
 	camera.SetPosition(0, 0, -2);
 	camera.SetRotation(0, 0, 0);
 	SoundDriver * drv = 0;
+	N3sConsole::init();
 }
 
 void N3sApp::assignD3DContext(N3sD3dContext context)
@@ -151,11 +152,17 @@ void N3sApp::update(bool runThisNesFrame)
 			camera.AdjustRotation(1, 0, 0);
 		if (inputState.keyboardState.keyStates[40])
 			camera.AdjustRotation(0, 0, 1);
+
+		if (inputState.keyboardState.keyStates[40])
+			N3sConsole::writeLine("TEST!");
+
 		if (inputState.gamePads[0].buttonStates[brb])
 		{
 			//camera.SetPosition(0, 0, -2);
 			//camera.SetRotation(0, 0, 0);
 		}
+
+		N3sConsole::update();
 	}
 }
 
@@ -185,7 +192,8 @@ void N3sApp::render()
 		N3s3d::setGuiProjection();
 		//N3s3d::updateWorldMatrix(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 10.0f);
 		//Overlay::test();
-		Overlay::drawString(0, 0, 4, "!?\"#$%&\'()*+,-./0123456789 !!!??123 123 123");
+		//Overlay::drawString(0, 0, 2, "!\"#$%&'()*+,-./\n0123456789:;<=>?\nABCDEFGHIJKLMNOPQRSTUVQXYZ\n[\\]^`");
+		N3sConsole::render();
 	}
 }
 

@@ -20,7 +20,7 @@ int getScreenYFromBottom(int y)
 
 void Overlay::init()
 {
-	for (int i = 0; i < 26; i++)
+	for (int i = 0; i < characterCount; i++)
 	{
 		characterMeshes[i] = createMeshFromBitmapCharacter(bitmapCharacters[i]);
 	}
@@ -39,21 +39,33 @@ void Overlay::drawString(int x, int y, int scale, string s)
 	// Get screen-space coordinates
 	int screenX = getScreenX(x);
 	int screenY = getScreenY(y);
-	int currentX;
+	int currentX = screenX;
+	int currentY = screenY;
 	int characterSize = 8 * scale;
 	// Iterate over string chars
 	for (int i = 0; i < s.length(); i++)
 	{
-		int c = s[i] - 32;
-		// Check if it's a space (0) or the char is out of range
-		if (c > 0 && c < characterCount)
+		int c = s[i];
+		// Newline
+		if(c == 10)
 		{
-			c--;	// offset because array of meshes doesn't include space
-			currentX = i * characterSize;
+			currentY -= characterSize;
+			currentX = screenX;
+		}
+		else if (c > 32 && c < 32 + characterCount)	// 32 is space
+		{
+			// Offset so that char ! is 0, like in character mesh array
+			c -= 33;
 			// Update world matrix
-			N3s3d::updateWorldMatrix(screenX + currentX, screenY, 0, 0, 0, 0, scale);
+			N3s3d::updateWorldMatrix(currentX, currentY, 0, 0, 0, 0, scale);
 			// Render character
 			N3s3d::renderMesh(&characterMeshes[c]);
+			// Move position over by 1 character
+			currentX += characterSize;
+		}
+		else
+		{
+			currentX += characterSize;
 		}
 	}
 }
