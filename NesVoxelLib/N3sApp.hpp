@@ -13,7 +13,7 @@
 #include <memory>
 #include <iostream>
 #include <fstream>
-#include "N3sConsole.hpp"
+
 
 class N3sApp {
 public:

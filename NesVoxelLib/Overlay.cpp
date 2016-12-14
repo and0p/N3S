@@ -1,7 +1,13 @@
 #include "stdafx.h"
 #include "Overlay.hpp"
 
+// Overlay / GUI meshes
 VoxelMesh characterMeshes[characterCount];
+
+// Misc editor meshes
+VoxelMesh voxelPreviewMesh;	// Single voxel
+VoxelMesh voxelGrid;		// 8x8 grid, voxel-size
+VoxelMesh nametableGrid;	// 32x30 grid, sprite-size
 
 int getScreenX(int x)
 {
@@ -13,7 +19,7 @@ int getScreenY(int y)
 	return (N3s3d::viewport.Height / 2) - y;
 }
 
-int getScreenYFromBottom(int y)
+int getScreen0romBottom(int y)
 {
 	return (N3s3d::viewport.Width / 2) + y;
 }
@@ -24,6 +30,7 @@ void Overlay::init()
 	{
 		characterMeshes[i] = createMeshFromBitmapCharacter(bitmapCharacters[i]);
 	}
+	buildVoxelPreviewMesh();
 }
 
 void Overlay::unload()
@@ -70,9 +77,16 @@ void Overlay::drawString(int x, int y, int scale, string s)
 	}
 }
 
-void Overlay::test()
+void Overlay::drawVoxelPreview(int x, int y, int z)
 {
-	N3s3d::renderMesh(&characterMeshes[0]);
+	// Get true coordinates
+	float xf = -1.0f + (pixelSizeW * x);
+	float yf = 1.0f - (pixelSizeH * y);
+	float zf = (float)z * pixelSizeW;
+	// Update world matrix
+	N3s3d::updateWorldMatrix(xf, yf, zf);
+	// Render character
+	N3s3d::renderMesh(&voxelPreviewMesh);
 }
 
 VoxelMesh createMeshFromBitmapCharacter(BitmapCharacter bitmap)
@@ -110,4 +124,82 @@ VoxelMesh createMeshFromBitmapCharacter(BitmapCharacter bitmap)
 	mesh.type = overlay;
 	mesh.buffer = N3s3d::createBufferFromOverlayVertices(&vertices, mesh.size);
 	return mesh;
+}
+
+// This mesh is just a single voxel at standard size,
+void buildVoxelPreviewMesh()
+{
+	voxelPreviewMesh.type = overlay;
+	voxelPreviewMesh.size = 36;
+
+	vector<OverlayVertex> vertices;
+	OverlayVertex v1, v2, v3, v4;
+	// Add left side
+	v1.Pos = XMFLOAT4(0, 0, 0 + pixelSizeW, 1.0f);
+	v2.Pos = XMFLOAT4(0, 0, 0, 1.0f);
+	v3.Pos = XMFLOAT4(0, 0 - pixelSizeH, 0, 1.0f);
+	v4.Pos = XMFLOAT4(0, 0 - pixelSizeH, 0 + pixelSizeW, 1.0f);
+	vertices.push_back(v1);
+	vertices.push_back(v2);
+	vertices.push_back(v4);
+	vertices.push_back(v2);
+	vertices.push_back(v3);
+	vertices.push_back(v4);
+	// Add right side
+	v1.Pos = XMFLOAT4(0 + pixelSizeW, 0, 0, 1.0f);
+	v2.Pos = XMFLOAT4(0 + pixelSizeW, 0, 0 + pixelSizeW, 1.0f);
+	v3.Pos = XMFLOAT4(0 + pixelSizeW, 0 - pixelSizeH, 0 + pixelSizeW, 1.0f);
+	v4.Pos = XMFLOAT4(0 + pixelSizeW, 0 - pixelSizeH, 0, 1.0f);
+	vertices.push_back(v1);
+	vertices.push_back(v2);
+	vertices.push_back(v4);
+	vertices.push_back(v2);
+	vertices.push_back(v3);
+	vertices.push_back(v4);
+	// Add top side
+	v1.Pos = XMFLOAT4(0, 0, 0 + pixelSizeW, 1.0f);
+	v2.Pos = XMFLOAT4(0 + pixelSizeW, 0, 0 + pixelSizeW, 1.0f);
+	v3.Pos = XMFLOAT4(0 + pixelSizeW, 0, 0, 1.0f);
+	v4.Pos = XMFLOAT4(0, 0, 0, 1.0f);
+	vertices.push_back(v1);
+	vertices.push_back(v2);
+	vertices.push_back(v4);
+	vertices.push_back(v2);
+	vertices.push_back(v3);
+	vertices.push_back(v4);
+	// Add bottom side
+	v1.Pos = XMFLOAT4(0, 0 - pixelSizeH, 0, 1.0f);
+	v2.Pos = XMFLOAT4(0 + pixelSizeW, 0 - pixelSizeH, 0, 1.0f);
+	v3.Pos = XMFLOAT4(0 + pixelSizeW, 0 - pixelSizeH, 0 + pixelSizeW, 1.0f);
+	v4.Pos = XMFLOAT4(0, 0 - pixelSizeH, 0 + pixelSizeW, 1.0f);
+	vertices.push_back(v1);
+	vertices.push_back(v2);
+	vertices.push_back(v4);
+	vertices.push_back(v2);
+	vertices.push_back(v3);
+	vertices.push_back(v4);
+	// Add front side
+	v1.Pos = XMFLOAT4(0, 0, 0, 1.0f);
+	v2.Pos = XMFLOAT4(0 + pixelSizeW, 0, 0, 1.0f);
+	v3.Pos = XMFLOAT4(0 + pixelSizeW, 0 - pixelSizeH, 0, 1.0f);
+	v4.Pos = XMFLOAT4(0, 0 - pixelSizeH, 0, 1.0f);
+	vertices.push_back(v1);
+	vertices.push_back(v2);
+	vertices.push_back(v4);
+	vertices.push_back(v2);
+	vertices.push_back(v3);
+	vertices.push_back(v4);
+	// Add back side
+	v1.Pos = XMFLOAT4(0 + pixelSizeW, 0, 0 + pixelSizeW, 1.0f);
+	v2.Pos = XMFLOAT4(0, 0, 0 + pixelSizeW, 1.0f);
+	v3.Pos = XMFLOAT4(0, 0 - pixelSizeH, 0 + pixelSizeW, 1.0f);
+	v4.Pos = XMFLOAT4(0 + pixelSizeW, 0 - pixelSizeH, 0 + pixelSizeW, 1.0f);
+	vertices.push_back(v1);
+	vertices.push_back(v2);
+	vertices.push_back(v4);
+	vertices.push_back(v2);
+	vertices.push_back(v3);
+	vertices.push_back(v4);
+
+	voxelPreviewMesh.buffer = N3s3d::createBufferFromOverlayVertices(&vertices, 36);
 }

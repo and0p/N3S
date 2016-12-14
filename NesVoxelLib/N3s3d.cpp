@@ -36,6 +36,8 @@ D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc;
 ID3D11DepthStencilState* m_depthDisabledStencilState;
 ID3D11DepthStencilState* m_depthStencilState;
 ID3D11DepthStencilView* m_depthStencilView;
+ID3D11RasterizerState* fillRasterState;
+ID3D11RasterizerState* wireframeRasterState;
 int selectedPalette;
 int mirrorBufferNumber;
 int paletteBufferNumber;
@@ -57,7 +59,7 @@ void N3s3d::initPipeline(N3sD3dContext c)
 	initPaletteShaderExtras();
 	setShader(color);
 	initDepthStencils();
-	enabledDepthBuffer();
+	setDepthBufferState(true);
 	initSampleState();
 	initRasterDesc();
 
@@ -487,14 +489,20 @@ void N3s3d::setIndexBuffer()
 	);
 }
 
-void N3s3d::enabledDepthBuffer()
+void N3s3d::setDepthBufferState(bool active)
 {
-	context->OMSetDepthStencilState(m_depthStencilState, 1);
+	if(active)
+		context->OMSetDepthStencilState(m_depthStencilState, 1);
+	else
+		context->OMSetDepthStencilState(m_depthDisabledStencilState, 1);
 }
 
-void N3s3d::disableDepthBuffer()
+void N3s3d::setRasterFillState(bool fill)
 {
-	context->OMSetDepthStencilState(m_depthDisabledStencilState, 1);
+	if(fill)
+		context->RSSetState(fillRasterState);
+	else
+		context->RSSetState(wireframeRasterState);
 }
 
 void N3s3d::setGuiProjection()
@@ -597,9 +605,21 @@ void N3s3d::initRasterDesc()
 	rasterDesc.ScissorEnable = false;
 	rasterDesc.SlopeScaledDepthBias = 0.0f;
 
-	ID3D11RasterizerState * m_rasterState;
-	device->CreateRasterizerState(&rasterDesc, &m_rasterState);
-	context->RSSetState(m_rasterState);
+	D3D11_RASTERIZER_DESC wireRasterDesc;
+	wireRasterDesc.AntialiasedLineEnable = false;
+	wireRasterDesc.CullMode = D3D11_CULL_NONE;
+	wireRasterDesc.DepthBias = 0;
+	wireRasterDesc.DepthBiasClamp = 0.0f;
+	wireRasterDesc.DepthClipEnable = true;
+	wireRasterDesc.FillMode = D3D11_FILL_WIREFRAME;
+	wireRasterDesc.FrontCounterClockwise = true;
+	wireRasterDesc.MultisampleEnable = false;
+	wireRasterDesc.ScissorEnable = false;
+	wireRasterDesc.SlopeScaledDepthBias = 0.0f;
+
+	device->CreateRasterizerState(&rasterDesc, &fillRasterState);
+	device->CreateRasterizerState(&wireRasterDesc, &wireframeRasterState);
+	context->RSSetState(fillRasterState);
 }
 
 void N3s3d::createIndexBuffer()

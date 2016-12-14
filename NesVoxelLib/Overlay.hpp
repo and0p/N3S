@@ -10,7 +10,7 @@ public:
 	static void init();
 	static void unload();
 	static void drawString(int x, int y, int scale, string s);
-	static void test();
+	static void drawVoxelPreview(int x, int y, int z);
 	static bool shadow;
 };
 
@@ -18,6 +18,12 @@ struct BitmapCharacter
 {
 	int pixels[64];
 };
+
+VoxelMesh createMeshFromBitmapCharacter(BitmapCharacter bitmap);
+
+void buildVoxelPreviewMesh();
+void buildVoxelGridMesh();
+void buildNametableGridMesh();
 
 //						  012345678901234567890123456789012345678901234567890123456789012
 // starting with a space: !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVQXYZ[\]^`
@@ -655,5 +661,3 @@ static BitmapCharacter bitmapCharacters[characterCount] =
 		0,0,0,0,0,0,0,0
 	}
 };
-
-VoxelMesh createMeshFromBitmapCharacter(BitmapCharacter bitmap);

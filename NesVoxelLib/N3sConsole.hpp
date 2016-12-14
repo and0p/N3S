@@ -24,6 +24,4 @@ public:
 	static void writeLine(string line);
 	static void update();
 	static void render();
-private:
-	static unique_ptr<vector<ConsoleLine>> lines;
 };

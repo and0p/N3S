@@ -87,8 +87,8 @@ public:
 	static void renderMesh(VoxelMesh *voxelMesh);
 	static PPUHueStandardCollection ppuHueStandardCollection;
 	static void setIndexBuffer();
-	static void enabledDepthBuffer();
-	static void disableDepthBuffer();
+	static void setDepthBufferState(bool active);
+	static void setRasterFillState(bool fill);
 	static void setGuiProjection();
 	static D3D11_VIEWPORT viewport;
 	static void updateViewport(D3D11_VIEWPORT viewport);

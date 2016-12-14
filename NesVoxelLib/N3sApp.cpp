@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "N3sApp.hpp"
 #include <time.h>
+#include "N3sConsole.hpp"
+#include "Overlay.hpp"
 
 extern SoundDriver *newDirectSound();
 
@@ -173,7 +175,7 @@ void N3sApp::render()
 		// "Render" camera to matrices
 		camera.Render();
 		// Enable depth buffer
-		N3s3d::enabledDepthBuffer();
+		N3s3d::setDepthBufferState(true);
 		// Render scene
 		N3s3d::setShader(color);
 		N3s3d::updateMatricesWithCamera(&camera);
@@ -185,16 +187,16 @@ void N3sApp::render()
 			renderSprites();
 		if (snapshot->mask.renderBackground)
 			renderNameTables();
-		// Overlay shader testing
-		N3s3d::disableDepthBuffer();
-		N3s3d::setShader(overlay);
-		N3s3d::updateMatricesWithCamera(&camera);
-		N3s3d::setGuiProjection();
-		//N3s3d::updateWorldMatrix(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 10.0f);
-		//Overlay::test();
-		//Overlay::drawString(0, 0, 2, "!\"#$%&'()*+,-./\n0123456789:;<=>?\nABCDEFGHIJKLMNOPQRSTUVQXYZ\n[\\]^`");
-		N3sConsole::render();
 	}
+	// Overlay shader testing
+	N3s3d::setDepthBufferState(false);
+	N3s3d::setShader(overlay);
+	N3s3d::updateMatricesWithCamera(&camera);
+	Overlay::drawVoxelPreview(0, 0, 0);
+	Overlay::drawVoxelPreview(5, 5, 0);
+	Overlay::drawVoxelPreview(-128, -120, 0);
+	N3s3d::setGuiProjection();
+	N3sConsole::render();
 }
 
 void N3sApp::pause()

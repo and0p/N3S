@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "N3sConsole.hpp"
 
-unique_ptr<vector<ConsoleLine>> N3sConsole::lines;
+unique_ptr<vector<ConsoleLine>> lines;
 
 void N3sConsole::init()
 {
