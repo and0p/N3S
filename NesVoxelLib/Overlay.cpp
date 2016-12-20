@@ -6,8 +6,9 @@ VoxelMesh characterMeshes[characterCount];
 
 // Misc editor meshes
 VoxelMesh voxelPreviewMesh;	// Single voxel
-VoxelMesh voxelGrid;		// 8x8 grid, voxel-size
-VoxelMesh nametableGrid;	// 32x30 grid, sprite-size
+VoxelMesh voxelGridMesh;		// 8x8 grid, voxel-size
+VoxelMesh voxelGridMeshLong;	// 32x8 grid, voxel-size
+VoxelMesh nametableGridMesh;	// 32x30 grid, sprite-size
 
 int getScreenX(int x)
 {
@@ -31,6 +32,7 @@ void Overlay::init()
 		characterMeshes[i] = createMeshFromBitmapCharacter(bitmapCharacters[i]);
 	}
 	buildVoxelPreviewMesh();
+	buildGridMeshes();
 }
 
 void Overlay::unload()
@@ -87,6 +89,56 @@ void Overlay::drawVoxelPreview(int x, int y, int z)
 	N3s3d::updateWorldMatrix(xf, yf, zf);
 	// Render character
 	N3s3d::renderMesh(&voxelPreviewMesh);
+}
+
+void Overlay::drawVoxelGrid(int spriteX, int spriteY, int voxelPos, gridOrientation orientation)
+{
+	// Set raster mode to wireframe
+	N3s3d::setRasterFillState(false);
+	float x, y, z;
+	// Branch based on orientation
+	switch (orientation) {
+	case xAxis:
+		// Get true world coords
+		x = -1.0f + (spriteX * pixelSizeW * 8);
+		y = 1.0f - (spriteY * pixelSizeH * 8);
+		z = voxelPos * pixelSizeW;
+		// Update world transform based on position and orientation
+		N3s3d::updateWorldMatrix(x, y, z);
+		// Render the mesh
+		N3s3d::renderMesh(&voxelGridMesh);
+		break;
+	case yAxis:
+		// Get true world coords
+		x = -1.0f + (spriteX * pixelSizeW * 8);
+		y = 1.0f - (spriteY * pixelSizeH * 8) - (voxelPos * pixelSizeH);
+		z = 0;
+		// Update world transform based on position and orientation
+		N3s3d::updateWorldMatrix(x, y, z, 90, -90, 0, 1);
+		// Render the mesh
+		N3s3d::renderMesh(&voxelGridMeshLong);
+		break;
+	case zAxis:
+		// Get true world coords
+		x = -1.0f + (spriteX * pixelSizeW * 8) + (voxelPos * pixelSizeW);
+		y = 1.0f - (spriteY * pixelSizeH * 8);
+		z = 0;
+		// Update world transform based on position and orientation
+		N3s3d::updateWorldMatrix(x, y, z, 0, -90, 0, 1);
+		// Render the mesh
+		N3s3d::renderMesh(&voxelGridMeshLong);
+		break;
+	}
+	// Set raster mode back to fille
+	N3s3d::setRasterFillState(true);
+}
+
+void Overlay::drawNametableGrid()
+{
+	N3s3d::setRasterFillState(false);
+	N3s3d::updateWorldMatrix(0, 0, 16 * pixelSizeW);
+	N3s3d::renderMesh(&nametableGridMesh);
+	N3s3d::setRasterFillState(true);
 }
 
 VoxelMesh createMeshFromBitmapCharacter(BitmapCharacter bitmap)
@@ -202,4 +254,89 @@ void buildVoxelPreviewMesh()
 	vertices.push_back(v4);
 
 	voxelPreviewMesh.buffer = N3s3d::createBufferFromOverlayVertices(&vertices, 36);
+}
+
+void buildGridMeshes()
+{
+	// Build the 8x8 grid
+	voxelGridMesh.type = overlay;
+	voxelGridMesh.size = 9 * 6;
+	
+	vector<OverlayVertex> vertices;
+	OverlayVertex v1, v2;
+
+	for (float i = 0; i < 9; i += 1)
+	{
+		// Add horizontal line
+		v1.Pos = XMFLOAT4(0, i * -pixelSizeH, 0, 1.0f);
+		v2.Pos = XMFLOAT4(pixelSizeW * 8, i * -pixelSizeH, 0, 1.0f);
+		vertices.push_back(v1);
+		vertices.push_back(v2);
+		vertices.push_back(v1);
+		// Add vertical line
+		v1.Pos = XMFLOAT4(i * pixelSizeW, 0, 0, 1.0f);
+		v2.Pos = XMFLOAT4(i * pixelSizeW, 8 * -pixelSizeH, 0, 1.0f);
+		vertices.push_back(v1);
+		vertices.push_back(v2);
+		vertices.push_back(v1);
+	}
+
+	voxelGridMesh.buffer = N3s3d::createBufferFromOverlayVertices(&vertices, voxelGridMesh.size);
+
+	// Build the 32x8 grid, along z-axis by default
+	voxelGridMeshLong.type = overlay;
+	voxelGridMeshLong.size = (9 + 33) * 3;
+
+	vertices.clear();
+
+	// Add horizontal lines
+	for (int i = 0; i < 9; i++)
+	{
+		v1.Pos = XMFLOAT4(0, i * -pixelSizeH, 0, 1.0f);
+		v2.Pos = XMFLOAT4(pixelSizeW * 32, i * -pixelSizeH, 0, 1.0f);
+		vertices.push_back(v1);
+		vertices.push_back(v2);
+		vertices.push_back(v1);
+	}
+	// Add vertical lines
+	for (int i = 0; i < 33; i++)
+	{
+		v1.Pos = XMFLOAT4(i * pixelSizeW, 0, 0, 1.0f);
+		v2.Pos = XMFLOAT4(i * pixelSizeW, -8 * pixelSizeH, 0, 1.0f);
+		vertices.push_back(v1);
+		vertices.push_back(v2);
+		vertices.push_back(v1);
+	}
+
+	voxelGridMeshLong.buffer = N3s3d::createBufferFromOverlayVertices(&vertices, voxelGridMeshLong.size);
+
+	// Build the nametable grid
+	nametableGridMesh.type = overlay;
+	nametableGridMesh.size = (31 + 33) * 3;
+
+	vertices.clear();
+
+	float spriteWidth = pixelSizeW * 8;
+	float spriteHeight = pixelSizeH * 8;
+
+	// Add horizontal lines
+	for (float i = 0; i < 31; i++)
+	{
+		v1.Pos = XMFLOAT4(-1.0f, 1.0f - (i * spriteHeight), 0, 1.0f);
+		v2.Pos = XMFLOAT4(1.0f, 1.0f - (i * spriteHeight), 0, 1.0f);
+		vertices.push_back(v1);
+		vertices.push_back(v2);
+		vertices.push_back(v1);
+	}
+	// Add vertical lines
+	for (float i = 0; i < 33; i++)
+	{
+		v1.Pos = XMFLOAT4(-1.0f + (i * spriteWidth), 1.0f, 0, 1.0f);
+		v2.Pos = XMFLOAT4(-1.0f + (i * spriteWidth), -1.0f, 0, 1.0f);
+		vertices.push_back(v1);
+		vertices.push_back(v2);
+		vertices.push_back(v1);
+	}
+
+	nametableGridMesh.buffer = N3s3d::createBufferFromOverlayVertices(&vertices, nametableGridMesh.size);
 }

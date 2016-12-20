@@ -280,7 +280,7 @@ void N3s3d::updateWorldMatrix(float xPos, float yPos, float zPos, float xRot, fl
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	MatrixBuffer* dataPtr;
 	XMVECTOR translation = { xPos, yPos, zPos, 0.0f };
-	XMVECTOR rotation = { xRot, yRot, zRot, 0.0f };
+	XMVECTOR rotation = { XMConvertToRadians(xRot),	XMConvertToRadians(yRot), XMConvertToRadians(zRot), 0.0f };
 	XMVECTOR scaling = { scale, scale, scale, 0.0f };
 	XMMATRIX translationMatrix = XMMatrixTranslationFromVector(translation);
 	XMMATRIX rotationMatrix = XMMatrixRotationRollPitchYawFromVector(rotation);

@@ -192,9 +192,16 @@ void N3sApp::render()
 	N3s3d::setDepthBufferState(false);
 	N3s3d::setShader(overlay);
 	N3s3d::updateMatricesWithCamera(&camera);
-	Overlay::drawVoxelPreview(0, 0, 0);
-	Overlay::drawVoxelPreview(5, 5, 0);
-	Overlay::drawVoxelPreview(-128, -120, 0);
+	// Overlay::drawVoxelPreview(0, 0, 0);
+	// Overlay::drawVoxelPreview(5, 5, 0);
+	// Overlay::drawVoxelPreview(-128, -120, 0);
+	Overlay::drawVoxelGrid(0, 0, 0, xAxis);
+	Overlay::drawVoxelGrid(0, 0, 4, yAxis);
+	Overlay::drawVoxelGrid(0, 0, 4, zAxis);
+	Overlay::drawVoxelGrid(16, 15, 0, xAxis);
+	Overlay::drawVoxelGrid(16, 15, 4, yAxis);
+	Overlay::drawVoxelGrid(16, 15, 4, zAxis);
+	Overlay::drawNametableGrid();
 	N3s3d::setGuiProjection();
 	N3sConsole::render();
 }

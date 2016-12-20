@@ -5,12 +5,16 @@ const static int characterCount = 63;
 
 using namespace std;
 
+enum gridOrientation { xAxis, zAxis, yAxis };
+
 class Overlay {
 public:
 	static void init();
 	static void unload();
 	static void drawString(int x, int y, int scale, string s);
 	static void drawVoxelPreview(int x, int y, int z);
+	static void drawVoxelGrid(int spriteX, int spriteY, int voxelPos, gridOrientation orientation);
+	static void drawNametableGrid();
 	static bool shadow;
 };
 
@@ -22,8 +26,7 @@ struct BitmapCharacter
 VoxelMesh createMeshFromBitmapCharacter(BitmapCharacter bitmap);
 
 void buildVoxelPreviewMesh();
-void buildVoxelGridMesh();
-void buildNametableGridMesh();
+void buildGridMeshes();
 
 //						  012345678901234567890123456789012345678901234567890123456789012
 // starting with a space: !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVQXYZ[\]^`
