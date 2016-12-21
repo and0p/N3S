@@ -22,6 +22,7 @@ ID3D11Buffer *mirrorBuffer;
 ID3D11Buffer *paletteBuffer;
 ID3D11Buffer *paletteSelectionBuffer;
 ID3D11Buffer *indexBuffer;
+ID3D11Buffer *overlayColorBuffer;
 //MatrixBuffer *worldMatrixPtr;
 //MatrixBuffer *viewMatrixPtr;
 //MatrixBuffer *projectionMatrixPtr;
@@ -56,7 +57,7 @@ void N3s3d::initPipeline(N3sD3dContext c)
 
 	// Init D3D pipeline
 	initShaders();
-	initPaletteShaderExtras();
+	initShaderExtras();
 	setShader(color);
 	initDepthStencils();
 	setDepthBufferState(true);
@@ -84,6 +85,7 @@ void N3s3d::initPipeline(N3sD3dContext c)
 		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f
 	};
 	updatePalette(paletteArray);
+	setOverlayColor(100, 100, 100, 64);
 }
 
 void N3s3d::initShaders() {
@@ -164,7 +166,7 @@ void N3s3d::initShaders() {
 	device1->CreatePixelShader(s_data, s_size, 0, &shaders[overlay].pixelShader);
 }
 
-void N3s3d::initPaletteShaderExtras()
+void N3s3d::initShaderExtras()
 {
 	// Create mirror buffer desc
 	D3D11_BUFFER_DESC mirrorBufferDesc;
@@ -198,6 +200,17 @@ void N3s3d::initPaletteShaderExtras()
 	paletteSelectionBufferDesc.StructureByteStride = 0;
 
 	device1->CreateBuffer(&paletteSelectionBufferDesc, NULL, &paletteSelectionBuffer);
+
+	// Create overlay color selection buffer desc
+	D3D11_BUFFER_DESC overlayColorBufferDesc;
+	overlayColorBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	overlayColorBufferDesc.ByteWidth = sizeof(float) * 4;
+	overlayColorBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	overlayColorBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	overlayColorBufferDesc.MiscFlags = 0;
+	overlayColorBufferDesc.StructureByteStride = 0;
+
+	device1->CreateBuffer(&overlayColorBufferDesc, NULL, &overlayColorBuffer);
 
 	// Set buffer slots
 	mirrorBufferNumber = 3;
@@ -375,6 +388,31 @@ void N3s3d::selectPalette(int palette)
 		// Finally set the constant buffer in the pixel shader with the updated values.
 		context1->VSSetConstantBuffers(paletteSelectionBufferNumber, 1, &paletteSelectionBuffer);
 	}
+}
+
+void N3s3d::setOverlayColor(int r, int g, int b, int a)
+{
+	// Make sure the overlay shader is active
+	if (activeShader != overlay)
+		setShader(overlay);
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	float* dataPtr;
+	// Lock the constant buffer so it can be written to.
+	context1->Map(overlayColorBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	// Get a pointer to the data in the constant buffer.
+	dataPtr = (float*)mappedResource.pData;
+	// Copy the values into the constant buffer.
+	*dataPtr = ((float)r / 256);
+	dataPtr++;
+	*dataPtr = ((float)g / 256);
+	dataPtr++;
+	*dataPtr = ((float)b / 256);
+	dataPtr++;
+	*dataPtr = ((float)a / 256);
+	// Unlock the constant buffer.
+	context1->Unmap(overlayColorBuffer, 0);
+	// Finally set the constant buffer in the vertex shader with the updated value.
+	context1->PSSetConstantBuffers(0, 1, &overlayColorBuffer);
 }
 
 void N3s3d::updateMatricesWithCamera(Camera * camera) {
@@ -706,6 +744,28 @@ bool N3s3d::initDepthStencils()
 
 	// Set the z-buffer enabled depth stencil state
 	context->OMSetDepthStencilState(m_depthStencilState, 1);
+
+	// Enable alpha blending in output merger
+	ID3D11BlendState1* g_pBlendStateNoBlend = NULL;
+
+	D3D11_BLEND_DESC1 BlendState;
+	ZeroMemory(&BlendState, sizeof(D3D11_BLEND_DESC1));
+	//BlendState.AlphaToCoverageEnable = false;
+	BlendState.IndependentBlendEnable = true;
+	BlendState.RenderTarget[0].BlendEnable = true;
+	BlendState.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	BlendState.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	BlendState.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	BlendState.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	BlendState.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	BlendState.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	BlendState.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	device1->CreateBlendState1(&BlendState, &g_pBlendStateNoBlend);
+
+	float blendFactor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	UINT sampleMask = 0xffffffff;
+
+	context->OMSetBlendState(g_pBlendStateNoBlend, blendFactor, sampleMask);
 	
 	// If it all succeeded, return true
 	return true;

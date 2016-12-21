@@ -82,6 +82,7 @@ public:
 	static void updateMirroring(bool horizontal, bool vertical);
 	static void updatePalette(float palette[72]);
 	static void selectPalette(int palette);
+	static void setOverlayColor(int r, int g, int b, int a);
 	static XMMATRIX getProjectionMatrix(const float near_plane, const float far_plane, const float fov_horiz, const float fov_vert);
 	static void setShader(ShaderType type);
 	static void renderMesh(VoxelMesh *voxelMesh);
@@ -94,7 +95,7 @@ public:
 	static void updateViewport(D3D11_VIEWPORT viewport);
 private:
 	static void initShaders();
-	static void initPaletteShaderExtras();
+	static void initShaderExtras();
 	static void initSampleState();
 	static void initRasterDesc();
 	static void createIndexBuffer();
