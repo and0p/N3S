@@ -116,6 +116,7 @@ void Game::Clear()
     // Set the viewport.
     auto viewport = m_deviceResources->GetScreenViewport();
     context->RSSetViewports(1, &viewport);
+	N3s3d::updateViewport(viewport);
 
     m_deviceResources->PIXEndEvent();
 }

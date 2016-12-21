@@ -95,7 +95,7 @@ VoxelMesh buildZMesh(int zArray[32])
 	}
 	mesh.size = sideCount * 6;
 	mesh.type = color;
-	mesh.buffer = N3s3d::createBufferFromColorVerticesV(&vertices, mesh.size);
+	mesh.buffer = N3s3d::createBufferFromColorVertices(&vertices, mesh.size);
 	return mesh;
 }
 
@@ -399,7 +399,7 @@ bool SpriteMesh::buildMesh()
 	// Return true if there is an actual mesh to render
 	if (vertices.size() > 0)
 	{
-		mesh.buffer = N3s3d::createBufferFromColorVerticesV(&vertices, mesh.size);
+		mesh.buffer = N3s3d::createBufferFromColorVertices(&vertices, mesh.size);
 		buildZMeshes();
 		return true;
 	}
