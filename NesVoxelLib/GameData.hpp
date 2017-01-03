@@ -66,6 +66,7 @@ public:
 	VirtualSprite();
 	VirtualSprite(string chrData, shared_ptr<SpriteMesh> mesh);
 	VirtualSprite(json j, map<int, shared_ptr<SpriteMesh>> meshes);
+	void render(int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop);
 	void renderOAM(shared_ptr<PpuSnapshot> snapshot, int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop);
 	void renderNametable(shared_ptr<PpuSnapshot> snapshot, int x, int y, int palette, int nametableX, int nametableY, Crop crop);
 	json getJSON();
@@ -73,8 +74,8 @@ public:
 	vector<int> appearancesInRomChr;	// Where does this sprite appear in CHR data? For reference.
 	string chrData;
 private:
-	string description = "";
 	shared_ptr<SpriteMesh> defaultMesh;
+	string description = "";
 	string serializeChrDataAsText();
 	void getChrStringFromText(string s);
 };

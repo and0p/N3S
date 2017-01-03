@@ -10,10 +10,12 @@
 #include "N3sPatternTable.hpp"
 #include "Audio.hpp"
 #include "Overlay.hpp"
+#include "GameView.hpp"
 #include <memory>
 #include <iostream>
 #include <fstream>
 
+enum n3sMode { gameMode, editorMode };
 
 class N3sApp {
 public:
@@ -35,26 +37,21 @@ public:
 	XMVECTORF32 getBackgroundColor();
 	retro_game_info *info;
 	Camera camera;
-	std::shared_ptr<GameData> gameData;
+	static shared_ptr<GameData> gameData;
+	static shared_ptr<PpuSnapshot> snapshot;
+	static shared_ptr<InputState> inputState;
+	static shared_ptr<VirtualPatternTable> virtualPatternTable;
 	bool loaded;
 	bool save();
 	bool saveAs(string path);
+	n3sMode mode = gameMode;
 private:
 	string romPath;
 	string n3sPath;
 	SoundDriver *audioEngine;
 	HWND hwnd;
 	bool emulationPaused;
-	bool pausedThisPress;
-	bool frameAdvanced;
+	//bool pausedThisPress;
+	//bool frameAdvanced;
 	bool muted;
-	std::shared_ptr<PpuSnapshot> snapshot;
-	InputState inputState;
-	shared_ptr<VirtualPatternTable> virtualPatternTable;
-	void updatePalette();
-	void renderSprites();
-	void renderSprite(shared_ptr<VirtualSprite> vSprite, int x, int y, int palette, bool flipX, bool flipY);
-	void renderNameTables();
-	void renderScrollSection(ScrollSection section);
-	void renderRow(int y, int height, int xOffset, int yOffset, int nametableX, int nametableY, int nameTable, bool patternSelect);
 };

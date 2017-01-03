@@ -54,4 +54,3 @@ bool toggleBool(bool b)
 	else
 		return false;;
 };
-

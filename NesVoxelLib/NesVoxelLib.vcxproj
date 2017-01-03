@@ -243,7 +243,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.hpp" />
+    <ClInclude Include="Editor.hpp" />
     <ClInclude Include="GameData.hpp" />
+    <ClInclude Include="GameView.hpp" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="libretro.h" />
     <ClInclude Include="N3s3d.hpp" />
@@ -259,12 +261,15 @@
     <ClInclude Include="Overlay.hpp" />
     <ClInclude Include="PpuSnapshot.hpp" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Scene.hpp" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="Editor.cpp" />
     <ClCompile Include="GameData.cpp" />
+    <ClCompile Include="GameView.cpp" />
     <ClCompile Include="N3s3d.cpp" />
     <ClCompile Include="N3sApp.cpp" />
     <ClCompile Include="Audio.cpp" />
@@ -275,6 +280,7 @@
     <ClCompile Include="NesEmulator.cpp" />
     <ClCompile Include="Overlay.cpp" />
     <ClCompile Include="PpuSnapshot.cpp" />
+    <ClCompile Include="Scene.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='HoloLens Debug|Win32'">Create</PrecompiledHeader>

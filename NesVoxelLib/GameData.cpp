@@ -556,6 +556,11 @@ VirtualSprite::VirtualSprite(json j, map<int, shared_ptr<SpriteMesh>> meshes)
 	description = j["description"].get<string>();
 }
 
+void VirtualSprite::render(int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop)
+{
+	defaultMesh->render(x, y, palette, mirrorH, mirrorV, crop);
+}
+
 void VirtualSprite::renderOAM(shared_ptr<PpuSnapshot> snapshot, int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop)
 {
 	// TODO: Check dynamic stuff
