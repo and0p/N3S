@@ -3,6 +3,11 @@
 #include "NesEmulator.hpp"
 #include "libretro.h"
 
+void DigitalInput::update()
+{
+	bool currentlyActive = InputState::
+}
+
 ControllerState::ControllerState()
 {
 }
