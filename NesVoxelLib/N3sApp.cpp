@@ -121,15 +121,14 @@ void N3sApp::reset()
 void N3sApp::update(bool runThisNesFrame)
 {
 	// Update input
-	inputState->checkGamePads();
 	inputState->refreshInput();
 	// Update console
 	N3sConsole::update();
 	// See if we're switching modes due to user input
-	if (N3sApp::inputState->keyboardState.keyStates[VK_OEM_COMMA])
-		mode = gameMode;
-	if (N3sApp::inputState->keyboardState.keyStates[VK_OEM_PERIOD])
-		mode = editorMode;
+	//if (N3sApp::inputState->keyboardState.keyStates[VK_OEM_COMMA])
+	//	mode = gameMode;
+	//if (N3sApp::inputState->keyboardState.keyStates[VK_OEM_PERIOD])
+	//	mode = editorMode;
 	// See if a game is loaded
 	if (loaded)
 	{
@@ -222,9 +221,9 @@ void N3sApp::updateGameOriginPosition(float x, float y, float z)
 void N3sApp::recieveKeyInput(int key, bool down)
 {
 	if (down)
-		inputState->keyboardState.setDown(key);
+		inputState->keyboardMouse->setDown(key);
 	else
-		inputState->keyboardState.setUp(key);
+		inputState->keyboardMouse->setUp(key);
 }
 
 XMVECTORF32 N3sApp::getBackgroundColor()

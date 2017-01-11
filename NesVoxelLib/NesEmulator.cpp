@@ -16,7 +16,7 @@
 static const void *pixelData;
 static retro_game_info *info;
 
-int16_t NesEmulator::inputs[2][8];
+int16_t NesEmulator::inputs[2][16];
 SoundDriver* NesEmulator::audioEngine;
 
 static struct {

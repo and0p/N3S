@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Xinput.h>
+#include <vector>
 
 #pragma comment(lib, "XInput.lib") // XInput library
 
@@ -12,8 +13,10 @@ const int xboxAxisCount = 6;
 
 enum inputFunctions {
 	nes_p1_a, nes_p1_b, nes_p1_up, nes_p1_left, nes_p1_down, nes_p1_right, nes_p1_start, nes_p1_select,
-	nes_p2_a, nes_p2_b, nes_p2_up, nes_p2_left, nes_p2_down, nes_p2_right, nes_p2_start, nes_p1_select,
-	emu_pause, emu_reset, LAST
+	nes_p2_a, nes_p2_b, nes_p2_up, nes_p2_left, nes_p2_down, nes_p2_right, nes_p2_start, nes_p2_select,
+	emu_pause, emu_reset, 
+	cam_left, cam_right, cam_up, cam_down, cam_pan_in, cam_pan_out,
+	LAST
 };
 
 enum device { keyboardMouse, gamepad1, gamepad2 };
@@ -24,6 +27,7 @@ enum axisNames { leftX, leftY, rightX, rightY, lTrigger, rTrigger };
 class Input
 {
 public:
+	Input() {}
 	bool active = false;
 	int framesActive = 0;
 	bool activatedThisFrame = false;
@@ -38,6 +42,7 @@ public:
 class DigitalInput : public Input
 {
 public:
+	DigitalInput() {}
 	void update();
 	float getValue();
 };
@@ -45,27 +50,24 @@ public:
 class AnalogInput : Input
 {
 public:
+	AnalogInput() {}
 	float value = 0.0f;
 	float deadzone = 0.1f;
 	void update();
 	float getValue();
 };
 
-class InputFunction
-{
-	vector<Binding> bindings;
-	bool active;
-	int activeTime;
-};
-
 class InputDevice
 {
-	virtual DigitalInput getDigitalInput(int inputNumber) = 0;
-	virtual AnalogInput getAnalogInput(int inputNumber) = 0;
+public:
+	InputDevice();
+	// virtual DigitalInput getDigitalInput(int inputNumber) = 0;
+	// virtual AnalogInput getAnalogInput(int inputNumber) = 0;
 };
 
 class KeyboardMouseDevice : InputDevice
 {
+public:
 	KeyboardMouseDevice();
 	float mouseX;
 	float mouseY;
@@ -77,29 +79,45 @@ class KeyboardMouseDevice : InputDevice
 
 class GamepadDevice : InputDevice
 {
+public:
+	GamepadDevice();
 	bool connected = false;
 	shared_ptr<DigitalInput> buttons[xboxButtonCount];
 	shared_ptr<AnalogInput> analogInputs[xboxAxisCount];
-	void update(XINPUT_GAMEPAD gamepad);
+	void update(bool connected, XINPUT_GAMEPAD gamepad);
 };
 
 class Binding
 {
+public:
+	Binding(shared_ptr<Input> input) : input(input), ctrl(false), alt(false), shift(false) {}
+	Binding(shared_ptr<Input> input, bool ctrl, bool alt, bool shift) : input(input), ctrl(ctrl), alt(alt), shift(shift) {}
 	shared_ptr<Input> input;
 	bool ctrl = false;
 	bool alt = false;
 	bool shift = false;
 };
 
+class InputFunction
+{
+public:
+	vector<Binding> bindings;
+	bool active;
+	bool activatedThisFrame;
+	int framesActive;
+	float value;
+	void update();
+};
+
 class InputState
 {
 public:
 	InputState();
-	shared_ptr<KeyboardMouseDevice> keyboardMouse;
-	shared_ptr<GamepadDevice> gamepads[2];
-	shared_ptr<Binding> bindings[inputFunctions::LAST];
-	bool connected[2];
-	
-	void checkGamePads();
-	void refreshInput();
+	static shared_ptr<KeyboardMouseDevice> keyboardMouse;
+	static shared_ptr<GamepadDevice> gamepads[2];
+	static InputFunction functions[inputFunctions::LAST];
+	static void checkGamePads();
+	static void refreshInput();
+	static void sendNesInput();
+	static void createBindings();
 };

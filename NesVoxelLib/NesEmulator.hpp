@@ -4,7 +4,7 @@
 
 class NesEmulator {
 public:
-	static int16_t inputs[2][8];
+	static int16_t inputs[2][16];
 	static void Initialize(const char * romPath);
 	static void ExecuteFrame();
 	static void unload();

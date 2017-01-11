@@ -36,7 +36,7 @@ void Scene::setBackgroundSprite(int x, int y, SceneSprite sprite)
 void Scene::createSceneFromCurrentSnapshot()
 {
 	int scrollX = N3sApp::snapshot->scrollSections[0].x;
-	int scrollX = N3sApp::snapshot->scrollSections[0].y;
+	int scrollY = N3sApp::snapshot->scrollSections[0].y;
 	int nameTable = N3sApp::snapshot->scrollSections[0].nameTable;
 	// todo: adjust scroll x and y by nametable selection
 

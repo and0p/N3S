@@ -7,38 +7,14 @@ Camera gameCamera = Camera();
 void GameView::update()
 {
 	gameCamera.SetPosition(0, 0, -2);
-	//bool yPressed = inputState->gamePads[0].buttonStates[by];
-	//bool bPressed = inputState->gamePads[0].buttonStates[bb];
-	//if (bPressed && !pausedThisPress && !emulationPaused)
-	//{
-	//	pausedThisPress = true;
-	//	pause();
-	//}
-	//else if (bPressed && !pausedThisPress && emulationPaused)
-	//{
-	//	unpause();
-	//	pausedThisPress = true;
-	//}
-	//if (!bPressed)
-	//	pausedThisPress = false;
-	//if (!emulationPaused || (yPressed && !frameAdvanced) && !runThisNesFrame)
-	//	
-	//if (yPressed)
-	//	frameAdvanced = true;
-	//else
-	//	frameAdvanced = false;
+	float camXRotation = InputState::functions[cam_left].value + InputState::functions[cam_right].value;
+	float camYRotation = InputState::functions[cam_up].value - InputState::functions[cam_down].value;
+	float camZoom = InputState::functions[cam_pan_in].value - InputState::functions[cam_pan_out].value;
+	gameCamera.AdjustRotation(camXRotation, 0.0f, camYRotation);
 	//float zoomAmount = inputState->gamePads[0].triggerStates[lTrigger] - inputState->gamePads[0].triggerStates[rTrigger];
 	//gameCamera.AdjustPosition(inputState->gamePads[0].analogStickStates[lStick].x * 0.05f, inputState->gamePads[0].analogStickStates[lStick].y * 0.05f, zoomAmount * 0.05f);
 	//gameCamera.AdjustRotation(inputState->gamePads[0].analogStickStates[rStick].x, 0, inputState->gamePads[0].analogStickStates[rStick].y * -1);
 	// Looking with keyboard arrows
-	if (N3sApp::inputState->keyboardState.keyStates[37])
-		gameCamera.AdjustRotation(-1, 0, 0);
-	if (N3sApp::inputState->keyboardState.keyStates[38])
-		gameCamera.AdjustRotation(0, 0, -1);
-	if (N3sApp::inputState->keyboardState.keyStates[39])
-		gameCamera.AdjustRotation(1, 0, 0);
-	if (N3sApp::inputState->keyboardState.keyStates[40])
-		gameCamera.AdjustRotation(0, 0, 1);
 
 	//if (inputState->keyboardState.keyStates[40])
 	//	N3sConsole::writeLine("TEST!");
