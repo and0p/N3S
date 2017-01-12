@@ -8,21 +8,19 @@
 using namespace std;
 
 const int totalKeys = 256;
-const int xboxButtonCount = 14;
-const int xboxAxisCount = 6;
 
 enum inputFunctions {
 	nes_p1_a, nes_p1_b, nes_p1_up, nes_p1_left, nes_p1_down, nes_p1_right, nes_p1_start, nes_p1_select,
 	nes_p2_a, nes_p2_b, nes_p2_up, nes_p2_left, nes_p2_down, nes_p2_right, nes_p2_start, nes_p2_select,
 	emu_pause, emu_reset, 
 	cam_left, cam_right, cam_up, cam_down, cam_pan_in, cam_pan_out,
-	LAST
+	INPUTCOUNT
 };
 
 enum device { keyboardMouse, gamepad1, gamepad2 };
 
-enum buttonNames { bdUp, bdDown, bdLeft, bdRight, ba, bb, bx, by, blb, brb, bselect, bstart, blClick, brClick, LAST };
-enum axisNames { leftXPos, leftXNeg, leftYPos, leftYNeg, rightXPos, rightXNeg, rightYPos, rightYNeg, lTrigger, rTrigger, LAST };
+enum buttonNames { bdUp, bdDown, bdLeft, bdRight, ba, bb, bx, by, blb, brb, bselect, bstart, blClick, brClick, BUTTONCOUNT };
+enum axisNames { leftXPos, leftXNeg, leftYPos, leftYNeg, rightXPos, rightXNeg, rightYPos, rightYNeg, lTrigger, rTrigger, AXISCOUNT };
 
 class Input
 {
@@ -47,7 +45,7 @@ public:
 	float getValue();
 };
 
-class AnalogInput : Input
+class AnalogInput : public Input
 {
 public:
 	AnalogInput(bool negative) : negative(negative) {}
@@ -83,8 +81,8 @@ class GamepadDevice : InputDevice
 public:
 	GamepadDevice();
 	bool connected = false;
-	shared_ptr<DigitalInput> buttons[xboxButtonCount];
-	shared_ptr<AnalogInput> analogInputs[xboxAxisCount];
+	shared_ptr<DigitalInput> buttons[BUTTONCOUNT];
+	shared_ptr<AnalogInput> analogInputs[AXISCOUNT];
 	void update(bool connected, XINPUT_GAMEPAD gamepad);
 };
 
@@ -116,7 +114,7 @@ public:
 	InputState();
 	static shared_ptr<KeyboardMouseDevice> keyboardMouse;
 	static shared_ptr<GamepadDevice> gamepads[2];
-	static InputFunction functions[inputFunctions::LAST];
+	static InputFunction functions[INPUTCOUNT];
 	static void checkGamePads();
 	static void refreshInput();
 	static void sendNesInput();

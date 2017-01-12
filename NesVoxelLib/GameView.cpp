@@ -7,7 +7,7 @@ Camera gameCamera = Camera();
 void GameView::update()
 {
 	gameCamera.SetPosition(0, 0, -2);
-	float camXRotation = InputState::functions[cam_left].value + InputState::functions[cam_right].value;
+	float camXRotation = (InputState::functions[cam_left].value * -1) + InputState::functions[cam_right].value;
 	float camYRotation = InputState::functions[cam_up].value - InputState::functions[cam_down].value;
 	float camZoom = InputState::functions[cam_pan_in].value - InputState::functions[cam_pan_out].value;
 	gameCamera.AdjustRotation(camXRotation, 0.0f, camYRotation);
