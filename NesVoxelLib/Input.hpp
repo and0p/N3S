@@ -21,8 +21,8 @@ enum inputFunctions {
 
 enum device { keyboardMouse, gamepad1, gamepad2 };
 
-enum buttonNames { bdUp, bdDown, bdLeft, bdRight, ba, bb, bx, by, blb, brb, bselect, bstart, blClick, brClick };
-enum axisNames { leftX, leftY, rightX, rightY, lTrigger, rTrigger };
+enum buttonNames { bdUp, bdDown, bdLeft, bdRight, ba, bb, bx, by, blb, brb, bselect, bstart, blClick, brClick, LAST };
+enum axisNames { leftXPos, leftXNeg, leftYPos, leftYNeg, rightXPos, rightXNeg, rightYPos, rightYNeg, lTrigger, rTrigger, LAST };
 
 class Input
 {
@@ -50,9 +50,10 @@ public:
 class AnalogInput : Input
 {
 public:
-	AnalogInput() {}
+	AnalogInput(bool negative) : negative(negative) {}
 	float value = 0.0f;
 	float deadzone = 0.1f;
+	bool negative = false;
 	void update();
 	float getValue();
 };
@@ -60,7 +61,7 @@ public:
 class InputDevice
 {
 public:
-	InputDevice();
+	InputDevice() {}
 	// virtual DigitalInput getDigitalInput(int inputNumber) = 0;
 	// virtual AnalogInput getAnalogInput(int inputNumber) = 0;
 };

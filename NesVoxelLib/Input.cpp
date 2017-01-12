@@ -34,30 +34,30 @@ float DigitalInput::getValue()
 
 void AnalogInput::update()
 {
-	if (value > deadzone)
+	// Flip value if negative
+	value = fabs(value);
+	if (value >= deadzone)
 	{
+		setActive(true);
 		if (framesActive > 0)
 			setActivatedThisFrame(false);
 		else
 			setActivatedThisFrame(true);
-		setFramesActive(framesActive + 1);
-		setActive(true);
+		framesActive++;
+		// Adjust value based on deadzone area
+		value = value / (1.0f - deadzone);
 	}
 	else
 	{
-		setActive(false);
 		setActivatedThisFrame(false);
-		setFramesActive(0);
+		framesActive = 0;
+		setActive(false);
 	}
 }
 
 float AnalogInput::getValue()
 {
-	return 0.0f;
-}
-
-InputDevice::InputDevice()
-{
+	return value;
 }
 
 KeyboardMouseDevice::KeyboardMouseDevice()
@@ -95,10 +95,16 @@ GamepadDevice::GamepadDevice()
 	{
 		buttons[i] = make_shared<DigitalInput>();
 	}
-	for (int i = 0; i < xboxAxisCount; i++)
-	{
-		analogInputs[i] = make_shared<AnalogInput>();
-	}
+	analogInputs[leftXPos] = make_shared<AnalogInput>(false);
+	analogInputs[leftXNeg] = make_shared<AnalogInput>(true);
+	analogInputs[leftYPos] = make_shared<AnalogInput>(false);
+	analogInputs[leftYNeg] = make_shared<AnalogInput>(true);
+	analogInputs[rightXPos] = make_shared<AnalogInput>(false);
+	analogInputs[rightXNeg] = make_shared<AnalogInput>(true);
+	analogInputs[rightYPos] = make_shared<AnalogInput>(false);
+	analogInputs[rightYNeg] = make_shared<AnalogInput>(true);
+	analogInputs[lTrigger] = make_shared<AnalogInput>(false);
+	analogInputs[rTrigger] = make_shared<AnalogInput>(false);
 }
 
 void GamepadDevice::update(bool connected, XINPUT_GAMEPAD gamepad)
