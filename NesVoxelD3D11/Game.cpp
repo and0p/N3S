@@ -163,7 +163,7 @@ void Game::GetDefaultSize(int& width, int& height) const
     width = 1024;
     height = 768;
 }
-void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam)
+void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam, HWND hwnd)
 {
 	switch (message)
 	{
@@ -203,17 +203,40 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 		}
 		}
-	case WM_KEYDOWN:
-	{
-		bool previouslyDown = (int)lParam >> 30 & 1;
-		if (!previouslyDown)
-			app.recieveKeyInput(wParam, true);
+		case WM_KEYDOWN:
+		{
+			bool previouslyDown = (int)lParam >> 30 & 1;
+			if (!previouslyDown)
+				app.recieveKeyInput(wParam, true);
+			break;
+		}
+		case WM_KEYUP:
+			app.recieveKeyInput(wParam, false);
+			break;
+		case WM_LBUTTONDOWN:
+			app.recieveMouseInput(left_mouse, true);
+			break;
+		case WM_LBUTTONUP:
+			app.recieveMouseInput(left_mouse, false);
+			break;
+		case WM_MBUTTONDOWN:
+			app.recieveMouseInput(middle_mouse, true);
+			break;
+		case WM_MBUTTONUP:
+			app.recieveMouseInput(middle_mouse, false);
+			break;
+		case WM_RBUTTONDOWN:
+			app.recieveMouseInput(right_mouse, true);
+			break;
+		case WM_RBUTTONUP:
+			app.recieveMouseInput(right_mouse, false);
+			break;
+		case WM_MOUSEMOVE:
+			int x = LOWORD(lParam);
+			int y = HIWORD(lParam);
+			app.recieveMouseMovement(x, y);
 		break;
-	}
-	case WM_KEYUP:
-		app.recieveKeyInput(wParam, false);
-		break;
-	}
+		}
 	}
 }
 #pragma endregion

@@ -264,11 +264,33 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_KEYDOWN:
-		g_game->getAppMessage(message, wParam, lParam);
+		g_game->getAppMessage(message, wParam, lParam, hWnd);
 		break;
 
 	case WM_KEYUP:
-		g_game->getAppMessage(message, wParam, lParam);
+		g_game->getAppMessage(message, wParam, lParam, hWnd);
+		break;
+
+	case WM_LBUTTONDOWN:
+		g_game->getAppMessage(message, wParam, lParam, hWnd);
+		break;
+	case WM_LBUTTONUP:
+		g_game->getAppMessage(message, wParam, lParam, hWnd);
+		break;
+	case WM_MBUTTONDOWN:
+		g_game->getAppMessage(message, wParam, lParam, hWnd);
+		break;
+	case WM_MBUTTONUP:
+		g_game->getAppMessage(message, wParam, lParam, hWnd);
+		break;
+	case WM_RBUTTONDOWN:
+		g_game->getAppMessage(message, wParam, lParam, hWnd);
+		break;
+	case WM_RBUTTONUP:
+		g_game->getAppMessage(message, wParam, lParam, hWnd);
+		break;
+	case WM_MOUSEMOVE:
+		g_game->getAppMessage(message, wParam, lParam, hWnd);
 		break;
 
 	case WM_COMMAND:
@@ -279,7 +301,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			readyToExit = true;
 			break;
 		default:
-			g_game->getAppMessage(message, wParam, lParam);
+			g_game->getAppMessage(message, wParam, lParam, hWnd);
 			break;
 		}
 	}

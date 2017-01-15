@@ -66,6 +66,47 @@ float AnalogInput::getValue()
 	return value;
 }
 
+void MouseButton::update(bool down, int x, int y)
+{
+	// Get distance between possible action start and this X/Y
+	int xDelta = abs(actionXStart - x);
+	int yDelta = abs(actionYStart - y);
+	if (down)
+	{
+		if (framesActive == 0)
+		{
+			state = clicked;
+			actionXStart = x;
+			actionYStart = y;
+		}
+		else if (framesActive > 0)
+		{
+			// See if X or Y are further than 5 pixels away
+			if (xDelta > 5 || yDelta > 5)
+			{
+				state = dragging;
+			}
+		}
+		framesActive++;
+	}
+	else
+	{
+		// If we're releasing near the click start it counts as "pressed" for buttons
+		if (framesActive > 0 && framesActive < 300)
+		{
+			if (xDelta > 5 || yDelta > 5)
+			{
+				state = pressed;
+				framesActive = 0;
+			}
+		}
+		else
+		{
+			state = inactive;
+		}
+	}
+}
+
 KeyboardMouseDevice::KeyboardMouseDevice()
 {
 	for (int i = 0; i < totalKeys; i++)
@@ -85,6 +126,11 @@ void KeyboardMouseDevice::setDown(int key)
 void KeyboardMouseDevice::setUp(int key)
 {
 	keys[key]->setActive(false);
+}
+
+void KeyboardMouseDevice::updateMouseButton(MouseButtons button, bool down)
+{
+	mouseButtons[button].update(down, mouseX, mouseY);
 }
 
 void KeyboardMouseDevice::update()
@@ -284,3 +330,4 @@ void InputState::createBindings()
 	functions[cam_up].bindings.push_back({ gamepads[0]->analogInputs[rightYPos] });
 	functions[cam_down].bindings.push_back({ gamepads[0]->analogInputs[rightYNeg] });
 }
+
