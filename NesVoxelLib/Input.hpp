@@ -22,7 +22,7 @@ enum device { keyboardMouse, gamepad1, gamepad2 };
 enum buttonNames { bdUp, bdDown, bdLeft, bdRight, ba, bb, bx, by, blb, brb, bselect, bstart, blClick, brClick, BUTTONCOUNT };
 enum axisNames { leftXPos, leftXNeg, leftYPos, leftYNeg, rightXPos, rightXNeg, rightYPos, rightYNeg, lTrigger, rTrigger, AXISCOUNT };
 
-enum MouseState { inactive, clicked, pressed, dragging };
+enum MouseState { inactive, clicked, down, pressed, dragging };
 enum MouseButtons { left_mouse, right_mouse, middle_mouse, MOUSEBUTTONCOUNT };
 
 class Input
@@ -65,12 +65,12 @@ public:
 	MouseState state = inactive;
 	int x = 0;
 	int y = 0;
-	int actionXStart = 0;
-	int actionYStart = 0;
-	void update(bool pressed, int x, int y);
+	int actionXStart = -1;
+	int actionYStart = -1;
+	void update(int x, int y);
+	bool down = false;
 private:
-	bool down;
-	int framesActive;
+	int framesActive = 0;
 };
 
 class InputDevice
@@ -91,7 +91,6 @@ public:
 	MouseButton mouseButtons[MouseButtons::MOUSEBUTTONCOUNT];
 	void setDown(int key);
 	void setUp(int key);
-	void updateMouseButton(MouseButtons button, bool down);
 	void update();
 };
 

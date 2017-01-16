@@ -66,11 +66,8 @@ float AnalogInput::getValue()
 	return value;
 }
 
-void MouseButton::update(bool down, int x, int y)
+void MouseButton::update(int x, int y)
 {
-	// Get distance between possible action start and this X/Y
-	int xDelta = abs(actionXStart - x);
-	int yDelta = abs(actionYStart - y);
 	if (down)
 	{
 		if (framesActive == 0)
@@ -81,29 +78,35 @@ void MouseButton::update(bool down, int x, int y)
 		}
 		else if (framesActive > 0)
 		{
+			// Get distance between possible action start and this X/Y
+			int xDelta = abs(actionXStart - x);
+			int yDelta = abs(actionYStart - y);
 			// See if X or Y are further than 5 pixels away
 			if (xDelta > 5 || yDelta > 5)
 			{
 				state = dragging;
 			}
+			else
+				state = MouseState::down;	// Set "down"
 		}
 		framesActive++;
 	}
 	else
 	{
 		// If we're releasing near the click start it counts as "pressed" for buttons
-		if (framesActive > 0 && framesActive < 300)
+		if (framesActive > 0 && framesActive < 1000)
 		{
-			if (xDelta > 5 || yDelta > 5)
-			{
+			// Get distance between possible action start and this X/Y
+			int xDelta = abs(actionXStart - x);
+			int yDelta = abs(actionYStart - y);
+			if (xDelta < 5 || yDelta < 5)
 				state = pressed;
-				framesActive = 0;
-			}
 		}
 		else
 		{
 			state = inactive;
 		}
+		framesActive = 0;
 	}
 }
 
@@ -128,16 +131,15 @@ void KeyboardMouseDevice::setUp(int key)
 	keys[key]->setActive(false);
 }
 
-void KeyboardMouseDevice::updateMouseButton(MouseButtons button, bool down)
-{
-	mouseButtons[button].update(down, mouseX, mouseY);
-}
-
 void KeyboardMouseDevice::update()
 {
 	for (int i = 0; i < totalKeys; i++)
 	{
 		keys[i]->update();
+	}
+	for (int i = 0; i < MOUSEBUTTONCOUNT; i++)
+	{
+		mouseButtons[i].update(mouseX, mouseY);
 	}
 }
 

@@ -184,14 +184,20 @@ void N3sApp::render()
 	Overlay::drawNametableGrid();
 	N3s3d::setGuiProjection();
 	*/
-	N3s3d::setOverlayColor(255, 255, 255, 255);
+	N3s3d::setDepthBufferState(false);
 	N3s3d::setShader(overlay);
+	N3s3d::setOverlayColor(255, 255, 255, 255);
 	N3s3d::setGuiProjection();
 	string s = "";
 	s.append(to_string(InputState::keyboardMouse->mouseX));
 	s.append(", ");
 	s.append(to_string(InputState::keyboardMouse->mouseY));
-	Overlay::drawString(0, 0, 4, s);
+	Overlay::drawString(0, 0, 2, s);
+	s = "";
+	s.append(to_string(InputState::keyboardMouse->mouseButtons[0].state));
+	s.append(to_string(InputState::keyboardMouse->mouseButtons[1].state));
+	s.append(to_string(InputState::keyboardMouse->mouseButtons[2].state));
+	Overlay::drawString(0, 18, 2, s);
 	N3sConsole::render();
 }
 
@@ -236,7 +242,7 @@ void N3sApp::recieveKeyInput(int key, bool down)
 
 void N3sApp::recieveMouseInput(MouseButtons button, bool down)
 {
-	InputState::keyboardMouse->updateMouseButton(button, down);
+	InputState::keyboardMouse->mouseButtons[button].down = down;
 }
 
 void N3sApp::recieveMouseMovement(int x, int y)
