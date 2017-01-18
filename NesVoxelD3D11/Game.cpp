@@ -84,8 +84,7 @@ void Game::Render()
     auto context = m_deviceResources->GetD3DDeviceContext();
 
 	// Let the app render
-	if(app.loaded)
-		app.render();
+	app.render();
 
 	context;
 
