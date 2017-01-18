@@ -78,16 +78,20 @@ void MouseButton::update(int x, int y)
 		}
 		else if (framesActive > 0)
 		{
-			// Get distance between possible action start and this X/Y
-			int xDelta = abs(actionXStart - x);
-			int yDelta = abs(actionYStart - y);
-			// See if X or Y are further than 5 pixels away
-			if (xDelta > 5 || yDelta > 5)
+			// Don't change to/from dragging state if we're already dragging
+			if (state != dragging)
 			{
-				state = dragging;
+				// Get distance between possible action start and this X/Y
+				int xDelta = abs(actionXStart - x);
+				int yDelta = abs(actionYStart - y);
+				// See if X or Y are further than 5 pixels away
+				if (xDelta > 5 || yDelta > 5)
+				{
+					state = dragging;
+				}
+				else
+					state = MouseState::down;
 			}
-			else
-				state = MouseState::down;	// Set "down"
 		}
 		framesActive++;
 	}
