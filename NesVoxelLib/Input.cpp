@@ -3,45 +3,226 @@
 #include "NesEmulator.hpp"
 #include "libretro.h"
 
-ControllerState::ControllerState()
+shared_ptr<KeyboardMouseDevice> InputState::keyboardMouse;
+shared_ptr<GamepadDevice> InputState::gamepads[2];
+InputFunction InputState::functions[INPUTCOUNT];
+
+void DigitalInput::update()
 {
+	if (active)
+	{
+		if (framesActive > 0)
+			setActivatedThisFrame(false);
+		else
+			setActivatedThisFrame(true);
+		setFramesActive(framesActive + 1);
+	}
+	else
+	{
+		setActivatedThisFrame(false);
+		setFramesActive(0);
+	}
 }
 
-ControllerState::ControllerState(XINPUT_GAMEPAD gamepad)
+float DigitalInput::getValue()
 {
-	// Read buttons
-	buttonStates[ba] = ((gamepad.wButtons & XINPUT_GAMEPAD_A) != 0);
-	buttonStates[bb] = ((gamepad.wButtons & XINPUT_GAMEPAD_B) != 0);
-	buttonStates[bx] = ((gamepad.wButtons & XINPUT_GAMEPAD_X) != 0);
-	buttonStates[by] = ((gamepad.wButtons & XINPUT_GAMEPAD_Y) != 0);
-	buttonStates[bstart] = ((gamepad.wButtons & XINPUT_GAMEPAD_START) != 0);
-	buttonStates[bselect] = ((gamepad.wButtons & XINPUT_GAMEPAD_BACK) != 0);
-	buttonStates[bdLeft] = ((gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) != 0);
-	buttonStates[bdRight] = ((gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT) != 0);
-	buttonStates[bdUp] = ((gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP) != 0);
-	buttonStates[bdDown] = ((gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN) != 0);
-	buttonStates[blb] = ((gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER) != 0);
-	buttonStates[brb] = ((gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER) != 0);
-	// Read analog sticks
-	analogStickStates[lStick] = { gamepad.sThumbLX / 32767.0f, gamepad.sThumbLY / 32767.0f };
-	analogStickStates[rStick] = { gamepad.sThumbRX / 32767.0f, gamepad.sThumbRY / 32767.0f };
-	// Read triggers
-	triggerStates[lTrigger] = gamepad.bLeftTrigger / 255.0f;
-	triggerStates[rTrigger] = gamepad.bRightTrigger / 255.0f;
-	// Dead-zone sticks and triggers
-	if (analogStickStates[lStick].x < 0.15f && analogStickStates[lStick].x > -0.15f)
-		analogStickStates[lStick].x = 0;
-	if (analogStickStates[lStick].y < 0.15f && analogStickStates[lStick].y > -0.15f)
-		analogStickStates[lStick].y = 0;
-	if (analogStickStates[rStick].x < 0.15f && analogStickStates[rStick].x > -0.15f)
-		analogStickStates[rStick].x = 0;
-	if (analogStickStates[rStick].y < 0.15f && analogStickStates[rStick].y > -0.15f)
-		analogStickStates[rStick].y = 0;
+	if (active)
+		return 1.0f;
+	else
+		return 0.0f;
+}
+
+void AnalogInput::update()
+{
+	// Flip value if negative
+	if (negative)
+	{
+		value *= -1;
+	}
+	// Set the value
+	if (value >= deadzone)
+	{
+		setActive(true);
+		if (framesActive > 0)
+			setActivatedThisFrame(false);
+		else
+			setActivatedThisFrame(true);
+		framesActive++;
+		// Adjust value based on deadzone area
+		value -= deadzone;
+		value = (float)(value / (1.0f - deadzone));
+	}
+	else
+	{
+		setActivatedThisFrame(false);
+		framesActive = 0;
+		setActive(false);
+		value = 0;
+	}
+}
+
+float AnalogInput::getValue()
+{
+	return value;
+}
+
+void MouseButton::update(int x, int y)
+{
+	if (down)
+	{
+		if (framesActive == 0)
+		{
+			state = clicked;
+			actionXStart = x;
+			actionYStart = y;
+		}
+		else if (framesActive > 0)
+		{
+			// Don't change to/from dragging state if we're already dragging
+			if (state != dragging)
+			{
+				// Get distance between possible action start and this X/Y
+				int xDelta = abs(actionXStart - x);
+				int yDelta = abs(actionYStart - y);
+				// See if X or Y are further than 5 pixels away
+				if (xDelta > 5 || yDelta > 5)
+				{
+					state = dragging;
+				}
+				else
+					state = MouseState::down;
+			}
+		}
+		framesActive++;
+	}
+	else
+	{
+		// If we're releasing near the click start it counts as "pressed" for buttons
+		if (framesActive > 0 && framesActive < 1000)
+		{
+			// Get distance between possible action start and this X/Y
+			int xDelta = abs(actionXStart - x);
+			int yDelta = abs(actionYStart - y);
+			if (xDelta < 5 || yDelta < 5)
+				state = pressed;
+		}
+		else
+		{
+			state = inactive;
+		}
+		framesActive = 0;
+	}
+}
+
+KeyboardMouseDevice::KeyboardMouseDevice()
+{
+	for (int i = 0; i < totalKeys; i++)
+	{
+		keys[i] = make_shared<DigitalInput>();
+	}
+}
+
+void KeyboardMouseDevice::setDown(int key)
+{
+	if (key >= 0 && key < totalKeys)
+	{
+		keys[key]->setActive(true);
+	}
+}
+
+void KeyboardMouseDevice::setUp(int key)
+{
+	keys[key]->setActive(false);
+}
+
+void KeyboardMouseDevice::update()
+{
+	for (int i = 0; i < totalKeys; i++)
+	{
+		keys[i]->update();
+	}
+	for (int i = 0; i < MOUSEBUTTONCOUNT; i++)
+	{
+		mouseButtons[i].update(mouseX, mouseY);
+	}
+}
+
+GamepadDevice::GamepadDevice()
+{
+	for (int i = 0; i < BUTTONCOUNT; i++)
+	{
+		buttons[i] = make_shared<DigitalInput>();
+	}
+	analogInputs[leftXPos] = make_shared<AnalogInput>(false);
+	analogInputs[leftXNeg] = make_shared<AnalogInput>(true);
+	analogInputs[leftYPos] = make_shared<AnalogInput>(false);
+	analogInputs[leftYNeg] = make_shared<AnalogInput>(true);
+	analogInputs[rightXPos] = make_shared<AnalogInput>(false);
+	analogInputs[rightXNeg] = make_shared<AnalogInput>(true);
+	analogInputs[rightYPos] = make_shared<AnalogInput>(false);
+	analogInputs[rightYNeg] = make_shared<AnalogInput>(true);
+	analogInputs[lTrigger] = make_shared<AnalogInput>(false);
+	analogInputs[rTrigger] = make_shared<AnalogInput>(false);
+}
+
+void GamepadDevice::update(bool connected, XINPUT_GAMEPAD gamepad)
+{
+	if (connected)
+	{
+		// Read buttons
+		buttons[ba]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_A) != 0));
+		buttons[bb]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_B) != 0));
+		buttons[bx]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_X) != 0));
+		buttons[by]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_Y) != 0));
+		buttons[bstart]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_START) != 0));
+		buttons[bselect]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_BACK) != 0));
+		buttons[bdLeft]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) != 0));
+		buttons[bdRight]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT) != 0));
+		buttons[bdUp]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP) != 0));
+		buttons[bdDown]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN) != 0));
+		buttons[blb]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER) != 0));
+		buttons[brb]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER) != 0));
+		// Read analog sticks
+		analogInputs[leftXNeg]->value = gamepad.sThumbLX / 32767.0f;
+		analogInputs[leftXPos]->value = gamepad.sThumbLX / 32767.0f;
+		analogInputs[leftYNeg]->value = gamepad.sThumbLY / 32767.0f;
+		analogInputs[leftYPos]->value = gamepad.sThumbLY / 32767.0f;
+		analogInputs[rightXNeg]->value = gamepad.sThumbRX / 32767.0f;
+		analogInputs[rightXPos]->value = gamepad.sThumbRX / 32767.0f;
+		analogInputs[rightYNeg]->value = gamepad.sThumbRY / 32767.0f;
+		analogInputs[rightYPos]->value = gamepad.sThumbRY / 32767.0f; 
+		analogInputs[lTrigger]->value = gamepad.bLeftTrigger / 255.0f;
+		analogInputs[rTrigger]->value = gamepad.bRightTrigger / 255.0f;
+
+		// Update all
+		for (int i = 0; i < BUTTONCOUNT; i++)
+		{
+			buttons[i]->update();
+		}
+		for (int i = 0; i < AXISCOUNT; i++)
+		{
+			analogInputs[i]->update();
+		}
+	}
+	else
+	{
+		for (int i = 0; i < BUTTONCOUNT; i++)
+		{
+			buttons[i]->setActive(false);
+		}
+		for (int i = 0; i < AXISCOUNT; i++)
+		{
+			analogInputs[i]->value = 0.0f;
+		}
+	}
 }
 
 InputState::InputState()
 {
-	keyboardState = KeyboardState();
+	keyboardMouse = make_shared<KeyboardMouseDevice>();
+	gamepads[0] = make_shared<GamepadDevice>();
+	gamepads[1] = make_shared<GamepadDevice>();
+	createBindings();
 }
 
 void InputState::checkGamePads()
@@ -50,52 +231,109 @@ void InputState::checkGamePads()
 	// See if either controller is connected and grab input state if so
 	if (XInputGetState(0, &state) == ERROR_SUCCESS)
 	{
-		connected[0] = true;
-		gamePads[0] = ControllerState(state.Gamepad);
+		gamepads[0]->update(true, state.Gamepad);
 	}
 	else
 	{
-		connected[0] = false;
+		gamepads[0]->update(false, state.Gamepad);
 	}
 	if (XInputGetState(1, &state) == ERROR_SUCCESS)
 	{
-		connected[1] = true;
-		gamePads[1] = ControllerState(state.Gamepad);
+		gamepads[1]->update(true, state.Gamepad);
 	}
 	else
 	{
-		connected[1] = false;
+		gamepads[1]->update(false, state.Gamepad);
 	}
 }
 
 void InputState::refreshInput()
 {
-	// Send to emulator
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_A] = ((connected[0] && gamePads[0].buttonStates[ba]) || keyboardState.keyStates[75]);;
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_B] = ((connected[0] && gamePads[0].buttonStates[bx]) || keyboardState.keyStates[74]);;
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_SELECT] = ((connected[0] && gamePads[0].buttonStates[bselect]) || keyboardState.keyStates[85]);
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_START] = ((connected[0] && gamePads[0].buttonStates[bstart]) || keyboardState.keyStates[73]);
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_UP] = ((connected[0] && gamePads[0].buttonStates[bdUp]) || keyboardState.keyStates[87]);;
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_DOWN] = ((connected[0] && gamePads[0].buttonStates[bdDown]) || keyboardState.keyStates[83]);;
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_LEFT] = ((connected[0] && gamePads[0].buttonStates[bdLeft]) || keyboardState.keyStates[65]);;
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_RIGHT] = ((connected[0] && gamePads[0].buttonStates[bdRight]) || keyboardState.keyStates[68]);;
-	
+	checkGamePads();
+	keyboardMouse->update();
+	// Update bindings and send input to NES
+	for (int i = 0; i < INPUTCOUNT; i++)
+	{
+		if (i == 18)
+		{
+			int boop = 0;
+		}
+		functions[i].update();
+	}
+	sendNesInput();
 }
 
-KeyboardState::KeyboardState()
+void InputState::sendNesInput()
 {
-	for (int i = 0; i < 256; i++)
+	// Player 1
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_A] = functions[nes_p1_a].active;
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_B] = functions[nes_p1_b].active;
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_SELECT] = functions[nes_p1_select].active;
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_START] = functions[nes_p1_start].active;
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_UP] = functions[nes_p1_up].active;
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_DOWN] = functions[nes_p1_down].active;
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_LEFT] = functions[nes_p1_left].active;
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_RIGHT] = functions[nes_p1_right].active;
+	// Player 2
+	NesEmulator::inputs[1][RETRO_DEVICE_ID_JOYPAD_A] = functions[nes_p2_a].active;
+	NesEmulator::inputs[1][RETRO_DEVICE_ID_JOYPAD_B] = functions[nes_p2_b].active;
+	NesEmulator::inputs[1][RETRO_DEVICE_ID_JOYPAD_SELECT] = functions[nes_p2_select].active;
+	NesEmulator::inputs[1][RETRO_DEVICE_ID_JOYPAD_START] = functions[nes_p2_start].active;
+	NesEmulator::inputs[1][RETRO_DEVICE_ID_JOYPAD_UP] = functions[nes_p2_up].active;
+	NesEmulator::inputs[1][RETRO_DEVICE_ID_JOYPAD_DOWN] = functions[nes_p2_down].active;
+	NesEmulator::inputs[1][RETRO_DEVICE_ID_JOYPAD_LEFT] = functions[nes_p2_left].active;
+	NesEmulator::inputs[1][RETRO_DEVICE_ID_JOYPAD_RIGHT] = functions[nes_p2_right].active;
+}
+
+void InputFunction::update()
+{
+	active = false;
+	activatedThisFrame = false;
+	framesActive = 0;
+	value = 0;
+	for (Binding b : bindings)
 	{
-		keyStates[i] = false;
+		if (b.input->active)
+			active = true;
+		if (b.input->activatedThisFrame)
+			activatedThisFrame = true;
+		if (b.input->framesActive > framesActive)
+			framesActive = b.input->framesActive;
+		if (b.input->getValue() > value)
+			value = b.input->getValue();
 	}
 }
 
-void KeyboardState::setDown(int key)
+void InputState::createBindings()
 {
-	keyStates[key] = true;
+	// Crappy hard-coded test bindings
+	// TODO: load from a proper config, build menu to edit
+
+	// NES Player 1 controls
+	functions[nes_p1_a].bindings.push_back({ InputState::keyboardMouse->keys[0x4B] });
+	functions[nes_p1_b].bindings.push_back({ InputState::keyboardMouse->keys[0x4A] });
+	functions[nes_p1_select].bindings.push_back({ InputState::keyboardMouse->keys[0x55] });
+	functions[nes_p1_start].bindings.push_back({ InputState::keyboardMouse->keys[0x49] });
+	functions[nes_p1_up].bindings.push_back({ InputState::keyboardMouse->keys[0x57] });
+	functions[nes_p1_down].bindings.push_back({ InputState::keyboardMouse->keys[0x53] });
+	functions[nes_p1_left].bindings.push_back({ InputState::keyboardMouse->keys[0x41] });
+	functions[nes_p1_right].bindings.push_back({ InputState::keyboardMouse->keys[0x44] });
+
+	functions[nes_p1_up].bindings.push_back({ gamepads[0]->analogInputs[leftYPos] });
+	functions[nes_p1_down].bindings.push_back({ gamepads[0]->analogInputs[leftYNeg] });
+	functions[nes_p1_left].bindings.push_back({ gamepads[0]->analogInputs[leftXNeg] });
+	functions[nes_p1_right].bindings.push_back({ gamepads[0]->analogInputs[leftXPos] });
+	// Camera controls
+	functions[cam_up].bindings.push_back({ keyboardMouse->keys[VK_UP] });
+	functions[cam_down].bindings.push_back({ keyboardMouse->keys[VK_DOWN] });
+	functions[cam_left].bindings.push_back({ keyboardMouse->keys[VK_LEFT] });
+	functions[cam_right].bindings.push_back({ keyboardMouse->keys[VK_RIGHT] });
+	functions[cam_pan_in].bindings.push_back({ keyboardMouse->keys[VK_OEM_PERIOD] });
+	functions[cam_pan_out].bindings.push_back({ keyboardMouse->keys[VK_OEM_COMMA] });
+
+	functions[cam_left].bindings.push_back({ gamepads[0]->analogInputs[rightXNeg] });
+	functions[cam_right].bindings.push_back({ gamepads[0]->analogInputs[rightXPos] });
+	functions[cam_up].bindings.push_back({ gamepads[0]->analogInputs[rightYPos] });
+	functions[cam_down].bindings.push_back({ gamepads[0]->analogInputs[rightYNeg] });
 }
 
-void KeyboardState::setUp(int key)
-{
-	keyStates[key] = false;
-}

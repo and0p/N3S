@@ -121,15 +121,14 @@ void N3sApp::reset()
 void N3sApp::update(bool runThisNesFrame)
 {
 	// Update input
-	inputState->checkGamePads();
 	inputState->refreshInput();
 	// Update console
 	N3sConsole::update();
 	// See if we're switching modes due to user input
-	if (N3sApp::inputState->keyboardState.keyStates[VK_OEM_COMMA])
-		mode = gameMode;
-	if (N3sApp::inputState->keyboardState.keyStates[VK_OEM_PERIOD])
-		mode = editorMode;
+	//if (N3sApp::inputState->keyboardState.keyStates[VK_OEM_COMMA])
+	//	mode = gameMode;
+	//if (N3sApp::inputState->keyboardState.keyStates[VK_OEM_PERIOD])
+	//	mode = editorMode;
 	// See if a game is loaded
 	if (loaded)
 	{
@@ -185,6 +184,20 @@ void N3sApp::render()
 	Overlay::drawNametableGrid();
 	N3s3d::setGuiProjection();
 	*/
+	N3s3d::setDepthBufferState(false);
+	N3s3d::setShader(overlay);
+	N3s3d::setOverlayColor(255, 255, 255, 255);
+	N3s3d::setGuiProjection();
+	string s = "";
+	s.append(to_string(InputState::keyboardMouse->mouseX));
+	s.append(", ");
+	s.append(to_string(InputState::keyboardMouse->mouseY));
+	Overlay::drawString(0, 0, 2, s);
+	s = "";
+	s.append(to_string(InputState::keyboardMouse->mouseButtons[0].state));
+	s.append(to_string(InputState::keyboardMouse->mouseButtons[1].state));
+	s.append(to_string(InputState::keyboardMouse->mouseButtons[2].state));
+	Overlay::drawString(0, 18, 2, s);
 	N3sConsole::render();
 }
 
@@ -222,9 +235,20 @@ void N3sApp::updateGameOriginPosition(float x, float y, float z)
 void N3sApp::recieveKeyInput(int key, bool down)
 {
 	if (down)
-		inputState->keyboardState.setDown(key);
+		inputState->keyboardMouse->setDown(key);
 	else
-		inputState->keyboardState.setUp(key);
+		inputState->keyboardMouse->setUp(key);
+}
+
+void N3sApp::recieveMouseInput(MouseButtons button, bool down)
+{
+	InputState::keyboardMouse->mouseButtons[button].down = down;
+}
+
+void N3sApp::recieveMouseMovement(int x, int y)
+{
+	InputState::keyboardMouse->mouseX = x;
+	InputState::keyboardMouse->mouseY = y;
 }
 
 XMVECTORF32 N3sApp::getBackgroundColor()
