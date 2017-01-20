@@ -246,6 +246,7 @@
     <ClInclude Include="Editor.hpp" />
     <ClInclude Include="GameData.hpp" />
     <ClInclude Include="GameView.hpp" />
+    <ClInclude Include="Gui.hpp" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="libretro.h" />
     <ClInclude Include="N3s3d.hpp" />
@@ -270,6 +271,7 @@
     <ClCompile Include="Editor.cpp" />
     <ClCompile Include="GameData.cpp" />
     <ClCompile Include="GameView.cpp" />
+    <ClCompile Include="Gui.cpp" />
     <ClCompile Include="N3s3d.cpp" />
     <ClCompile Include="N3sApp.cpp" />
     <ClCompile Include="Audio.cpp" />

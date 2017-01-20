@@ -5,10 +5,11 @@
 VoxelMesh characterMeshes[characterCount];
 
 // Misc editor meshes
-VoxelMesh voxelPreviewMesh;	// Single voxel
+VoxelMesh voxelPreviewMesh;		// Single voxel
 VoxelMesh voxelGridMesh;		// 8x8 grid, voxel-size
 VoxelMesh voxelGridMeshLong;	// 32x8 grid, voxel-size
 VoxelMesh nametableGridMesh;	// 32x30 grid, sprite-size
+VoxelMesh rectangleMesh;		// 1x1 rectangle, for resizing and drawing
 
 int getScreenX(int x)
 {
@@ -33,6 +34,7 @@ void Overlay::init()
 	}
 	buildVoxelPreviewMesh();
 	buildGridMeshes();
+	buildRectangleMesh();
 }
 
 void Overlay::unload()
@@ -139,6 +141,21 @@ void Overlay::drawNametableGrid()
 	N3s3d::updateWorldMatrix(0, 0, 16 * pixelSizeW);
 	N3s3d::renderMesh(&nametableGridMesh);
 	N3s3d::setRasterFillState(true);
+}
+
+void Overlay::drawRectangle(int x, int y, int width, int height)
+{
+	int screenX = getScreenX(x);
+	int screenY = getScreenY(y);
+	// Update world matrix
+	N3s3d::updateWorldMatrix(screenX, screenY, 0, 0, 0, 0, width, height, 1);
+	// Render rectangle
+	N3s3d::renderMesh(&rectangleMesh);
+}
+
+void Overlay::setColor(int r, int g, int b, int a)
+{
+	N3s3d::setOverlayColor(r, g, b, a);
 }
 
 VoxelMesh createMeshFromBitmapCharacter(BitmapCharacter bitmap)
@@ -339,4 +356,27 @@ void buildGridMeshes()
 	}
 
 	nametableGridMesh.buffer = N3s3d::createBufferFromOverlayVertices(&vertices, nametableGridMesh.size);
+}
+
+void buildRectangleMesh()
+{
+	rectangleMesh.type = overlay;
+	rectangleMesh.size = 6;
+
+	vector<OverlayVertex> vertices;
+	OverlayVertex v1, v2, v3, v4;
+
+	// Add front side
+	v1.Pos = XMFLOAT4(0, 0, 0, 1.0f);
+	v2.Pos = XMFLOAT4(1.0f, 0, 0, 1.0f);
+	v3.Pos = XMFLOAT4(1.0f, -1.0f, 0, 1.0f);
+	v4.Pos = XMFLOAT4(0, -1.0f, 0, 1.0f);
+	vertices.push_back(v1);
+	vertices.push_back(v2);
+	vertices.push_back(v4);
+	vertices.push_back(v2);
+	vertices.push_back(v3);
+	vertices.push_back(v4);
+
+	rectangleMesh.buffer = N3s3d::createBufferFromOverlayVertices(&vertices, rectangleMesh.size);
 }

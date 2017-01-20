@@ -15,6 +15,8 @@ public:
 	static void drawVoxelPreview(int x, int y, int z);
 	static void drawVoxelGrid(int spriteX, int spriteY, int voxelPos, gridOrientation orientation);
 	static void drawNametableGrid();
+	static void drawRectangle(int x, int y, int width, int height);
+	static void setColor(int r, int g, int b, int a);
 	static bool shadow;
 };
 
@@ -27,6 +29,7 @@ VoxelMesh createMeshFromBitmapCharacter(BitmapCharacter bitmap);
 
 void buildVoxelPreviewMesh();
 void buildGridMeshes();
+void buildRectangleMesh();
 
 //						  012345678901234567890123456789012345678901234567890123456789012
 // starting with a space: !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVQXYZ[\]^`

@@ -313,6 +313,32 @@ void N3s3d::updateWorldMatrix(float xPos, float yPos, float zPos, float xRot, fl
 	context1->VSSetConstantBuffers(0, 1, &shaders[activeShader].matrices.worldMatrixBuffer);
 }
 
+void N3s3d::updateWorldMatrix(float xPos, float yPos, float zPos, float xRot, float yRot, float zRot, float xScale, float yScale, float zScale)
+{
+	XMMATRIX worldMatrix;
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	MatrixBuffer* dataPtr;
+	XMVECTOR translation = { xPos, yPos, zPos, 0.0f };
+	XMVECTOR rotation = { XMConvertToRadians(xRot),	XMConvertToRadians(yRot), XMConvertToRadians(zRot), 0.0f };
+	XMVECTOR scaling = { xScale, yScale, zScale, 0.0f };
+	XMMATRIX translationMatrix = XMMatrixTranslationFromVector(translation);
+	XMMATRIX rotationMatrix = XMMatrixRotationRollPitchYawFromVector(rotation);
+	XMMATRIX scaleMatrix = XMMatrixScalingFromVector(scaling);
+	XMMATRIX temp = DirectX::XMMatrixMultiply(scaleMatrix, rotationMatrix);
+	temp = DirectX::XMMatrixMultiply(temp, translationMatrix);
+	worldMatrix = XMMatrixTranspose(temp);
+	// Lock the constant buffer so it can be written to.
+	context1->Map(shaders[activeShader].matrices.worldMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	// Get a pointer to the data in the constant buffer.
+	dataPtr = (MatrixBuffer*)mappedResource.pData;
+	// Copy the matrices into the constant buffer.
+	dataPtr->matrix = worldMatrix;
+	// Unlock the constant buffer.
+	context1->Unmap(shaders[activeShader].matrices.worldMatrixBuffer, 0);
+	// Finally set the constant buffer in the vertex shader with the updated values.
+	context1->VSSetConstantBuffers(0, 1, &shaders[activeShader].matrices.worldMatrixBuffer);
+}
+
 void N3s3d::updateMirroring(bool horizontal, bool vertical) {
 	int x, y;
 	if (horizontal)

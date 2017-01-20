@@ -79,6 +79,7 @@ public:
 	static void updateViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 perspective);
 	static void updateWorldMatrix(float xPos, float yPos, float zPos);
 	static void updateWorldMatrix(float xPos, float yPos, float zPos, float xRot, float yRot, float zRot, float scale);
+	static void updateWorldMatrix(float xPos, float yPos, float zPos, float xRot, float yRot, float zRot, float xScale, float yScale, float zScale);
 	static void updateMirroring(bool horizontal, bool vertical);
 	static void updatePalette(float palette[72]);
 	static void selectPalette(int palette);

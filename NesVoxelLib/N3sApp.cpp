@@ -125,10 +125,10 @@ void N3sApp::update(bool runThisNesFrame)
 	// Update console
 	N3sConsole::update();
 	// See if we're switching modes due to user input
-	//if (N3sApp::inputState->keyboardState.keyStates[VK_OEM_COMMA])
-	//	mode = gameMode;
-	//if (N3sApp::inputState->keyboardState.keyStates[VK_OEM_PERIOD])
-	//	mode = editorMode;
+	if (N3sApp::inputState->functions[tog_game].activatedThisFrame)
+		mode = gameMode;
+	else if (N3sApp::inputState->functions[tog_editor].activatedThisFrame)
+		mode = editorMode;
 	// See if a game is loaded
 	if (loaded)
 	{
@@ -167,37 +167,10 @@ void N3sApp::render()
 			break;
 		}
 	}
-	/*
-	// Overlay shader testing
-	N3s3d::setDepthBufferState(false);
-	N3s3d::setShader(overlay);
-	N3s3d::updateMatricesWithCamera(&camera);
-	// Overlay::drawVoxelPreview(0, 0, 0);
-	// Overlay::drawVoxelPreview(5, 5, 0);
-	// Overlay::drawVoxelPreview(-128, -120, 0);
-	Overlay::drawVoxelGrid(0, 0, 0, xAxis);
-	Overlay::drawVoxelGrid(0, 0, 4, yAxis);
-	Overlay::drawVoxelGrid(0, 0, 4, zAxis);
-	Overlay::drawVoxelGrid(16, 15, 0, xAxis);
-	Overlay::drawVoxelGrid(16, 15, 4, yAxis);
-	Overlay::drawVoxelGrid(16, 15, 4, zAxis);
-	Overlay::drawNametableGrid();
-	N3s3d::setGuiProjection();
-	*/
 	N3s3d::setDepthBufferState(false);
 	N3s3d::setShader(overlay);
 	N3s3d::setOverlayColor(255, 255, 255, 255);
 	N3s3d::setGuiProjection();
-	string s = "";
-	s.append(to_string(InputState::keyboardMouse->mouseX));
-	s.append(", ");
-	s.append(to_string(InputState::keyboardMouse->mouseY));
-	Overlay::drawString(0, 0, 2, s);
-	s = "";
-	s.append(to_string(InputState::keyboardMouse->mouseButtons[0].state));
-	s.append(to_string(InputState::keyboardMouse->mouseButtons[1].state));
-	s.append(to_string(InputState::keyboardMouse->mouseButtons[2].state));
-	Overlay::drawString(0, 18, 2, s);
 	N3sConsole::render();
 }
 

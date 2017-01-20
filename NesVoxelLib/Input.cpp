@@ -323,6 +323,7 @@ void InputState::createBindings()
 	functions[nes_p1_down].bindings.push_back({ gamepads[0]->analogInputs[leftYNeg] });
 	functions[nes_p1_left].bindings.push_back({ gamepads[0]->analogInputs[leftXNeg] });
 	functions[nes_p1_right].bindings.push_back({ gamepads[0]->analogInputs[leftXPos] });
+
 	// Camera controls
 	functions[cam_up].bindings.push_back({ keyboardMouse->keys[VK_UP] });
 	functions[cam_down].bindings.push_back({ keyboardMouse->keys[VK_DOWN] });
@@ -335,5 +336,9 @@ void InputState::createBindings()
 	functions[cam_right].bindings.push_back({ gamepads[0]->analogInputs[rightXPos] });
 	functions[cam_up].bindings.push_back({ gamepads[0]->analogInputs[rightYPos] });
 	functions[cam_down].bindings.push_back({ gamepads[0]->analogInputs[rightYNeg] });
+
+	// Switching between editor and game
+	functions[tog_game].bindings.push_back({ keyboardMouse->keys[VK_OEM_1] });		// semicolon
+	functions[tog_editor].bindings.push_back({ keyboardMouse->keys[VK_OEM_7] });	// single quote
 }
 

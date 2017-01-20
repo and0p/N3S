@@ -7,4 +7,5 @@ public:
 	static void init();
 	static void update();
 	static void render();
+	static void setScene(int s);
 };
