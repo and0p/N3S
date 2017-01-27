@@ -59,16 +59,16 @@ PpuSnapshot::PpuSnapshot(N3sRawPpu * rawPPU)
 		background.mirrorType = vertical;
 		break;
 	}
+	// Copy background color
+	palette.backgroundColorIndex = (int)rawPPU->palette[0];
 	// Copy palette
 	for (int p = 0; p < 8; p++)
 	{
 		for (int c = 0; c < 3; c++)
 		{
-			palette.palettes[p].colors[c] = (int)rawPPU->palette[(p*4) + 1 + c];
+			palette.colorIndices[(p * 3) + c] = (int)rawPPU->palette[(p * 4) + 1 + c];
 		}
 	}
-	// Copy background color
-	backgroundColor = (int)rawPPU->palette[0];
 	// Create variables to track most recent scroll variables
 	int lastX = 0;
 	int lastY = 0;

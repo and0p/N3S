@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "N3sApp.hpp"
+#include "N3sPalette.hpp"
 
 using namespace std;
 
@@ -26,6 +27,8 @@ public:
 	vector<SceneSprite> sprites;
 	void setBackgroundSprite(int x, int y, SceneSprite sprite);
 	static void createSceneFromCurrentSnapshot();
+	N3sPalette palettes[8];
+	int selectedPalette = 0;
 private:
 	SceneSprite bg[sceneWidth * sceneHeight];
 };

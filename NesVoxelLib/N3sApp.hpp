@@ -4,7 +4,6 @@
 #include "GameData.hpp"
 #include "PpuSnapshot.hpp"
 #include "NesEmulator.hpp"
-#include "Camera.hpp"
 #include "libretro.h"
 #include "Input.hpp"
 #include "N3sPatternTable.hpp"
@@ -39,7 +38,6 @@ public:
 	void recieveMouseMovement(int x, int y);
 	XMVECTORF32 getBackgroundColor();
 	retro_game_info *info;
-	Camera camera;
 	static shared_ptr<GameData> gameData;
 	static shared_ptr<PpuSnapshot> snapshot;
 	static shared_ptr<InputState> inputState;
@@ -54,7 +52,5 @@ private:
 	SoundDriver *audioEngine;
 	HWND hwnd;
 	bool emulationPaused;
-	//bool pausedThisPress;
-	//bool frameAdvanced;
 	bool muted;
 };

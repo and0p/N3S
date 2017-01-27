@@ -63,6 +63,7 @@ void SceneSelector::render()
 	}
 	// Draw scene numbers
 	currentY = buttonGap + 3;
+	Overlay::setColor(255, 255, 255, 60);
 	for (int i = 0; i < 8; i++)
 	{
 		string s(1, i + 48 + 1);

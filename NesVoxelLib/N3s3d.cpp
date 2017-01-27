@@ -45,7 +45,6 @@ int paletteBufferNumber;
 int paletteSelectionBufferNumber;
 
 D3D11_VIEWPORT N3s3d::viewport;
-PPUHueStandardCollection N3s3d::ppuHueStandardCollection;
 
 void N3s3d::initPipeline(N3sD3dContext c)
 {

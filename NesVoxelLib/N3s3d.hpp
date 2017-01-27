@@ -87,7 +87,6 @@ public:
 	static XMMATRIX getProjectionMatrix(const float near_plane, const float far_plane, const float fov_horiz, const float fov_vert);
 	static void setShader(ShaderType type);
 	static void renderMesh(VoxelMesh *voxelMesh);
-	static PPUHueStandardCollection ppuHueStandardCollection;
 	static void setIndexBuffer();
 	static void setDepthBufferState(bool active);
 	static void setRasterFillState(bool fill);

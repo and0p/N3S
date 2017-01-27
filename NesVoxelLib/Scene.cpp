@@ -12,6 +12,8 @@ Scene::Scene()
 
 void Scene::render()
 {
+	// Update palette in video card
+	palettes[selectedPalette].updateShaderPalette();
 	// Render grid
 	for (int y = 0; y < sceneHeight; y++)
 	{

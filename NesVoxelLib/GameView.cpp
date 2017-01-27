@@ -120,18 +120,7 @@ void renderSprite(shared_ptr<VirtualSprite> vSprite, int x, int y, int palette, 
 
 void updatePalette()
 {
-	float palette[72];
-	for (int p = 0; p < 8; p++)
-	{
-		for (int h = 0; h < 3; h++)
-		{
-			palette[(p * 9) + (h * 3)] = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, N3sApp::snapshot->palette.palettes[p].colors[h]).red;
-			palette[(p * 9) + (h * 3) + 1] = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, N3sApp::snapshot->palette.palettes[p].colors[h]).green;
-			palette[(p * 9) + (h * 3) + 2] = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, N3sApp::snapshot->palette.palettes[p].colors[h]).blue;
-		}
-	}
-	Hue hue = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, N3sApp::snapshot->palette.palettes[0].colors[2]);
-	N3s3d::updatePalette(palette);
+	N3sApp::snapshot->palette.updateShaderPalette();
 }
 
 void renderNameTables()

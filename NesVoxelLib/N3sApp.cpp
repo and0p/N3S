@@ -4,6 +4,7 @@
 #include "N3sConsole.hpp"
 #include "Overlay.hpp"
 #include "Editor.hpp"
+#include "N3sPalette.hpp"
 
 extern SoundDriver *newDirectSound();
 
@@ -19,10 +20,9 @@ N3sApp::N3sApp()
 	emulationPaused = false;
 	loaded = false;
 	muted = false;
-	camera.SetPosition(0, 0, -2);
-	camera.SetRotation(0, 0, 0);
 	inputState = make_shared<InputState>();
 	SoundDriver * drv = 0;
+	N3sPalette::init();
 	N3sConsole::init();
 }
 
@@ -107,8 +107,6 @@ void N3sApp::unload()
 		gameData->unload();
 		gameData.reset();
 		virtualPatternTable.reset();
-		camera.SetPosition(0, 0, -2);
-		camera.SetRotation(0, 0, 0);
 		loaded = false;
 	}
 }
@@ -228,7 +226,7 @@ XMVECTORF32 N3sApp::getBackgroundColor()
 {
 	Hue hue;
 	if (loaded)
-		hue = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->backgroundColor);
+		hue = snapshot->palette.getBackgroundColor();
 	else
 		hue = { 0.0f, 0.0f, 0.0f };
 	return{ hue.red, hue.green, hue.blue, 1.0f };
