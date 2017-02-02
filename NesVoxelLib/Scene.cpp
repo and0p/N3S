@@ -55,3 +55,8 @@ void Scene::createSceneFromCurrentSnapshot()
 		}
 	}
 }
+
+N3sPalette * Scene::getSelectedPalette()
+{
+	return &palettes[selectedPalette];
+}

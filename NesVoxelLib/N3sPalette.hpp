@@ -28,6 +28,7 @@ public:
 	int backgroundColorIndex;	// Background color
 	void updateShaderPalette();
 	Hue getBackgroundColor();
+	static Hue getHue(int color);
 	static void setPPUType(PPUType type);
 	static void init();
 private:
