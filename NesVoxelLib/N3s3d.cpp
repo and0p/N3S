@@ -13,6 +13,7 @@ Microsoft::WRL::ComPtr<ID3D11Device1>           device1;
 Microsoft::WRL::ComPtr<ID3D11DeviceContext>     context;
 Microsoft::WRL::ComPtr<ID3D11DeviceContext1>    context1;
 
+
 Shader shaders[shaderCount];
 //ID3D11InputLayout *inputLayouts[2];
 //ID3D11Buffer *worldMatrixBuffer;
@@ -415,7 +416,7 @@ void N3s3d::selectPalette(int palette)
 	}
 }
 
-void N3s3d::setOverlayColor(int r, int g, int b, int a)
+void N3s3d::setOverlayColor(float r, float g, float b, float a)
 {
 	// Make sure the overlay shader is active
 	if (activeShader != overlay)
@@ -427,17 +428,22 @@ void N3s3d::setOverlayColor(int r, int g, int b, int a)
 	// Get a pointer to the data in the constant buffer.
 	dataPtr = (float*)mappedResource.pData;
 	// Copy the values into the constant buffer.
-	*dataPtr = ((float)r / 256);
+	*dataPtr = r;
 	dataPtr++;
-	*dataPtr = ((float)g / 256);
+	*dataPtr = g;
 	dataPtr++;
-	*dataPtr = ((float)b / 256);
+	*dataPtr = b;
 	dataPtr++;
-	*dataPtr = ((float)a / 256);
+	*dataPtr = a;
 	// Unlock the constant buffer.
 	context1->Unmap(overlayColorBuffer, 0);
 	// Finally set the constant buffer in the vertex shader with the updated value.
 	context1->PSSetConstantBuffers(0, 1, &overlayColorBuffer);
+}
+
+void N3s3d::setOverlayColor(int r, int g, int b, int a)
+{
+	setOverlayColor((float)r / 255, (float)g / 255, (float)b / 255, (float)a / 255);
 }
 
 void N3s3d::updateMatricesWithCamera(Camera * camera) {

@@ -1,5 +1,20 @@
 #pragma once
 
+#include "N3sPalette.hpp"
+
+enum PaletteButtons {
+	palette_start = 0,
+	palette_end = 23,
+	bg_swatch = 24,
+	colors_start = 25,
+	colors_end = 89,
+	colors_close = 90,
+	next_palettte = 91,
+	previous_palette = 92,
+	options_open = 93,
+	options_close = 94
+};
+
 class GuiElement
 {
 public:
@@ -18,6 +33,25 @@ private:
 	static const int buttonHeight = 20;
 	static const int buttonWidth = 20;
 	static const int buttonGap = 10;
+};
+
+class PaletteSelector : public GuiElement
+{
+public:
+	PaletteSelector() {}
+	bool update(bool mouseAvailable) { return false; }
+	bool update(bool mouseAvailable, N3sPalette * palette);
+	void render() {};
+	void render(N3sPalette * palette);
+private:
+	bool mouseCaptured = false;
+	bool open = false;
+	int highlightedIndex = -1;
+	int selectedIndex = -1;
+	static const int leftMargin = 40;
+	static const int boxSize = 30;
+	static const int borderSize = 2;
+	static const int swatchSize = boxSize - (borderSize * 2);
 };
 
 inline bool mouseInRectangle(int mouseX, int mouseY, int rectX, int rectY, int rectWidth, int rectHeight) {

@@ -17,6 +17,7 @@ public:
 	static void drawNametableGrid();
 	static void drawRectangle(int x, int y, int width, int height);
 	static void setColor(int r, int g, int b, int a);
+	static void setColor(float r, float g, float b, float a);
 	static bool shadow;
 };
 

@@ -158,6 +158,11 @@ void Overlay::setColor(int r, int g, int b, int a)
 	N3s3d::setOverlayColor(r, g, b, a);
 }
 
+void Overlay::setColor(float r, float g, float b, float a)
+{
+	N3s3d::setOverlayColor(r, g, b, a);
+}
+
 VoxelMesh createMeshFromBitmapCharacter(BitmapCharacter bitmap)
 {
 	vector<OverlayVertex> vertices;

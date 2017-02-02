@@ -29,6 +29,7 @@ public:
 	static void createSceneFromCurrentSnapshot();
 	N3sPalette palettes[8];
 	int selectedPalette = 0;
+	N3sPalette * getSelectedPalette();
 private:
 	SceneSprite bg[sceneWidth * sceneHeight];
 };

@@ -66,8 +66,10 @@ float AnalogInput::getValue()
 	return value;
 }
 
-void MouseButton::update(int x, int y)
+void MouseButton::update(int newX, int newY)
 {
+	x = newX;
+	y = newY;
 	if (down)
 	{
 		if (framesActive == 0)
@@ -137,6 +139,11 @@ void KeyboardMouseDevice::setUp(int key)
 
 void KeyboardMouseDevice::update()
 {
+	// Get deltas and reset previous positions
+	mouseDeltaX = mouseX - previousMouseX;
+	mouseDeltaY = mouseY - previousMouseY;
+	previousMouseX = mouseX;
+	previousMouseY = mouseY;
 	for (int i = 0; i < totalKeys; i++)
 	{
 		keys[i]->update();

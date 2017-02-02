@@ -10,9 +10,14 @@ bool editing;
 Camera mainCamera;
 
 SceneSelector sceneSelector;
+PaletteSelector paletteSelector;
+
+bool Editor::mouseAvailable;
+XMVECTOR Editor::mouseVector;
 
 void Editor::init()
 {
+	mouseAvailable = true;
 	// Set camera to default position
 	mainCamera.SetPosition(0, 0, -2);
 	for (int i = 0; i < 8; i++)
@@ -21,7 +26,7 @@ void Editor::init()
 	}
 	scenes[0]->setBackgroundSprite(0, 0, { 1,0,false,false });
 	scenes[0]->setBackgroundSprite(1, 0, { 2,0,false,false });
-	scenes[0]->setBackgroundSprite(15, 15, { 3,0,false,false });
+	scenes[0]->setBackgroundSprite(15, 15, { 3,1,false,false });
 	scenes[0]->setBackgroundSprite(3, 0, { 4,0,false,false });
 	scenes[1]->setBackgroundSprite(0, 0, { 1,0,false,false });
 	scenes[1]->setBackgroundSprite(1, 0, { 2,0,false,false });
@@ -31,7 +36,17 @@ void Editor::init()
 
 void Editor::update()
 {
-	sceneSelector.update(true);
+	mouseAvailable = sceneSelector.update(mouseAvailable);
+	mouseAvailable = paletteSelector.update(mouseAvailable, scenes[selectedScene]->getSelectedPalette());
+	// Update camera position
+	if (InputState::keyboardMouse->mouseButtons[right_mouse].state > 0)
+	{
+		float xRot = InputState::keyboardMouse->mouseDeltaX / 3;
+		float yRot = InputState::keyboardMouse->mouseDeltaY / 3;
+		mainCamera.AdjustRotation(xRot, 0.0f, yRot);
+	}
+	// Calculate mouse vector
+	
 }
 
 void Editor::render()
@@ -44,8 +59,10 @@ void Editor::render()
 	// Render the scene
 	scenes[selectedScene]->render();
 	// Render GUI
+	N3s3d::setDepthBufferState(false);
 	N3s3d::setGuiProjection();
 	sceneSelector.render();
+	paletteSelector.render(scenes[selectedScene]->getSelectedPalette());
 }
 
 void Editor::setScene(int s)

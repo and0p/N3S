@@ -42,9 +42,14 @@ void N3sPalette::updateShaderPalette()
 	N3s3d::updatePalette(&colors[0]);
 }
 
+Hue N3sPalette::getHue(int color)
+{
+	return standards[0].hueSets[0].hues[color];
+}
+
 Hue N3sPalette::getBackgroundColor()
 {
-	return  standards[currentPPUType].hueSets[0].hues[backgroundColorIndex];
+	return standards[currentPPUType].hueSets[0].hues[backgroundColorIndex];
 }
 
 void N3sPalette::setPPUType(PPUType type)
@@ -57,7 +62,7 @@ N3sPalette::N3sPalette()
 	backgroundColorIndex = 0;
 	for (int i = 0; i < 24; i++)
 	{
-		colorIndices[i] = i + 1;
+		colorIndices[i] = i;
 	}
 }
 

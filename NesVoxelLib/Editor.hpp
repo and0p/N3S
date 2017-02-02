@@ -8,4 +8,7 @@ public:
 	static void update();
 	static void render();
 	static void setScene(int s);
+private:
+	static bool mouseAvailable;
+	static XMVECTOR mouseVector;
 };

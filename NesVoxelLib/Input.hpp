@@ -88,6 +88,10 @@ public:
 	KeyboardMouseDevice();
 	float mouseX;
 	float mouseY;
+	float previousMouseX;
+	float previousMouseY;
+	float mouseDeltaX;
+	float mouseDeltaY;
 	shared_ptr<DigitalInput> keys[totalKeys];
 	MouseButton mouseButtons[MouseButtons::MOUSEBUTTONCOUNT];
 	void setDown(int key);
