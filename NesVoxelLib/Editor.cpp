@@ -37,7 +37,7 @@ void Editor::init()
 void Editor::update()
 {
 	mouseAvailable = sceneSelector.update(mouseAvailable);
-	mouseAvailable = paletteSelector.update(mouseAvailable, scenes[selectedScene]->getSelectedPalette());
+	mouseAvailable = paletteSelector.update(mouseAvailable, scenes[selectedScene]);
 	// Update camera position
 	if (InputState::keyboardMouse->mouseButtons[right_mouse].state > 0)
 	{
@@ -62,10 +62,15 @@ void Editor::render()
 	N3s3d::setDepthBufferState(false);
 	N3s3d::setGuiProjection();
 	sceneSelector.render();
-	paletteSelector.render(scenes[selectedScene]->getSelectedPalette());
+	paletteSelector.render(scenes[selectedScene]);
 }
 
 void Editor::setScene(int s)
 {
 	selectedScene = s;
+}
+
+Hue Editor::getBackgroundColor()
+{
+	return scenes[selectedScene]->getSelectedPalette()->getBackgroundColor();
 }
