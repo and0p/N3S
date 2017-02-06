@@ -1,6 +1,9 @@
 #pragma once
 
 #include "N3sPalette.hpp"
+#include "Scene.hpp"
+
+using namespace std;
 
 enum PaletteButtons {
 	palette_start = 0,
@@ -22,7 +25,7 @@ public:
 	virtual void render() = 0;
 };
 
-class SceneSelector : public GuiElement
+class SceneSelector
 {
 public:
 	bool update(bool mouseAvailable);
@@ -35,17 +38,17 @@ private:
 	static const int buttonGap = 10;
 };
 
-class PaletteSelector : public GuiElement
+class PaletteSelector
 {
 public:
 	PaletteSelector() {}
 	bool update(bool mouseAvailable) { return false; }
-	bool update(bool mouseAvailable, N3sPalette * palette);
-	void render() {};
-	void render(N3sPalette * palette);
+	bool update(bool mouseAvailable, shared_ptr<Scene> scene );
+	void render(shared_ptr<Scene> scene);
 private:
 	bool mouseCaptured = false;
 	bool open = false;
+	bool optionsOpen = false;
 	int highlightedIndex = -1;
 	int selectedIndex = -1;
 	static const int leftMargin = 40;

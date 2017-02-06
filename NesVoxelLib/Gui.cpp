@@ -83,8 +83,9 @@ void SceneSelector::render()
 	}
 }
 
-bool PaletteSelector::update(bool mouseAvailable, N3sPalette * palette)
+bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene)
 {
+	N3sPalette * palette = scene->getSelectedPalette();
 	// Check for mouse hover, if mouse is available
 	if (mouseAvailable || mouseCaptured)
 	{
@@ -96,7 +97,7 @@ bool PaletteSelector::update(bool mouseAvailable, N3sPalette * palette)
 		int currentX = leftMargin;
 		int currentY = 0;
 		bool anythingHighlighted = false;	// Track if anything was highlighted
-		// Check for highlights
+		// Check for highlights on palette colors + background color
 		for (int r = 0; r < 2; r++)
 		{
 			for (int i = 0; i < 12; i++)
@@ -118,6 +119,49 @@ bool PaletteSelector::update(bool mouseAvailable, N3sPalette * palette)
 				}
 			}
 		}
+		if (mouseInRectangle(mouseX, mouseY, leftMargin + (boxSize * 12), 0, boxSize, boxSize * 2))
+		{
+			anythingHighlighted = true;
+			highlightedIndex = bg_swatch;
+			if (state > 0)
+			{
+				mouseCaptured = true;
+			}
+			if (state == pressed)
+			{
+				selectedIndex = bg_swatch;
+				mouseCaptured = false;
+			}
+		}
+		// Check for palette switching and option highlights/presses
+		if (mouseInRectangle(mouseX, mouseY, leftMargin + (boxSize * 13), 0, boxSize, boxSize))
+		{
+			anythingHighlighted = true;
+			highlightedIndex = previous_palette;
+			if (state > 0)
+			{
+				mouseCaptured = true;
+			}
+			if (state == pressed)
+			{
+				scene->selectPreviousPalette();
+				mouseCaptured = false;
+			}
+		}
+		if (mouseInRectangle(mouseX, mouseY, leftMargin + (boxSize * 14), 0, boxSize, boxSize))
+		{
+			anythingHighlighted = true;
+			highlightedIndex = next_palettte;
+			if (state > 0)
+			{
+				mouseCaptured = true;
+			}
+			if (state == pressed)
+			{
+				scene->selectNextPalette();
+				mouseCaptured = false;
+			}
+		}
 		// Check for highlights in color picker, if it is open
 		if (selectedIndex >= 0)
 		{
@@ -136,7 +180,11 @@ bool PaletteSelector::update(bool mouseAvailable, N3sPalette * palette)
 						}
 						if (state == pressed)
 						{
-							palette->colorIndices[selectedIndex] = (y * 8) + x;
+							int selectedColor = (y * 8) + x;
+							if (selectedIndex < bg_swatch)
+								palette->colorIndices[selectedIndex] = selectedColor;
+							else
+								palette->backgroundColorIndex = selectedColor;
 							mouseCaptured = false;
 						}
 					}
@@ -170,8 +218,9 @@ bool PaletteSelector::update(bool mouseAvailable, N3sPalette * palette)
 		return true;
 }
 
-void PaletteSelector::render(N3sPalette * palette)
+void PaletteSelector::render(shared_ptr<Scene> scene)
 {
+	N3sPalette * palette = scene->getSelectedPalette();
 	Overlay::setColor(0, 0, 0, 128);
 	Overlay::drawRectangle(leftMargin, 0, boxSize * 15, boxSize * 2);
 	// Render color swatches
@@ -200,9 +249,24 @@ void PaletteSelector::render(N3sPalette * palette)
 		}
 	}
 	// Render the BG color swatch
+	if (highlightedIndex == bg_swatch)
+	{
+		Overlay::setColor(255, 255, 255, 64);
+		Overlay::drawRectangle(leftMargin + boxSize * 12, 0, boxSize, boxSize * 2);
+	}
+	else if (selectedIndex == bg_swatch)
+	{
+		Overlay::setColor(255, 255, 255, 128);
+		Overlay::drawRectangle(leftMargin + boxSize * 12, 0, boxSize, boxSize * 2);
+	}
+	// Render menu buttons
+	Overlay::setColor(255, 255, 255, 128);
+	Overlay::drawString(leftMargin + (boxSize * 13) + 8, boxSize + 8, 2, std::to_string(scene->selectedPalette));
+	Overlay::drawString(leftMargin + (boxSize * 13) + 8, 8, 2, "<");
+	Overlay::drawString(leftMargin + (boxSize * 14) + 8, 8, 2, ">");
 	Hue h = palette->getBackgroundColor();
 	Overlay::setColor(h.red, h.green, h.blue, 1.0f);
-	Overlay::drawRectangle(leftMargin + boxSize * 12 + borderSize, borderSize, swatchSize, swatchSize * 2 + borderSize);
+	Overlay::drawRectangle(leftMargin + boxSize * 12 + borderSize, borderSize, swatchSize, (swatchSize * 2) + (borderSize * 2));
 	// If a swatch is selected, render the pop-out color selector
 	if (selectedIndex >= 0)
 	{

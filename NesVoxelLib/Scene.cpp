@@ -60,3 +60,17 @@ N3sPalette * Scene::getSelectedPalette()
 {
 	return &palettes[selectedPalette];
 }
+
+void Scene::selectNextPalette()
+{
+	selectedPalette++;
+	if (selectedPalette > 7)
+		selectedPalette = 0;
+}
+
+void Scene::selectPreviousPalette()
+{
+	selectedPalette--;
+	if (selectedPalette < 0)
+		selectedPalette = 7;
+}

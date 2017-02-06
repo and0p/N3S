@@ -8,6 +8,7 @@ public:
 	static void update();
 	static void render();
 	static void setScene(int s);
+	static Hue getBackgroundColor();
 private:
 	static bool mouseAvailable;
 	static XMVECTOR mouseVector;

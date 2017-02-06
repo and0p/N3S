@@ -226,7 +226,17 @@ XMVECTORF32 N3sApp::getBackgroundColor()
 {
 	Hue hue;
 	if (loaded)
-		hue = snapshot->palette.getBackgroundColor();
+	{
+		switch (mode)
+		{
+		case (gameMode):
+			hue = snapshot->palette.getBackgroundColor();
+			break;
+		case (editorMode):
+			hue = Editor::getBackgroundColor();
+			break;
+		}
+	}
 	else
 		hue = { 0.0f, 0.0f, 0.0f };
 	return{ hue.red, hue.green, hue.blue, 1.0f };

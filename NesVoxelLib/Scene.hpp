@@ -30,6 +30,8 @@ public:
 	N3sPalette palettes[8];
 	int selectedPalette = 0;
 	N3sPalette * getSelectedPalette();
+	void selectNextPalette();
+	void selectPreviousPalette();
 private:
 	SceneSprite bg[sceneWidth * sceneHeight];
 };
