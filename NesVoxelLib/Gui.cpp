@@ -39,13 +39,11 @@ bool SceneSelector::update(bool mouseAvailable)
 		}
 		if (!anythingHighlighted)
 			highlightedTab = -1;
-		if (highlightedTab == -1 && state )
+		if (highlightedTab == -1 && state < 1)
 		{
 			mouseCaptured = false;
 		}
 	}
-	// Do other stuff
-
 	// Return if mouse is still available
 	if (mouseCaptured)
 		return false;
@@ -107,15 +105,6 @@ bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene)
 					// Set this tab as being highlighted
 					anythingHighlighted = true;
 					highlightedIndex = (r * 12) + i;
-					if (state > 0)
-					{
-						mouseCaptured = true;
-					}
-					if (state == pressed)
-					{
-						selectedIndex = highlightedIndex;
-						mouseCaptured = false;
-					}
 				}
 			}
 		}
@@ -123,44 +112,17 @@ bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene)
 		{
 			anythingHighlighted = true;
 			highlightedIndex = bg_swatch;
-			if (state > 0)
-			{
-				mouseCaptured = true;
-			}
-			if (state == pressed)
-			{
-				selectedIndex = bg_swatch;
-				mouseCaptured = false;
-			}
 		}
 		// Check for palette switching and option highlights/presses
 		if (mouseInRectangle(mouseX, mouseY, leftMargin + (boxSize * 13), 0, boxSize, boxSize))
 		{
 			anythingHighlighted = true;
 			highlightedIndex = previous_palette;
-			if (state > 0)
-			{
-				mouseCaptured = true;
-			}
-			if (state == pressed)
-			{
-				scene->selectPreviousPalette();
-				mouseCaptured = false;
-			}
 		}
 		if (mouseInRectangle(mouseX, mouseY, leftMargin + (boxSize * 14), 0, boxSize, boxSize))
 		{
 			anythingHighlighted = true;
 			highlightedIndex = next_palettte;
-			if (state > 0)
-			{
-				mouseCaptured = true;
-			}
-			if (state == pressed)
-			{
-				scene->selectNextPalette();
-				mouseCaptured = false;
-			}
 		}
 		// Check for highlights in color picker, if it is open
 		if (selectedIndex >= 0)
@@ -174,19 +136,6 @@ bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene)
 					{
 						anythingHighlighted = true;
 						highlightedIndex = colors_start + (y * 8) + x;
-						if (state > 0)
-						{
-							mouseCaptured = true;
-						}
-						if (state == pressed)
-						{
-							int selectedColor = (y * 8) + x;
-							if (selectedIndex < bg_swatch)
-								palette->colorIndices[selectedIndex] = selectedColor;
-							else
-								palette->backgroundColorIndex = selectedColor;
-							mouseCaptured = false;
-						}
 					}
 				}
 			}
@@ -195,21 +144,57 @@ bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene)
 			{
 				anythingHighlighted = true;
 				highlightedIndex = colors_close;
-				if (state > 0)
-				{
-					mouseCaptured = true;
-				}
-				if (state == pressed)
-				{
-					// Close the selection windows
-					selectedIndex = -1;
-					anythingHighlighted = false;
-					mouseCaptured = false;
-				}
 			}
 		}
 		if (!anythingHighlighted)
 			highlightedIndex = -1;
+		else
+		{
+			if (state > 0)
+			{
+				mouseCaptured = true;
+			}
+			// React to button presses
+			if (state == pressed)
+			{
+				mouseCaptured = false;	// Uncapture mouse, since it is up this frame 
+				if (highlightedIndex >= palette_start && highlightedIndex <= bg_swatch)	
+				{
+					// Palette color/bg selection
+					selectedIndex = highlightedIndex;
+				}
+				else if (highlightedIndex >= colors_start && highlightedIndex < colors_close)
+				{
+					// Color assignment
+					int selectedColor = highlightedIndex - colors_start;
+					if (selectedIndex < bg_swatch)
+						palette->colorIndices[selectedIndex] = selectedColor;
+					else
+						palette->backgroundColorIndex = selectedColor;
+				}
+				else
+				{
+					// Some other button was pressed
+					switch (highlightedIndex)
+					{
+					case colors_close:
+						selectedIndex = -1;
+						break;
+					case previous_palette:
+						scene->selectPreviousPalette();
+						break;
+					case next_palettte:
+						scene->selectNextPalette();
+					case options_toggle:
+						if (optionsOpen)
+							optionsOpen = false;
+						else
+							optionsOpen = true;
+						break;
+					}
+				}
+			}
+		}
 	}
 	// Return if mouse is still available
 	if (mouseCaptured)
