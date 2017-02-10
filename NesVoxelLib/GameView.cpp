@@ -47,6 +47,11 @@ void GameView::render()
 	renderNameTables();
 }
 
+Camera * GameView::getCamera()
+{
+	return &gameCamera;
+}
+
 void GameView::parseInput()
 {
 }

@@ -453,7 +453,7 @@ void N3s3d::updateMatricesWithCamera(Camera * camera) {
 	MatrixBuffer* dataPtr;
 
 	//worldMatrix = XMMatrixIdentity();
-	projectionMatrix = getProjectionMatrix(0.1f, 1000.0f, 1, 1); // TODO use screen resolution
+	projectionMatrix = getProjectionMatrix(0.1f, 30.0f, 1, 1); // TODO use screen resolution
 	viewMatrix = camera->GetViewMatrix();
 
 	// Transpose the matrices to prepare them for the shader.
@@ -611,6 +611,37 @@ void N3s3d::setGuiProjection()
 void N3s3d::updateViewport(D3D11_VIEWPORT v)
 {
 	viewport = v;
+}
+
+XMVECTOR N3s3d::getMouseVector(Camera * camera, int mouseX, int mouseY)
+{
+	// Get XMVector for mouse coordinates
+	XMFLOAT3 x3 = { (float)mouseX, (float)mouseY, 0.0f };
+	XMVECTOR v = XMLoadFloat3(&x3);
+	// Get view and projection matrices from camera
+	XMMATRIX projectionMatrix = getProjectionMatrix(0.1f, 30.0f, 1, 1); // TODO use screen resolution
+	XMMATRIX viewMatrix = camera->GetViewMatrix();
+	// Get world matrix from camera origin
+	XMMATRIX worldMatrix = XMMatrixIdentity();
+	XMFLOAT3 pos = camera->GetPosition();
+	XMVECTOR translation = { pos.x, pos.y, pos.z, 0.0f };
+	worldMatrix = XMMatrixTranslationFromVector(translation);
+	//worldMatrix = XMMatrixTranspose(worldMatrix);
+	return XMVector3Unproject(v, 0, 0, viewport.Width, viewport.Height, 0.0f, 1.0f, projectionMatrix, viewMatrix, worldMatrix);
+	//return XMMATRIX();
+}
+
+XMFLOAT3 N3s3d::getZIntersection(Camera * camera, int mouseX, int mouseY)
+{
+	// Get mouse vector and store as XMFLOAT3
+	XMFLOAT3 mF;
+	XMStoreFloat3(&mF, getMouseVector(camera, mouseX, mouseY));
+	// Get start and end points from this, using camera origin and distant point along vector
+	XMVECTOR origin, distant;
+	XMFLOAT3 pos = camera->GetPosition();
+	origin = { pos.x, pos.y, pos.z, 0.0f };
+	distant = { pos.x + (mF.x * 10), pos.y + (mF.y * 10), pos.z + (mF.z * 10) };
+	// Create a plane on the z-axis with 3 XMVectors
 }
 
 void N3s3d::renderMesh(VoxelMesh *voxelMesh) {

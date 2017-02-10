@@ -94,6 +94,8 @@ public:
 	static void setGuiProjection();
 	static D3D11_VIEWPORT viewport;
 	static void updateViewport(D3D11_VIEWPORT viewport);
+	static XMVECTOR getMouseVector(Camera * camera, int mouseX, int mouseY);
+	static XMFLOAT3 getZIntersection(Camera * camera, int mouseX, int mouseY);
 private:
 	static void initShaders();
 	static void initShaderExtras();
