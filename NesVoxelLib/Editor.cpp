@@ -9,6 +9,8 @@ int selectedSprite;
 bool editing;
 Camera mainCamera;
 
+XMFLOAT3 zIntersect;
+
 SceneSelector sceneSelector;
 PaletteSelector paletteSelector;
 
@@ -24,14 +26,9 @@ void Editor::init()
 	{
 		scenes[i] = make_shared<Scene>();
 	}
-	scenes[0]->setBackgroundSprite(0, 0, { 1,0,false,false });
-	scenes[0]->setBackgroundSprite(1, 0, { 2,0,false,false });
-	scenes[0]->setBackgroundSprite(15, 15, { 3,1,false,false });
-	scenes[0]->setBackgroundSprite(3, 0, { 4,0,false,false });
-	scenes[1]->setBackgroundSprite(0, 0, { 1,0,false,false });
-	scenes[1]->setBackgroundSprite(1, 0, { 2,0,false,false });
-	scenes[1]->setBackgroundSprite(2, 0, { 3,0,false,false });
-	scenes[1]->setBackgroundSprite(3, 0, { 4,0,false,false });
+	zIntersect = { 0.0f, 0.0f, 0.0f };
+	scenes[0]->setBackgroundSprite(15, 15, { 3,1,0,0,false,false });
+	scenes[0]->addOAMSprite({ 3, 0, 64, 64, false, false });
 }
 
 void Editor::update()
@@ -54,10 +51,17 @@ void Editor::render()
 	// Update view with whatever camera
 	mainCamera.Render();
 	N3s3d::updateMatricesWithCamera(&mainCamera);
+	zIntersect = N3s3d::getZIntersection(&mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
 	// Enable depth buffer
 	N3s3d::setDepthBufferState(true);
 	// Render the scene
 	scenes[selectedScene]->render();
+	// Test sprite square
+	N3s3d::setShader(overlay);
+	Overlay::setColor(0.0f, 1.0f, 0.0f, 0.5f);
+	N3s3d::setRasterFillState(false);
+	Overlay::drawSpriteSquare(24, 24);
+	N3s3d::setRasterFillState(true);
 	// Render GUI
 	N3s3d::setDepthBufferState(false);
 	N3s3d::setGuiProjection();

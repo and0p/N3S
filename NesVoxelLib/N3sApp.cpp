@@ -169,14 +169,6 @@ void N3sApp::render()
 	N3s3d::setShader(overlay);
 	N3s3d::setOverlayColor(255, 255, 255, 255);
 	N3s3d::setGuiProjection();
-	// TEST render mouse vector info ahhhh
-	if (loaded && mode == gameMode)
-	{
-		XMVECTOR mouseVector = N3s3d::getMouseVector(GameView::getCamera(), InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
-		float x = XMVectorGetX(mouseVector);
-		string s = to_string(x);
-		N3sConsole::writeLine(s);
-	}
 	
 	N3sConsole::render();
 }

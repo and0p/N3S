@@ -28,11 +28,21 @@ void Scene::render()
 			}
 		}
 	}
+	// Render OAM
+	for each(SceneSprite s in sprites)
+	{
+		N3sApp::gameData->meshes[s.meshNum]->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
+	}
 }
 
 void Scene::setBackgroundSprite(int x, int y, SceneSprite sprite)
 {
 	bg[y * sceneWidth + x] = sprite;
+}
+
+void Scene::addOAMSprite(SceneSprite s)
+{
+	sprites.push_back(s);
 }
 
 void Scene::createSceneFromCurrentSnapshot()

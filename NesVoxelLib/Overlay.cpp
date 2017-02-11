@@ -9,6 +9,7 @@ VoxelMesh voxelPreviewMesh;		// Single voxel
 VoxelMesh voxelGridMesh;		// 8x8 grid, voxel-size
 VoxelMesh voxelGridMeshLong;	// 32x8 grid, voxel-size
 VoxelMesh nametableGridMesh;	// 32x30 grid, sprite-size
+VoxelMesh spriteSquareMesh;		// 2D box for flat sprite selection and highlights
 VoxelMesh rectangleMesh;		// 1x1 rectangle, for resizing and drawing
 
 int getScreenX(int x)
@@ -151,6 +152,17 @@ void Overlay::drawRectangle(int x, int y, int width, int height)
 	N3s3d::updateWorldMatrix(screenX, screenY, 0, 0, 0, 0, width, height, 1);
 	// Render rectangle
 	N3s3d::renderMesh(&rectangleMesh);
+}
+
+void Overlay::drawSpriteSquare(int x, int y)
+{
+	// Get true coordinates
+	float xf = -1.0f + (pixelSizeW * x);
+	float yf = 1.0f - (pixelSizeH * y);
+	// Update world matrix
+	N3s3d::updateWorldMatrix(xf, yf, 0.0f);
+	// Render character
+	N3s3d::renderMesh(&spriteSquareMesh);
 }
 
 void Overlay::setColor(int r, int g, int b, int a)
@@ -361,6 +373,36 @@ void buildGridMeshes()
 	}
 
 	nametableGridMesh.buffer = N3s3d::createBufferFromOverlayVertices(&vertices, nametableGridMesh.size);
+
+	// Build sprite square mesh
+	spriteSquareMesh.type = overlay;
+	spriteSquareMesh.size = (4) * 3;
+
+	vertices.clear();
+
+	// Top
+	v1.Pos = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+	v2.Pos = XMFLOAT4(spriteWidth, 0.0f, 0.0f, 1.0f);
+	vertices.push_back(v1);
+	vertices.push_back(v2);
+	vertices.push_back(v1);
+	// Left
+	v2.Pos = XMFLOAT4(0.0f, -spriteHeight, 0.0f, 1.0f);
+	vertices.push_back(v1);
+	vertices.push_back(v2);
+	vertices.push_back(v1);
+	// Bottom
+	v1.Pos = XMFLOAT4(spriteWidth, -spriteHeight, 0.0f, 1.0f);
+	vertices.push_back(v1);
+	vertices.push_back(v2);
+	vertices.push_back(v1);
+	//Right
+	v2.Pos = XMFLOAT4(spriteWidth, 0.0f, 0.0f, 1.0f);
+	vertices.push_back(v1);
+	vertices.push_back(v2);
+	vertices.push_back(v1);
+
+	spriteSquareMesh.buffer = N3s3d::createBufferFromOverlayVertices(&vertices, spriteSquareMesh.size);
 }
 
 void buildRectangleMesh()

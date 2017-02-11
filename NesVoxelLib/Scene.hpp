@@ -11,6 +11,8 @@ const int sceneHeight = 60;
 struct SceneSprite {
 	int meshNum;
 	int palette;
+	int x;
+	int y;
 	bool mirrorH;
 	bool mirrorV;
 };
@@ -26,6 +28,7 @@ public:
 	void render();
 	vector<SceneSprite> sprites;
 	void setBackgroundSprite(int x, int y, SceneSprite sprite);
+	void addOAMSprite(SceneSprite s);
 	static void createSceneFromCurrentSnapshot();
 	N3sPalette palettes[8];
 	int selectedPalette = 0;

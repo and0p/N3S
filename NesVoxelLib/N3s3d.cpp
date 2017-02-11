@@ -628,7 +628,6 @@ XMVECTOR N3s3d::getMouseVector(Camera * camera, int mouseX, int mouseY)
 	worldMatrix = XMMatrixTranslationFromVector(translation);
 	//worldMatrix = XMMatrixTranspose(worldMatrix);
 	return XMVector3Unproject(v, 0, 0, viewport.Width, viewport.Height, 0.0f, 1.0f, projectionMatrix, viewMatrix, worldMatrix);
-	//return XMMATRIX();
 }
 
 XMFLOAT3 N3s3d::getZIntersection(Camera * camera, int mouseX, int mouseY)
@@ -642,6 +641,18 @@ XMFLOAT3 N3s3d::getZIntersection(Camera * camera, int mouseX, int mouseY)
 	origin = { pos.x, pos.y, pos.z, 0.0f };
 	distant = { pos.x + (mF.x * 10), pos.y + (mF.y * 10), pos.z + (mF.z * 10) };
 	// Create a plane on the z-axis with 3 XMVectors
+	XMVECTOR c1, c2, c3;
+	XMFLOAT3 source = { 0.0f, 0.0f, 0.0f };
+	c1 = XMLoadFloat3(&source);
+	source = { 0.0f, 1.0f, 0.0f };
+	c2 = XMLoadFloat3(&source);
+	source = { 1.0f, 0.0f, 0.0f };
+	c3 = XMLoadFloat3(&source);
+	XMVECTOR plane = XMPlaneFromPoints(c1, c2, c3);
+	// Return float3 of where line from mouse/camera intersects the z-axis at 0
+	XMFLOAT3 r;
+	XMStoreFloat3(&r, XMPlaneIntersectLine(plane, origin, distant));
+	return r;
 }
 
 void N3s3d::renderMesh(VoxelMesh *voxelMesh) {

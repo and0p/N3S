@@ -2,6 +2,8 @@
 #include "Camera.hpp"
 #include "Scene.hpp"
 
+using namespace std;
+
 class Editor {
 public:
 	static void init();
