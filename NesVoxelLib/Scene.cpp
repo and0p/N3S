@@ -10,29 +10,61 @@ Scene::Scene()
 	}
 }
 
-void Scene::render()
+void Scene::render(bool renderBackground, bool renderOAM)
 {
 	// Update palette in video card
 	palettes[selectedPalette].updateShaderPalette();
-	// Render grid
-	for (int y = 0; y < sceneHeight; y++)
+	// Render background, if enabled
+	if (renderBackground)
 	{
-		int yCalc = y * sceneWidth;
-		for (int x = 0; x < sceneWidth; x++)
+		for (int y = 0; y < sceneHeight; y++)
 		{
-			SceneSprite sprite = bg[yCalc + x];
-			// Only render non-empty spots, which are 0 or greater
-			if (sprite.meshNum >= 0)
+			int yCalc = y * sceneWidth;
+			for (int x = 0; x < sceneWidth; x++)
 			{
-				N3sApp::gameData->meshes[sprite.meshNum]->render(x * 8, y * 8, sprite.palette, sprite.mirrorH, sprite.mirrorV, { 0,0,0,0 });
+				SceneSprite sprite = bg[yCalc + x];
+				// Only render non-empty spots, which are 0 or greater
+				if (sprite.meshNum >= 0)
+				{
+					N3sApp::gameData->meshes[sprite.meshNum]->render(x * 8, y * 8, sprite.palette, sprite.mirrorH, sprite.mirrorV, { 0,0,0,0 });
+				}
 			}
 		}
 	}
-	// Render OAM
-	for each(SceneSprite s in sprites)
+	// Render OAM, if enabled
+	if (renderOAM)
 	{
-		N3sApp::gameData->meshes[s.meshNum]->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
+		for each(SceneSprite s in sprites)
+		{
+			N3sApp::gameData->meshes[s.meshNum]->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
+		}
 	}
+}
+
+void Scene::renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights)
+{
+	// Render background grid, if enabled
+	N3s3d::setShader(overlay);
+	N3s3d::setRasterFillState(false);
+	N3s3d::setDepthBufferState(false);
+	if (drawBackgroundGrid)
+	{
+		Overlay::setColor(1.0f, 0.0f, 0.0f, 0.1f);
+		Overlay::drawNametableGrid(0, 0);
+		Overlay::drawNametableGrid(32, 0);
+		Overlay::drawNametableGrid(0, 30);
+		Overlay::drawNametableGrid(32, 30);
+	}
+	if (drawOamHighlights)
+	{
+		Overlay::setColor(0.0f, 1.0f, 0.0f, 0.5f);
+		for each(SceneSprite s in sprites)
+		{
+			Overlay::drawSpriteSquare(s.x, s.y);
+		}
+	}
+	N3s3d::setRasterFillState(true);
+	N3s3d::setDepthBufferState(true);
 }
 
 void Scene::setBackgroundSprite(int x, int y, SceneSprite sprite)

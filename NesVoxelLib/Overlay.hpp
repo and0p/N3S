@@ -14,7 +14,7 @@ public:
 	static void drawString(int x, int y, int scale, string s);
 	static void drawVoxelPreview(int x, int y, int z);
 	static void drawVoxelGrid(int spriteX, int spriteY, int voxelPos, gridOrientation orientation);
-	static void drawNametableGrid();
+	static void drawNametableGrid(int x, int y);
 	static void drawRectangle(int x, int y, int width, int height);
 	static void drawSpriteSquare(int x, int y);
 	static void setColor(int r, int g, int b, int a);
