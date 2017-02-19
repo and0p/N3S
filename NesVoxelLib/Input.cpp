@@ -154,6 +154,14 @@ void KeyboardMouseDevice::update()
 	}
 }
 
+bool KeyboardMouseDevice::hasMouseMoved()
+{
+	if (mouseDeltaX != 0 || mouseDeltaY != 0)
+		return true;
+	else
+		return false;
+}
+
 GamepadDevice::GamepadDevice()
 {
 	for (int i = 0; i < BUTTONCOUNT; i++)

@@ -28,6 +28,21 @@ public:
 	SceneSprite sprites[sceneWidth * sceneHeight];
 };
 
+class Highlight {
+public:
+	int selectedIndex = -1;
+	vector<int> highlightedSpriteIndices;
+	int highlightedBackgroundIndex = -1;
+	void clear();
+	int getHighlightedOAM();
+	int getHighlightedNT();
+};
+
+class Selection {
+	unordered_set<int> selectedSpriteIndices;
+	unordered_set<int> selectedBackgroundIndices;
+};
+
 class Scene {
 public:
 	Scene();
@@ -42,6 +57,8 @@ public:
 	N3sPalette * getSelectedPalette();
 	void selectNextPalette();
 	void selectPreviousPalette();
+	Highlight highlight;
+	void updateHighlight2d(int x, int y);
 private:
 	SceneSprite bg[sceneWidth * sceneHeight];
 };
