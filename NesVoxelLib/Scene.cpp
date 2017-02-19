@@ -46,7 +46,6 @@ void Scene::renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights)
 	// Render background grid, if enabled
 	N3s3d::setShader(overlay);
 	N3s3d::setRasterFillState(false);
-	N3s3d::setDepthBufferState(false);
 	if (drawBackgroundGrid)
 	{
 		Overlay::setColor(1.0f, 0.0f, 0.0f, 0.1f);
@@ -57,14 +56,13 @@ void Scene::renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights)
 	}
 	if (drawOamHighlights)
 	{
-		Overlay::setColor(0.0f, 1.0f, 0.0f, 0.5f);
+		Overlay::setColor(1.0f, 1.0f, 1.0f, 1.0f);
 		for each(SceneSprite s in sprites)
 		{
 			Overlay::drawSpriteSquare(s.x, s.y);
 		}
 	}
 	N3s3d::setRasterFillState(true);
-	N3s3d::setDepthBufferState(true);
 }
 
 void Scene::setBackgroundSprite(int x, int y, SceneSprite sprite)
@@ -115,4 +113,46 @@ void Scene::selectPreviousPalette()
 	selectedPalette--;
 	if (selectedPalette < 0)
 		selectedPalette = 7;
+}
+
+void Scene::updateHighlight2d(int x, int y)
+{
+	// Clear previous highlight
+	highlight.clear();
+	// See if any OAM sprites intersect selection
+	for (int i = 0; i < sprites.size(); i++)
+	{
+		SceneSprite s = sprites[i];
+		if (x >= s.x && x < s.x + 8 && y >= s.y && y < s.y + 8)
+			highlight.highlightedSpriteIndices.push_back(i);
+	}
+	// See if any part of the background intersects selection
+	if (x >= 0 && x < scenePixelWidth && y >= 0 && y < scenePixelHeight)
+		highlight.highlightedBackgroundIndex = floor(y / 8) * 64 + floor(x / 8);
+	// Set the index
+	if (highlight.highlightedBackgroundIndex >= 0 || highlight.highlightedSpriteIndices.size() > 0)
+		highlight.selectedIndex = 0;
+}
+
+void Highlight::clear()
+{
+	highlightedSpriteIndices.clear();
+	highlightedBackgroundIndex = -1;
+	selectedIndex = -1;
+}
+
+int Highlight::getHighlightedOAM()
+{
+	if (selectedIndex >= 0 && selectedIndex < highlightedSpriteIndices.size())
+		return highlightedSpriteIndices[selectedIndex];
+	else
+		return -1;
+}
+
+int Highlight::getHighlightedNT()
+{
+	if (selectedIndex == highlightedSpriteIndices.size())
+		return highlightedBackgroundIndex;
+	else
+		return -1;
 }

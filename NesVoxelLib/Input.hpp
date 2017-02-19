@@ -97,6 +97,7 @@ public:
 	void setDown(int key);
 	void setUp(int key);
 	void update();
+	bool hasMouseMoved();
 };
 
 class GamepadDevice : InputDevice

@@ -28,14 +28,13 @@ void getCoordinatesFromZIntersection()
 	// Normalize top-left of all screens to 0,0
 	xAtIntersect += 1.0f;
 	yAtIntersect -= 1.0f;
-	// Flip Y and start calculating as positive
-	yAtIntersect = fabs(yAtIntersect);
 	// Divide each by full size of scene
 	xAtIntersect /= sceneDXWidth;
 	yAtIntersect /= sceneDXHeight;
-	// Get "pixel" position
+	// Get "pixel" position of X
 	mousePixelX = floor(scenePixelWidth * xAtIntersect);
-	mousePixelY = floor(scenePixelHeight * yAtIntersect);
+	// Get Y, but flip it first (since negative = positive in NES screenspace)
+	mousePixelY = floor(scenePixelHeight * (yAtIntersect * -1));
 }
 
 void Editor::init()
@@ -49,7 +48,10 @@ void Editor::init()
 	}
 	zIntersect = { 0.0f, 0.0f, 0.0f };
 	scenes[0]->setBackgroundSprite(15, 15, { 3,1,0,0,false,false });
-	scenes[0]->addOAMSprite({ 3, 0, 64, 64, false, false });
+	scenes[0]->addOAMSprite({ 3, 0, 0, 0, false, false });
+	scenes[0]->addOAMSprite({ 3, 0, 200, 171, false, false });
+	scenes[0]->addOAMSprite({ 3, 0, 133, 117, false, false });
+	scenes[0]->addOAMSprite({ 3, 0, 32, 32, false, false });
 }
 
 void Editor::update()
@@ -69,30 +71,47 @@ void Editor::update()
 	mouseVector = N3s3d::getMouseVector(&mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
 	zIntersect = N3s3d::getZIntersection(&mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
 	getCoordinatesFromZIntersection();
+	// If mouse has moved and is available, calculate highlighted items
+	if(InputState::keyboardMouse->hasMouseMoved() && mouseAvailable)
+		scenes[selectedScene]->updateHighlight2d(mousePixelX, mousePixelY);
 }
 
 void Editor::render()
 {
+	shared_ptr<Scene> scene = scenes[selectedScene];
 	N3s3d::updateMatricesWithCamera(&mainCamera);
 	// Enable depth buffer
 	N3s3d::setDepthBufferState(true);
 	// Render the scene
-	scenes[selectedScene]->render(true, true);
+	scene->render(true, true);
 	// Render overlays
-	scenes[selectedScene]->renderOverlays(true, true);
-	// TEST render NT highlight
-	int xNT = floor(mousePixelX / 8);
-	int yNT = floor(mousePixelY / 8);
-	N3s3d::setShader(overlay);
-	N3s3d::setRasterFillState(false);
 	N3s3d::setDepthBufferState(false);
-	Overlay::setColor(1.0f, 0.0f, 0.0f, 0.5f);
-	Overlay::drawSpriteSquare(xNT * 8, yNT * 8);
-	N3s3d::setRasterFillState(true);
+	scene->renderOverlays(true, true);
+	// TEST render NT highlight
+	if (scene->highlight.selectedIndex >= 0)
+	{
+		N3s3d::setShader(overlay);
+		N3s3d::setRasterFillState(false);
+		// See if it's a OAM or nametable highlight
+		if (scene->highlight.getHighlightedOAM() >= 0)
+		{
+			SceneSprite s = scene->sprites[scene->highlight.getHighlightedOAM()];
+			Overlay::setColor(0.0f, 1.0f, 0.0f, 1.0f);
+			Overlay::drawSpriteSquare(s.x, s.y);
+		}
+		else if (scene->highlight.getHighlightedNT() >= 0)
+		{
+			int xNT = floor(mousePixelX / 8);
+			int yNT = floor(mousePixelY / 8);
+			Overlay::setColor(1.0f, 0.0f, 0.0f, 0.5f);
+			Overlay::drawSpriteSquare(xNT * 8, yNT * 8);
+		}
+		N3s3d::setRasterFillState(true);
+	}
 	// Render GUI
 	N3s3d::setGuiProjection();
 	sceneSelector.render();
-	paletteSelector.render(scenes[selectedScene]);
+	paletteSelector.render(scene);
 }
 
 void Editor::setScene(int s)
