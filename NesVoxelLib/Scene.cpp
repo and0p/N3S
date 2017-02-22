@@ -26,6 +26,14 @@ void Scene::render(bool renderBackground, bool renderOAM)
 				// Only render non-empty spots, which are 0 or greater
 				if (sprite.meshNum >= 0)
 				{
+					int i = unwrapArrayIndex(x, y, sceneWidth);
+					if (selection.selectedBackgroundIndices.count(i) > 0 || highlight.getHighlightedNT() == i)
+					{
+						N3s3d::setDepthStencilState(true, true, false);
+						N3sApp::gameData->meshes[sprite.meshNum]->render(x * 8, y * 8, sprite.palette, sprite.mirrorH, sprite.mirrorV, { 0,0,0,0 });
+						N3s3d::setDepthStencilState(true, false, false);
+					}
+					// See if this tile is selected or highlighted
 					N3sApp::gameData->meshes[sprite.meshNum]->render(x * 8, y * 8, sprite.palette, sprite.mirrorH, sprite.mirrorV, { 0,0,0,0 });
 				}
 			}

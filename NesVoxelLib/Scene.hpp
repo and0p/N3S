@@ -1,4 +1,5 @@
 #pragma once
+#include "stdafx.h"
 #include <vector>
 #include "N3sApp.hpp"
 #include "N3sPalette.hpp"

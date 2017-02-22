@@ -47,10 +47,15 @@ namespace DX
 
 // Simple utility functions
 
-bool toggleBool(bool b)
+inline bool toggleBool(bool b)
 {
 	if (b == false)
 		return true;
 	else
 		return false;;
-};
+}
+
+inline int unwrapArrayIndex(int x, int y, int arrayWidth)
+{
+	return (y * arrayWidth) + x;
+}
