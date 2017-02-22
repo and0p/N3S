@@ -570,6 +570,24 @@ void N3s3d::setDepthBufferState(bool active)
 		context->OMSetDepthStencilState(m_depthDisabledStencilState, 1);
 }
 
+void N3s3d::setDepthStencilState(bool depthTest, bool stencilWrite, bool stencilTest)
+{
+	if (depthTest)
+	{
+		if(stencilWrite)
+			context->OMSetDepthStencilState(m_depthStencilWriteState, 1);
+		else
+			context->OMSetDepthStencilState(m_depthStencilNoWriteState, 1);
+	}
+	else
+	{
+		if(stencilTest)
+			context->OMSetDepthStencilState(m_depthDisabledStencilOnlyState, 1);
+		else
+			context->OMSetDepthStencilState(m_depthDisabledStencilState, 1);
+	}
+}
+
 void N3s3d::setRasterFillState(bool fill)
 {
 	if(fill)
@@ -761,7 +779,7 @@ bool N3s3d::initDepthStencils()
 	// Thanks http://www.rastertek.com/dx11tut11.html
 	HRESULT result = false;
 
-#pragma region Standard depth stencil
+#pragma region Standard depth stencil, dont write stencil
 
 	// Initialize the description of the stencil state.
 	ZeroMemory(&depthStencilNoWriteDesc, sizeof(depthStencilNoWriteDesc));
@@ -782,17 +800,53 @@ bool N3s3d::initDepthStencils()
 
 #pragma endregion
 
+#pragma region Standard depth, write stencil
+
+	// Initialize the description of the stencil state.
+	ZeroMemory(&depthStencilNoWriteDesc, sizeof(depthStencilNoWriteDesc));
+
+	// Set up the description of the stencil state.
+	depthStencilWriteDesc.DepthEnable = true;
+	depthStencilWriteDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthStencilWriteDesc.DepthFunc = D3D11_COMPARISON_LESS;
+
+	depthStencilWriteDesc.StencilEnable = true;
+	depthStencilWriteDesc.StencilReadMask = 0xFF;
+	depthStencilWriteDesc.StencilWriteMask = 0xFF;
+
+	// Stencil operations if pixel is front-facing.
+	depthStencilWriteDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilWriteDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilWriteDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+	depthStencilWriteDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+	// Stencil operations if pixel is back-facing.
+	depthStencilWriteDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilWriteDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilWriteDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+	depthStencilWriteDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+	// Create the depth stencil state.
+	result = device->CreateDepthStencilState(&depthStencilWriteDesc, &m_depthStencilWriteState);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+#pragma endregion
 	
 #pragma region No z-buffer depth stencil
 
 	// Clear the second depth stencil state before setting the parameters.
-		ZeroMemory(&depthDisabledStencilDesc, sizeof(depthDisabledStencilDesc));
+	ZeroMemory(&depthDisabledStencilDesc, sizeof(depthDisabledStencilDesc));
 
 	// Now create a second depth stencil state which turns off the Z buffer for 2D rendering.  The only difference is 
 	// that DepthEnable is set to false, all other parameters are the same as the other depth stencil state.
 	depthDisabledStencilDesc.DepthEnable = false;
 	depthDisabledStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 	depthDisabledStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+
+	depthDisabledStencilDesc.StencilEnable = false;
 
 	// Create the state using the device.
 	result = device->CreateDepthStencilState(&depthDisabledStencilDesc, &m_depthDisabledStencilState);
@@ -814,25 +868,23 @@ bool N3s3d::initDepthStencils()
 	ZeroMemory(&depthDisabledStencilOnlyDesc, sizeof(depthDisabledStencilOnlyDesc));
 
 	// Set up the description of the stencil state.
-	depthStencilNoWriteDesc.DepthEnable = false;
-	depthStencilNoWriteDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	depthStencilNoWriteDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	depthDisabledStencilOnlyDesc.DepthEnable = false;
 
-	depthStencilNoWriteDesc.StencilEnable = true;
-	depthStencilNoWriteDesc.StencilReadMask = 0xFF;
-	depthStencilNoWriteDesc.StencilWriteMask = 0xFF;
+	depthDisabledStencilOnlyDesc.StencilEnable = true;
+	depthDisabledStencilOnlyDesc.StencilReadMask = 0xFF;
+	depthDisabledStencilOnlyDesc.StencilWriteMask = 0xFF;
 
 	// Stencil operations if pixel is front-facing.
-	depthStencilNoWriteDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilNoWriteDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
-	depthStencilNoWriteDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilNoWriteDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	depthDisabledStencilOnlyDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledStencilOnlyDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledStencilOnlyDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledStencilOnlyDesc.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
 
 	// Stencil operations if pixel is back-facing.
-	depthStencilNoWriteDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilNoWriteDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
-	depthStencilNoWriteDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilNoWriteDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	depthDisabledStencilOnlyDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledStencilOnlyDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledStencilOnlyDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledStencilOnlyDesc.BackFace.StencilFunc = D3D11_COMPARISON_EQUAL;
 
 	// Create the state using the device.
 	result = device->CreateDepthStencilState(&depthDisabledStencilOnlyDesc, &m_depthDisabledStencilOnlyState);

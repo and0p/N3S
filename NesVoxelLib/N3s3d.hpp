@@ -90,6 +90,7 @@ public:
 	static void renderMesh(VoxelMesh *voxelMesh);
 	static void setIndexBuffer();
 	static void setDepthBufferState(bool active);
+	static void setDepthStencilState(bool depthTest, bool stencilWrite, bool stencilTest);
 	static void setRasterFillState(bool fill);
 	static void setGuiProjection();
 	static D3D11_VIEWPORT viewport;
