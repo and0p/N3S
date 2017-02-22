@@ -37,17 +37,17 @@ void Scene::render(bool renderBackground, bool renderOAM)
 		for (int i = 0; i < sprites.size(); i++)
 		{
 			SceneSprite s = sprites[i];
-			// See if sprite is highlighted
-			if (selection.selectedSpriteIndices.count(i) > 0 || highlight.getHighlightedOAM == i)
+			// See if sprite is highlighted and write to stencil buffer if so
+			if (selection.selectedSpriteIndices.count(i) > 0 || highlight.getHighlightedOAM() == i)
 			{
 				N3s3d::setDepthStencilState(true, true, false);
 				N3sApp::gameData->meshes[s.meshNum]->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
+				N3s3d::setDepthStencilState(true, false, false);
 			}
 			else
 			{
 				N3sApp::gameData->meshes[s.meshNum]->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
 			}
-			
 		}
 	}
 }

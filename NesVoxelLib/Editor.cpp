@@ -73,7 +73,7 @@ void Editor::update()
 	getCoordinatesFromZIntersection();
 	// If mouse has moved and is available, calculate highlighted items
 	if(InputState::keyboardMouse->hasMouseMoved() && mouseAvailable)
-		scenes[selectedScene]->updateHighlight2d(mousePixelX, mousePixelY);
+		scenes[selectedScene]->updateHighlight2d(mousePixelX, mousePixelY, true, true);
 }
 
 void Editor::render()
@@ -108,8 +108,13 @@ void Editor::render()
 		}
 		N3s3d::setRasterFillState(true);
 	}
-	// Render GUI
+	// Test highlight effect
+	N3s3d::setDepthStencilState(false, false, true);
 	N3s3d::setGuiProjection();
+	Overlay::setColor(1.0f, 1.0f, 1.0f, 0.3f);
+	Overlay::drawRectangle(0, 0, 1920, 1080);
+	// Render GUI
+	N3s3d::setDepthBufferState(false);
 	sceneSelector.render();
 	paletteSelector.render(scene);
 }
