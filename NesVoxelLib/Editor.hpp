@@ -4,6 +4,16 @@
 
 using namespace std;
 
+struct interactionOptions
+{
+	bool display = true;
+	bool highlightAll = false;
+	enum selectionType
+	{
+		select_none, select_2d, select3d
+	};
+};
+
 class Editor {
 public:
 	static void init();
@@ -12,6 +22,8 @@ public:
 	static void setScene(int s);
 	static Hue getBackgroundColor();
 private:
+	static interactionOptions oamOptions;
+	static interactionOptions namtetableOptions;
 	static bool mouseAvailable;
 	static XMVECTOR mouseVector;
 };
