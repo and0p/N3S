@@ -126,20 +126,26 @@ void Scene::selectPreviousPalette()
 		selectedPalette = 7;
 }
 
-void Scene::updateHighlight2d(int x, int y)
+void Scene::updateHighlight2d(int x, int y, bool highlightOAM, bool highlightNametable)
 {
 	// Clear previous highlight
 	highlight.clear();
 	// See if any OAM sprites intersect selection
-	for (int i = 0; i < sprites.size(); i++)
+	if (highlightOAM)
 	{
-		SceneSprite s = sprites[i];
-		if (x >= s.x && x < s.x + 8 && y >= s.y && y < s.y + 8)
-			highlight.highlightedSpriteIndices.push_back(i);
+		for (int i = 0; i < sprites.size(); i++)
+		{
+			SceneSprite s = sprites[i];
+			if (x >= s.x && x < s.x + 8 && y >= s.y && y < s.y + 8)
+				highlight.highlightedSpriteIndices.push_back(i);
+		}
 	}
 	// See if any part of the background intersects selection
-	if (x >= 0 && x < scenePixelWidth && y >= 0 && y < scenePixelHeight)
-		highlight.highlightedBackgroundIndex = floor(y / 8) * 64 + floor(x / 8);
+	if (highlightNametable)
+	{
+		if (x >= 0 && x < scenePixelWidth && y >= 0 && y < scenePixelHeight)
+			highlight.highlightedBackgroundIndex = floor(y / 8) * 64 + floor(x / 8);
+	}
 	// Set the index
 	if (highlight.highlightedBackgroundIndex >= 0 || highlight.highlightedSpriteIndices.size() > 0)
 		highlight.selectedIndex = 0;

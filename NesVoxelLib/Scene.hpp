@@ -61,7 +61,7 @@ public:
 	void selectPreviousPalette();
 	Highlight highlight;
 	Selection selection;
-	void updateHighlight2d(int x, int y);
+	void updateHighlight2d(int x, int y, bool highlightOAM, bool highlightNametable);
 private:
 	SceneSprite bg[sceneWidth * sceneHeight];
 };
