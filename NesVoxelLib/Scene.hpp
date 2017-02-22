@@ -39,8 +39,10 @@ public:
 };
 
 class Selection {
+public:
 	unordered_set<int> selectedSpriteIndices;
 	unordered_set<int> selectedBackgroundIndices;
+	void clear();
 };
 
 class Scene {
@@ -58,6 +60,7 @@ public:
 	void selectNextPalette();
 	void selectPreviousPalette();
 	Highlight highlight;
+	Selection selection;
 	void updateHighlight2d(int x, int y);
 private:
 	SceneSprite bg[sceneWidth * sceneHeight];

@@ -34,9 +34,20 @@ void Scene::render(bool renderBackground, bool renderOAM)
 	// Render OAM, if enabled
 	if (renderOAM)
 	{
-		for each(SceneSprite s in sprites)
+		for (int i = 0; i < sprites.size(); i++)
 		{
-			N3sApp::gameData->meshes[s.meshNum]->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
+			SceneSprite s = sprites[i];
+			// See if sprite is highlighted
+			if (selection.selectedSpriteIndices.count(i) > 0 || highlight.getHighlightedOAM == i)
+			{
+				N3s3d::setDepthStencilState(true, true, false);
+				N3sApp::gameData->meshes[s.meshNum]->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
+			}
+			else
+			{
+				N3sApp::gameData->meshes[s.meshNum]->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
+			}
+			
 		}
 	}
 }
@@ -155,4 +166,10 @@ int Highlight::getHighlightedNT()
 		return highlightedBackgroundIndex;
 	else
 		return -1;
+}
+
+void Selection::clear()
+{
+	selectedSpriteIndices.clear();
+	selectedBackgroundIndices.clear();
 }
