@@ -1,8 +1,19 @@
 #include "stdafx.h"
 #include "Scene.hpp"
+#include "Camera.hpp"
+
+XMVECTOR mouseVector;
+XMFLOAT3 zIntersect;
+
+int mousePixelX;
+int mousePixelY;
+
+Camera mainCamera;
 
 Scene::Scene()
 {
+	// Set camera to default position
+	mainCamera.SetPosition(0, 0, -2);
 	// Clear BG with all "blank" (-1) sprites
 	for (int i = 0; i < sceneWidth * sceneHeight; i++)
 	{
@@ -10,8 +21,31 @@ Scene::Scene()
 	}
 }
 
+bool Scene::update(bool mouseAvailable)
+{
+	// Update camera position
+	if (InputState::keyboardMouse->mouseButtons[right_mouse].state > 0)
+	{
+		float xRot = InputState::keyboardMouse->mouseDeltaX / 3;
+		float yRot = InputState::keyboardMouse->mouseDeltaY / 3;
+		mainCamera.AdjustRotation(xRot, 0.0f, yRot);
+	}
+	// Update camera math
+	mainCamera.Render();
+	// Calculate mouse vector and z-intersect
+	mouseVector = N3s3d::getMouseVector(&mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
+	zIntersect = N3s3d::getZIntersection(&mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
+	getCoordinatesFromZIntersection();
+	// If mouse has moved and is available, calculate highlighted items
+	if (InputState::keyboardMouse->hasMouseMoved() && mouseAvailable)
+		updateHighlight2d(mousePixelX, mousePixelY, true, true);
+	return updateMouseActions(mouseAvailable);
+}
+
 void Scene::render(bool renderBackground, bool renderOAM)
 {
+	// Update camera math
+	N3s3d::updateMatricesWithCamera(&mainCamera);
 	// Update palette in video card
 	palettes[selectedPalette].updateShaderPalette();
 	// Render background, if enabled
@@ -58,6 +92,11 @@ void Scene::render(bool renderBackground, bool renderOAM)
 			}
 		}
 	}
+	// Render highlight selections / mouse hover
+	N3s3d::setDepthStencilState(false, false, true);
+	N3s3d::setGuiProjection();
+	Overlay::setColor(1.0f, 1.0f, 1.0f, 0.3f);
+	Overlay::drawRectangle(0, 0, 1920, 1080); // TODO: How do I get actual screen size again..?
 }
 
 void Scene::renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights)
@@ -157,6 +196,27 @@ void Scene::updateHighlight2d(int x, int y, bool highlightOAM, bool highlightNam
 	// Set the index
 	if (highlight.highlightedBackgroundIndex >= 0 || highlight.highlightedSpriteIndices.size() > 0)
 		highlight.selectedIndex = 0;
+}
+
+bool Scene::updateMouseActions(bool mouseAvailable)
+{
+	return false;
+}
+
+void Scene::getCoordinatesFromZIntersection()
+{
+	float xAtIntersect = zIntersect.x;
+	float yAtIntersect = zIntersect.y;
+	// Normalize top-left of all screens to 0,0
+	xAtIntersect += 1.0f;
+	yAtIntersect -= 1.0f;
+	// Divide each by full size of scene
+	xAtIntersect /= sceneDXWidth;
+	yAtIntersect /= sceneDXHeight;
+	// Get "pixel" position of X
+	mousePixelX = floor(scenePixelWidth * xAtIntersect);
+	// Get Y, but flip it first (since negative = positive in NES screenspace)
+	mousePixelY = floor(scenePixelHeight * (yAtIntersect * -1));
 }
 
 void Highlight::clear()

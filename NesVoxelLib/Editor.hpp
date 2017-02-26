@@ -18,6 +18,7 @@ class Editor {
 public:
 	static void init();
 	static void update();
+	static void parseInputForScene(bool mouseAvailable);
 	static void render();
 	static void setScene(int s);
 	static Hue getBackgroundColor();
@@ -25,5 +26,4 @@ private:
 	static interactionOptions oamOptions;
 	static interactionOptions namtetableOptions;
 	static bool mouseAvailable;
-	static XMVECTOR mouseVector;
 };

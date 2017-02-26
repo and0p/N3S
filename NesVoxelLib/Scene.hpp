@@ -15,6 +15,8 @@ const int scenePixelHeight = 480;
 const int sceneDXWidth = pixelSizeW * 8 * sceneWidth;
 const int sceneDXHeight = pixelSizeH * 8 * sceneHeight;
 
+enum mouseState { no_state, move_state, select_new, select_add, select_sub, select_intersect };
+
 struct SceneSprite {
 	int meshNum;
 	int palette;
@@ -49,6 +51,7 @@ public:
 class Scene {
 public:
 	Scene();
+	bool update(bool mouseAvailable);
 	void render(bool renderBackground, bool renderOAM);
 	void renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights);
 	vector<SceneSprite> sprites;
@@ -63,6 +66,8 @@ public:
 	Highlight highlight;
 	Selection selection;
 	void updateHighlight2d(int x, int y, bool highlightOAM, bool highlightNametable);
+	bool updateMouseActions(bool mouseAvailable);
 private:
 	SceneSprite bg[sceneWidth * sceneHeight];
+	static void getCoordinatesFromZIntersection();
 };
