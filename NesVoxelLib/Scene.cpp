@@ -10,6 +10,11 @@ int mousePixelY;
 
 Camera mainCamera;
 
+bool mouseCaptured = false;
+
+MouseModifier modifier = no_mod;
+MouseFunction mouseFunction = no_func;
+
 Scene::Scene()
 {
 	// Set camera to default position
@@ -36,9 +41,6 @@ bool Scene::update(bool mouseAvailable)
 	mouseVector = N3s3d::getMouseVector(&mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
 	zIntersect = N3s3d::getZIntersection(&mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
 	getCoordinatesFromZIntersection();
-	// If mouse has moved and is available, calculate highlighted items
-	if (InputState::keyboardMouse->hasMouseMoved() && mouseAvailable)
-		updateHighlight2d(mousePixelX, mousePixelY, true, true);
 	return updateMouseActions(mouseAvailable);
 }
 
@@ -200,7 +202,36 @@ void Scene::updateHighlight2d(int x, int y, bool highlightOAM, bool highlightNam
 
 bool Scene::updateMouseActions(bool mouseAvailable)
 {
-	return false;
+	// If mouse has moved and is available, calculate highlighted items
+	if (InputState::keyboardMouse->hasMouseMoved())
+		updateHighlight2d(mousePixelX, mousePixelY, true, true);
+	// Check left mouse
+	if (mouseAvailable || mouseCaptured)
+	{
+		MouseState state = InputState::keyboardMouse->mouseButtons[left_mouse].state;
+		if (state < 1)
+			mouseCaptured = 0;
+		int mouseX = InputState::keyboardMouse->mouseX;
+		int mouseY = InputState::keyboardMouse->mouseY;
+		if (mouseCaptured)
+		{
+			// See if this is a new click
+			if (state == clicked)
+			{
+				// Capture mod key
+				modifier = no_mod; // TODO: actually capture this
+			}
+			if (state == pressed)
+			{
+				// Check for highlight and add to selection
+			}
+			if (state == dragging)
+			{
+				// Do 
+			}
+		}
+	}
+	return true;
 }
 
 void Scene::getCoordinatesFromZIntersection()

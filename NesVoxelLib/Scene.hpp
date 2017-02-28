@@ -15,7 +15,8 @@ const int scenePixelHeight = 480;
 const int sceneDXWidth = pixelSizeW * 8 * sceneWidth;
 const int sceneDXHeight = pixelSizeH * 8 * sceneHeight;
 
-enum mouseState { no_state, move_state, select_new, select_add, select_sub, select_intersect };
+enum MouseModifier { no_mod, shift_mod, alt_mod, ctrl_mod };
+enum MouseFunction { no_func, move_func, select_new, select_add, select_sub, select_intersect };
 
 struct SceneSprite {
 	int meshNum;
