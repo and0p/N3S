@@ -46,6 +46,8 @@ bool Scene::update(bool mouseAvailable)
 
 void Scene::render(bool renderBackground, bool renderOAM)
 {
+	// Enable depth buffer
+	N3s3d::setDepthBufferState(true);
 	// Update camera math
 	N3s3d::updateMatricesWithCamera(&mainCamera);
 	// Update palette in video card
@@ -99,13 +101,17 @@ void Scene::render(bool renderBackground, bool renderOAM)
 	N3s3d::setGuiProjection();
 	Overlay::setColor(1.0f, 1.0f, 1.0f, 0.3f);
 	Overlay::drawRectangle(0, 0, 1920, 1080); // TODO: How do I get actual screen size again..?
+
 }
 
 void Scene::renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights)
 {
-	// Render background grid, if enabled
 	N3s3d::setShader(overlay);
+	N3s3d::setDepthBufferState(false);
 	N3s3d::setRasterFillState(false);
+	// Update camera math (was probably left at GUI projection after scene rendering)
+	N3s3d::updateMatricesWithCamera(&mainCamera);
+	// Render background grid, if enabled
 	if (drawBackgroundGrid)
 	{
 		Overlay::setColor(1.0f, 0.0f, 0.0f, 0.1f);
@@ -114,6 +120,7 @@ void Scene::renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights)
 		Overlay::drawNametableGrid(0, 30);
 		Overlay::drawNametableGrid(32, 30);
 	}
+	// Draw OAM highlights, if enabled
 	if (drawOamHighlights)
 	{
 		Overlay::setColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -122,7 +129,6 @@ void Scene::renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights)
 			Overlay::drawSpriteSquare(s.x, s.y);
 		}
 	}
-	N3s3d::setRasterFillState(true);
 }
 
 void Scene::setBackgroundSprite(int x, int y, SceneSprite sprite)
@@ -209,8 +215,8 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 	if (mouseAvailable || mouseCaptured)
 	{
 		MouseState state = InputState::keyboardMouse->mouseButtons[left_mouse].state;
-		if (state < 1)
-			mouseCaptured = 0;
+		if (state > 0)
+			mouseCaptured = true;
 		int mouseX = InputState::keyboardMouse->mouseX;
 		int mouseY = InputState::keyboardMouse->mouseY;
 		if (mouseCaptured)
@@ -219,7 +225,14 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 			if (state == clicked)
 			{
 				// Capture mod key
-				modifier = no_mod; // TODO: actually capture this
+				if (InputState::functions[selection_add].active && InputState::functions[selection_remove].active)
+					modifier = mod_intersect;
+				else if (InputState::functions[selection_add].active)
+					modifier = mod_add;
+				else if (InputState::functions[selection_remove].active)
+					modifier = mod_remove;
+				else
+					modifier = no_mod;
 				// See if OAM or NT is highlighted at all
 					// See if any objects in highlight are also in selection
 						// If so, set function to move
@@ -227,7 +240,24 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 			}
 			if (state == pressed)
 			{
+				// Clear previous selection when appropriate
+				if(modifier == no_mod)
+					selection.clear();
 				// Check for highlight and add to selection
+				if (highlight.getHighlightedOAM() >= 0)
+				{
+					if (modifier == no_mod || modifier == mod_add)
+						selection.selectedSpriteIndices.insert(highlight.getHighlightedOAM());
+					else if (modifier == mod_remove)
+						selection.selectedSpriteIndices.erase(highlight.getHighlightedOAM());
+				}
+				else if (highlight.getHighlightedNT() >= 0)
+				{
+					if (modifier == no_mod || modifier == mod_add)
+						selection.selectedSpriteIndices.insert(highlight.getHighlightedNT());
+					else if (modifier == mod_remove)
+						selection.selectedSpriteIndices.erase(highlight.getHighlightedNT());
+				}
 			}
 			if (state == dragging)
 			{
@@ -280,6 +310,14 @@ int Highlight::getHighlightedNT()
 		return highlightedBackgroundIndex;
 	else
 		return -1;
+}
+
+bool Highlight::anythingHighlighted()
+{
+	if (selectedIndex >= 0)
+		return true;
+	else
+		return false;
 }
 
 void Selection::clear()

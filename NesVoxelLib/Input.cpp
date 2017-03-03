@@ -355,5 +355,11 @@ void InputState::createBindings()
 	// Switching between editor and game
 	functions[tog_game].bindings.push_back({ keyboardMouse->keys[VK_OEM_1] });		// semicolon
 	functions[tog_editor].bindings.push_back({ keyboardMouse->keys[VK_OEM_7] });	// single quote
+
+	// Editor controls
+	functions[selection_add].bindings.push_back({ keyboardMouse->keys[VK_LSHIFT] });
+	functions[selection_add].bindings.push_back({ keyboardMouse->keys[VK_RSHIFT] });
+	functions[selection_remove].bindings.push_back({ keyboardMouse->keys[VK_LSHIFT] });
+	functions[selection_remove].bindings.push_back({ keyboardMouse->keys[VK_RSHIFT] });
 }
 

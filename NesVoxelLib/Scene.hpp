@@ -15,7 +15,7 @@ const int scenePixelHeight = 480;
 const int sceneDXWidth = pixelSizeW * 8 * sceneWidth;
 const int sceneDXHeight = pixelSizeH * 8 * sceneHeight;
 
-enum MouseModifier { no_mod, shift_mod, alt_mod, ctrl_mod };
+enum MouseModifier { no_mod, mod_add, mod_remove, mod_intersect };
 enum MouseFunction { no_func, move_func, select_new, select_add, select_sub, select_intersect };
 
 struct SceneSprite {
@@ -40,6 +40,7 @@ public:
 	void clear();
 	int getHighlightedOAM();
 	int getHighlightedNT();
+	bool anythingHighlighted();
 };
 
 class Selection {

@@ -43,12 +43,9 @@ void Editor::render()
 {
 	shared_ptr<Scene> scene = scenes[selectedScene];
 
-	// Enable depth buffer
-	N3s3d::setDepthBufferState(true);
 	// Render the scene
 	scene->render(true, true);
 	// Render overlays
-	N3s3d::setDepthBufferState(false);
 	scene->renderOverlays(true, true);
 	//// TEST render NT highlight
 	//if (scene->highlight.selectedIndex >= 0)
