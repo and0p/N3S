@@ -85,3 +85,8 @@ Hue Editor::getBackgroundColor()
 {
 	return scenes[selectedScene]->getSelectedPalette()->getBackgroundColor();
 }
+
+void Editor::updateTempScene(shared_ptr<PpuSnapshot> snapshot)
+{
+	scenes[8].reset(new Scene(snapshot));
+}

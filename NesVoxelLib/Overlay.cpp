@@ -154,6 +154,15 @@ void Overlay::drawRectangle(int x, int y, int width, int height)
 	N3s3d::renderMesh(&rectangleMesh);
 }
 
+void Overlay::drawRectangleInScene(int x, int y, int z, int width, int height)
+{
+	N3s3d::updateWorldMatrix(
+		-1.0f + x * pixelSizeW, 1.0f - (y * pixelSizeH), z * pixelSizeW,
+		0, 0, 0,
+		width * pixelSizeW, height * pixelSizeH, 1);
+	N3s3d::renderMesh(&rectangleMesh);
+}
+
 void Overlay::drawSpriteSquare(int x, int y)
 {
 	// Get true coordinates

@@ -55,7 +55,18 @@ inline bool toggleBool(bool b)
 		return false;;
 }
 
-inline int unwrapArrayIndex(int x, int y, int arrayWidth)
+struct Vector2D {
+	float x;
+	float y;
+};
+
+inline int getArrayIndexFromXY(int x, int y, int arrayWidth)
 {
 	return (y * arrayWidth) + x;
+}
+
+inline Vector2D unwrapArrayindex(int i, int arrayWidth)
+{
+	float y = floor(i / arrayWidth);
+	return { (float)(i % arrayWidth), y };
 }

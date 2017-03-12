@@ -1,19 +1,38 @@
 #include "stdafx.h"
 #include "Scene.hpp"
 #include "Camera.hpp"
+#include "Editor.hpp"
 
 XMVECTOR mouseVector;
 XMFLOAT3 zIntersect;
 
-int mousePixelX;
-int mousePixelY;
+Vector2D mousePixelCoordinates;
 
 Camera mainCamera;
 
 bool mouseCaptured = false;
 
+bool selectionClickedOn = false;
+bool draggingSelection = false;
 MouseModifier modifier = no_mod;
 MouseFunction mouseFunction = no_func;
+Vector2D originMousePixelCoordinates;
+
+int sel_top, sel_left, sel_bottom, sel_right;
+
+bool edittingIn3d = false;
+
+bool isSpriteIn2dRect(int top, int left, int bottom, int right, int x, int y)
+{
+	if ((x >= left && x < right) || (x + 8 >= left && x + 8 < right))
+	{
+		if ((y >= top && y < bottom) || (y + 8 >= top && y + 8 < bottom))
+		{
+			return true;
+		}
+	}
+	return false;
+}
 
 Scene::Scene()
 {
@@ -23,6 +42,38 @@ Scene::Scene()
 	for (int i = 0; i < sceneWidth * sceneHeight; i++)
 	{
 		bg[i] = { -1, 0, false, false };	
+	}
+	selection = make_shared<Selection>();
+	displaySelection = make_shared<Selection>();
+}
+
+Scene::Scene(shared_ptr<PpuSnapshot> snapshot)
+{
+	// Set camera to default position
+	mainCamera.SetPosition(0, 0, -2);
+	// Clear BG with all "blank" (-1) sprites
+	for (int i = 0; i < sceneWidth * sceneHeight; i++)
+	{
+		bg[i] = { -1, 0, false, false };
+	}
+	selection = make_shared<Selection>();
+	displaySelection = make_shared<Selection>();
+	// Create scene from snapshot
+	// Grab all OAM
+	for each(OamSprite s in snapshot->sprites)
+	{
+		int id = N3sApp::virtualPatternTable->getSprite(s.tile)->defaultMesh->id; // lol
+		if (id >= 0)
+		{
+			SceneSprite ss;
+			ss.x = s.x;
+			ss.y = s.y;
+			ss.palette = s.palette;
+			ss.meshNum = id;
+			ss.mirrorH = s.hFlip;
+			ss.mirrorV = s.vFlip;
+			sprites.push_back(ss);
+		}
 	}
 }
 
@@ -40,7 +91,7 @@ bool Scene::update(bool mouseAvailable)
 	// Calculate mouse vector and z-intersect
 	mouseVector = N3s3d::getMouseVector(&mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
 	zIntersect = N3s3d::getZIntersection(&mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
-	getCoordinatesFromZIntersection();
+	mousePixelCoordinates = getCoordinatesFromZIntersection(zIntersect);
 	return updateMouseActions(mouseAvailable);
 }
 
@@ -64,8 +115,8 @@ void Scene::render(bool renderBackground, bool renderOAM)
 				// Only render non-empty spots, which are 0 or greater
 				if (sprite.meshNum >= 0)
 				{
-					int i = unwrapArrayIndex(x, y, sceneWidth);
-					if (selection.selectedBackgroundIndices.count(i) > 0 || highlight.getHighlightedNT() == i)
+					int i = getArrayIndexFromXY(x, y, sceneWidth);
+					if (displaySelection->selectedBackgroundIndices.count(i) > 0 || highlight.getHighlightedNT() == i)
 					{
 						N3s3d::setDepthStencilState(true, true, false);
 						N3sApp::gameData->meshes[sprite.meshNum]->render(x * 8, y * 8, sprite.palette, sprite.mirrorH, sprite.mirrorV, { 0,0,0,0 });
@@ -84,7 +135,7 @@ void Scene::render(bool renderBackground, bool renderOAM)
 		{
 			SceneSprite s = sprites[i];
 			// See if sprite is highlighted and write to stencil buffer if so
-			if (selection.selectedSpriteIndices.count(i) > 0 || highlight.getHighlightedOAM() == i)
+			if (displaySelection->selectedSpriteIndices.count(i) > 0 || highlight.getHighlightedOAM() == i)
 			{
 				N3s3d::setDepthStencilState(true, true, false);
 				N3sApp::gameData->meshes[s.meshNum]->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
@@ -101,7 +152,29 @@ void Scene::render(bool renderBackground, bool renderOAM)
 	N3s3d::setGuiProjection();
 	Overlay::setColor(1.0f, 1.0f, 1.0f, 0.3f);
 	Overlay::drawRectangle(0, 0, 1920, 1080); // TODO: How do I get actual screen size again..?
-
+	// Draw selection box, if currently dragging selection
+	if (draggingSelection)
+	{
+		N3s3d::setDepthBufferState(false);
+		Overlay::setColor(1.0f, 1.0f, 1.0f, 0.3f);
+		// Draw differently based on 2D or 3D editing mode
+		if (edittingIn3d)
+		{
+			Overlay::drawRectangle(sel_left, sel_top, sel_right - sel_left, sel_bottom - sel_top);
+		}
+		else
+		{
+			// Draw onto z-axis in pixel-space
+			N3s3d::updateMatricesWithCamera(&mainCamera);
+			Overlay::drawRectangleInScene(sel_left, sel_top, 0, sel_right - sel_left, sel_bottom - sel_top);
+		}
+	}
+	// Render selection boxes around OAM and NT
+	N3s3d::setDepthBufferState(false);
+	N3s3d::updateMatricesWithCamera(&mainCamera);
+	N3s3d::setRasterFillState(false);
+	displaySelection->render(&sprites);
+	N3s3d::setRasterFillState(true);
 }
 
 void Scene::renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights)
@@ -181,7 +254,7 @@ void Scene::selectPreviousPalette()
 		selectedPalette = 7;
 }
 
-void Scene::updateHighlight2d(int x, int y, bool highlightOAM, bool highlightNametable)
+void Scene::updateHighlight2d(Vector2D mouse, bool highlightOAM, bool highlightNametable)
 {
 	// Clear previous highlight
 	highlight.clear();
@@ -191,15 +264,15 @@ void Scene::updateHighlight2d(int x, int y, bool highlightOAM, bool highlightNam
 		for (int i = 0; i < sprites.size(); i++)
 		{
 			SceneSprite s = sprites[i];
-			if (x >= s.x && x < s.x + 8 && y >= s.y && y < s.y + 8)
+			if (mouse.x >= s.x && mouse.x < s.x + 8 && mouse.y >= s.y && mouse.y < s.y + 8)
 				highlight.highlightedSpriteIndices.push_back(i);
 		}
 	}
 	// See if any part of the background intersects selection
 	if (highlightNametable)
 	{
-		if (x >= 0 && x < scenePixelWidth && y >= 0 && y < scenePixelHeight)
-			highlight.highlightedBackgroundIndex = floor(y / 8) * 64 + floor(x / 8);
+		if (mouse.x >= 0 && mouse.x < scenePixelWidth && mouse.y >= 0 && mouse.y < scenePixelHeight)
+			highlight.highlightedBackgroundIndex = floor(mouse.y / 8) * 64 + floor(mouse.x / 8);
 	}
 	// Set the index
 	if (highlight.highlightedBackgroundIndex >= 0 || highlight.highlightedSpriteIndices.size() > 0)
@@ -210,13 +283,15 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 {
 	// If mouse has moved and is available, calculate highlighted items
 	if (InputState::keyboardMouse->hasMouseMoved())
-		updateHighlight2d(mousePixelX, mousePixelY, true, true);
+		updateHighlight2d(mousePixelCoordinates, true, true);
 	// Check left mouse
 	if (mouseAvailable || mouseCaptured)
 	{
 		MouseState state = InputState::keyboardMouse->mouseButtons[left_mouse].state;
 		if (state > 0)
 			mouseCaptured = true;
+		else
+			mouseCaptured = false;
 		int mouseX = InputState::keyboardMouse->mouseX;
 		int mouseY = InputState::keyboardMouse->mouseY;
 		if (mouseCaptured)
@@ -224,6 +299,14 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 			// See if this is a new click
 			if (state == clicked)
 			{
+				// See if OAM or NT is highlighted at all
+				if (highlight.anythingHighlighted())
+				{
+					// See if the current selection is highlighted
+					if(selection->selectedSpriteIndices.count(highlight.getHighlightedOAM()) > 0 ||
+					   selection->selectedBackgroundIndices.count(highlight.getHighlightedNT() > 0))
+						selectionClickedOn = true;
+				}
 				// Capture mod key
 				if (InputState::functions[selection_add].active && InputState::functions[selection_remove].active)
 					modifier = mod_intersect;
@@ -232,49 +315,148 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 				else if (InputState::functions[selection_remove].active)
 					modifier = mod_remove;
 				else
+				{
 					modifier = no_mod;
-				// See if OAM or NT is highlighted at all
-					// See if any objects in highlight are also in selection
-						// If so, set function to move
-						// Otherwise we're selecting in different ways, based on mod key
+				}
+				// Capture Z-intersect at click
+				originMousePixelCoordinates = getCoordinatesFromZIntersection(zIntersect);
 			}
-			if (state == pressed)
+			else if (state == pressed)
 			{
 				// Clear previous selection when appropriate
 				if(modifier == no_mod)
-					selection.clear();
+					selection->clear();
 				// Check for highlight and add to selection
 				if (highlight.getHighlightedOAM() >= 0)
 				{
 					if (modifier == no_mod || modifier == mod_add)
-						selection.selectedSpriteIndices.insert(highlight.getHighlightedOAM());
+						selection->selectedSpriteIndices.insert(highlight.getHighlightedOAM());
 					else if (modifier == mod_remove)
-						selection.selectedSpriteIndices.erase(highlight.getHighlightedOAM());
+						selection->selectedSpriteIndices.erase(highlight.getHighlightedOAM());
 				}
 				else if (highlight.getHighlightedNT() >= 0)
 				{
 					if (modifier == no_mod || modifier == mod_add)
-						selection.selectedSpriteIndices.insert(highlight.getHighlightedNT());
+						selection->selectedBackgroundIndices.insert(highlight.getHighlightedNT());
 					else if (modifier == mod_remove)
-						selection.selectedSpriteIndices.erase(highlight.getHighlightedNT());
+						selection->selectedBackgroundIndices.erase(highlight.getHighlightedNT());
 				}
 			}
-			if (state == dragging)
+			else if (state == dragging)
 			{
-				// If we are already 
+				// If we highlighted any part of our selection, then mouse dragging should move the whole thing
+				if (selectionClickedOn)
+				{
+					// Create function within selection to do this, that makes the most sense
+				}
+				// If a modifier was held down, or no part of selection was highlighted, start drag selection
+				if (!selectionClickedOn)
+				{
+					if(modifier == no_mod)
+						selection->clear();
+					draggingSelection = true;
+					// Calculate the new selection area
+					int x, y, startX, startY;
+					// Branch based on 2D or 3D editing mode
+					if (edittingIn3d)
+					{
+						// Get X&Y or beginning and end of drag in screen-space
+						x = mouseX;
+						y = mouseY;
+						startX = InputState::keyboardMouse->mouseButtons[left_mouse].actionXStart;
+						startY = InputState::keyboardMouse->mouseButtons[left_mouse].actionYStart;
+					}
+					else
+					{
+						// Get X&Y or beginning and end of drag in game-space
+						x = mousePixelCoordinates.x;
+						y = mousePixelCoordinates.y;
+						startX = originMousePixelCoordinates.x;
+						startY = originMousePixelCoordinates.y;
+					}
+					// Set sides of selection
+					if (x > startX)
+					{
+						sel_right = x;
+						sel_left = startX;
+					}
+					else
+					{
+						sel_right = startX;
+						sel_left = x;
+					}
+					if (y > startY)
+					{
+						sel_top = startY;
+						sel_bottom = y;
+					}
+					else
+					{
+						sel_top = y;
+						sel_bottom = startY;
+					}
+					// Get all items current in the selection box in their own selection
+					shared_ptr<Selection> tempSelection = make_shared<Selection>();
+					if (true) // TODO add actual options
+					{
+						for(int i = 0; i < sprites.size(); i++)
+						{
+							SceneSprite s = sprites[i];
+							if (isSpriteIn2dRect(sel_top, sel_left, sel_bottom, sel_right, sprites[i].x, sprites[i].y))
+								tempSelection->selectedSpriteIndices.insert(i);
+						}
+					}
+					if (true)
+					{
+						for (y = 0; y < sceneHeight; y++)
+							for (x = 0; x < sceneWidth; x++)
+								if (isSpriteIn2dRect(sel_top, sel_left, sel_bottom, sel_right, x * 8, y * 8))
+								{
+									int i = getArrayIndexFromXY(x, y, sceneWidth);
+									if(bg[i].meshNum >= 0)
+										tempSelection->selectedBackgroundIndices.insert(i);
+								}
+					}
+					// Set new display selection to be some combination of the two, depending on modifier key
+					switch (modifier)
+					{
+					case mod_add:
+						displaySelection = Selection::getUnion(selection, tempSelection);
+						break;
+					case mod_remove:
+						displaySelection = Selection::getSubtraction(selection, tempSelection);
+						break;
+					case mod_intersect:
+						displaySelection = Selection::getIntersection(selection, tempSelection);
+						break;
+					default:	// No modifier
+						displaySelection = tempSelection;
+						break;
+					}
+				}
 			}
 		}
-		if (!mouseCaptured)
-		{
-			mouseFunction = no_func;
-			modifier = no_mod;
-		}
 	}
+	if(!mouseAvailable || !mouseCaptured)
+	{
+		// Set display selection to the new, real selection if we just stopped dragging
+		if(draggingSelection)
+			selection = displaySelection;
+		mouseFunction = no_func;
+		modifier = no_mod;
+		draggingSelection = false;
+		selectionClickedOn = false;
+	}
+	// The displayed selection is just the current selection if we're not dragging
+	// (This might be redundant if we've just finished dragging, oh well)
+	if (!draggingSelection)
+		displaySelection = selection;
 	return true;
 }
 
-void Scene::getCoordinatesFromZIntersection()
+Vector2D Scene::getCoordinatesFromZIntersection(XMFLOAT3 zIntersect)
 {
+	Vector2D mouse;
 	float xAtIntersect = zIntersect.x;
 	float yAtIntersect = zIntersect.y;
 	// Normalize top-left of all screens to 0,0
@@ -284,9 +466,10 @@ void Scene::getCoordinatesFromZIntersection()
 	xAtIntersect /= sceneDXWidth;
 	yAtIntersect /= sceneDXHeight;
 	// Get "pixel" position of X
-	mousePixelX = floor(scenePixelWidth * xAtIntersect);
+	mouse.x = floor(scenePixelWidth * xAtIntersect);
 	// Get Y, but flip it first (since negative = positive in NES screenspace)
-	mousePixelY = floor(scenePixelHeight * (yAtIntersect * -1));
+	mouse.y = floor(scenePixelHeight * (yAtIntersect * -1));
+	return mouse;
 }
 
 void Highlight::clear()
@@ -324,4 +507,67 @@ void Selection::clear()
 {
 	selectedSpriteIndices.clear();
 	selectedBackgroundIndices.clear();
+}
+
+shared_ptr<Selection> Selection::getUnion(shared_ptr<Selection> a, shared_ptr<Selection> b)
+{
+	shared_ptr<Selection> temp = make_shared<Selection>();
+	for each(int i in a->selectedSpriteIndices)
+		temp->selectedSpriteIndices.insert(i);
+	for each(int i in b->selectedSpriteIndices)
+		temp->selectedSpriteIndices.insert(i);
+	for each(int i in a->selectedBackgroundIndices)
+		temp->selectedBackgroundIndices.insert(i);
+	for each(int i in b->selectedBackgroundIndices)
+		temp->selectedBackgroundIndices.insert(i);
+	return temp;
+}
+
+shared_ptr<Selection> Selection::getSubtraction(shared_ptr<Selection> first, shared_ptr<Selection> second)
+{
+	shared_ptr<Selection> temp = make_shared<Selection>();
+	// Get all selections for first sets
+	temp->selectedSpriteIndices = first->selectedSpriteIndices;
+	temp->selectedBackgroundIndices = first->selectedBackgroundIndices;
+	// Remove any that are also in the second sets
+	for each(int i in second->selectedSpriteIndices)
+		temp->selectedSpriteIndices.erase(i);
+	for each(int i in second->selectedBackgroundIndices)
+		temp->selectedBackgroundIndices.erase(i);
+	return temp;
+}
+
+shared_ptr<Selection> Selection::getIntersection(shared_ptr<Selection> a, shared_ptr<Selection> b)
+{
+	shared_ptr<Selection> temp = make_shared<Selection>();
+	// Add sprite and nt indices if both selections have them
+	for each(int i in a->selectedSpriteIndices)
+	{
+		if(b->selectedSpriteIndices.count(i) > 0)
+			temp->selectedSpriteIndices.insert(i);
+	}
+	for each(int i in b->selectedBackgroundIndices)
+	{
+		if (b->selectedBackgroundIndices.count(i) > 0)
+			temp->selectedBackgroundIndices.insert(i);
+	}
+	return temp;
+}
+
+void Selection::render(vector<SceneSprite> * sprites)
+{
+	// Render all OAM highlights
+	Overlay::setColor(0.0f, 1.0f, 0.0f, 1.0f);
+	for each(int i in selectedSpriteIndices)
+	{
+		SceneSprite s = sprites->at(i);
+		Overlay::drawSpriteSquare(s.x, s.y);
+	}
+	// Render all NT highlights
+	Overlay::setColor(1.0f, 0.0f, 0.0f, 1.0f);
+	for each(int i in selectedBackgroundIndices)
+	{
+		Vector2D pos = unwrapArrayindex(i, sceneWidth);
+		Overlay::drawSpriteSquare(pos.x * 8, pos.y * 8);
+	}
 }

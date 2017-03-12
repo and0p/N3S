@@ -126,7 +126,11 @@ void N3sApp::update(bool runThisNesFrame)
 	if (N3sApp::inputState->functions[tog_game].activatedThisFrame)
 		mode = gameMode;
 	else if (N3sApp::inputState->functions[tog_editor].activatedThisFrame)
+	{
+		if(mode != editorMode)
+			Editor::updateTempScene(snapshot);
 		mode = editorMode;
+	}
 	// See if a game is loaded
 	if (loaded)
 	{

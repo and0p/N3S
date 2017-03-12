@@ -48,11 +48,16 @@ public:
 	unordered_set<int> selectedSpriteIndices;
 	unordered_set<int> selectedBackgroundIndices;
 	void clear();
+	static shared_ptr<Selection> getUnion(shared_ptr<Selection> a, shared_ptr<Selection> b);
+	static shared_ptr<Selection> getSubtraction(shared_ptr<Selection> first, shared_ptr<Selection> second);
+	static shared_ptr<Selection> getIntersection(shared_ptr<Selection> a, shared_ptr<Selection> b);
+	void render(vector<SceneSprite> * sprites);
 };
 
 class Scene {
 public:
 	Scene();
+	Scene(shared_ptr<PpuSnapshot> snapshot);
 	bool update(bool mouseAvailable);
 	void render(bool renderBackground, bool renderOAM);
 	void renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights);
@@ -66,10 +71,11 @@ public:
 	void selectNextPalette();
 	void selectPreviousPalette();
 	Highlight highlight;
-	Selection selection;
-	void updateHighlight2d(int x, int y, bool highlightOAM, bool highlightNametable);
+	shared_ptr<Selection> selection;
+	shared_ptr<Selection> displaySelection;
+	void updateHighlight2d(Vector2D mouse, bool highlightOAM, bool highlightNametable);
 	bool updateMouseActions(bool mouseAvailable);
 private:
 	SceneSprite bg[sceneWidth * sceneHeight];
-	static void getCoordinatesFromZIntersection();
+	static Vector2D Scene::getCoordinatesFromZIntersection(XMFLOAT3 zIntersect);
 };

@@ -22,8 +22,9 @@ public:
 	static void render();
 	static void setScene(int s);
 	static Hue getBackgroundColor();
-private:
 	static interactionOptions oamOptions;
-	static interactionOptions namtetableOptions;
+	static interactionOptions nametableOptions;
+	static void updateTempScene(shared_ptr<PpuSnapshot> snapshot);
+private:
 	static bool mouseAvailable;
 };

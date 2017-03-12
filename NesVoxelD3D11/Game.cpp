@@ -212,6 +212,18 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam, HWND hwnd)
 		case WM_KEYUP:
 			app.recieveKeyInput(wParam, false);
 			break;
+		case WM_SYSKEYDOWN:
+		{
+			if (wParam == VK_MENU)
+				int test = 0;
+			bool previouslyDown = (int)lParam >> 30 & 1;
+			if (!previouslyDown)
+				app.recieveKeyInput(wParam, true);
+			break;
+		}
+		case WM_SYSKEYUP:
+			app.recieveKeyInput(wParam, false);
+			break;
 		case WM_LBUTTONDOWN:
 			app.recieveMouseInput(left_mouse, true);
 			break;

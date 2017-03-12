@@ -276,6 +276,11 @@ void InputState::refreshInput()
 		functions[i].update();
 	}
 	sendNesInput();
+	// DEBUG: Check VK_MENU
+	if (keyboardMouse->keys[VK_MENU]->active)
+		int test = 0;
+	if (functions[selection_remove].active)
+		int testtt = 0;
 }
 
 void InputState::sendNesInput()
@@ -357,9 +362,7 @@ void InputState::createBindings()
 	functions[tog_editor].bindings.push_back({ keyboardMouse->keys[VK_OEM_7] });	// single quote
 
 	// Editor controls
-	functions[selection_add].bindings.push_back({ keyboardMouse->keys[VK_LSHIFT] });
-	functions[selection_add].bindings.push_back({ keyboardMouse->keys[VK_RSHIFT] });
-	functions[selection_remove].bindings.push_back({ keyboardMouse->keys[VK_LSHIFT] });
-	functions[selection_remove].bindings.push_back({ keyboardMouse->keys[VK_RSHIFT] });
+	functions[selection_add].bindings.push_back({ keyboardMouse->keys[VK_SHIFT] });
+	functions[selection_remove].bindings.push_back({ keyboardMouse->keys[VK_MENU] });
 }
 
