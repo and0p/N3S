@@ -259,3 +259,47 @@ void Background::addQuadrant(char * data, bool nameTableSelection)
 	}
 	quadrants.push_back(quadrant);
 }
+
+int PpuSnapshot::getTrueOamTile(int s)
+{
+	int tile = sprites[s].tile;
+	int y = sprites[s].y;
+	if (ctrl.spriteSize16x8)
+	{
+		// In 8x16, pattern table selection is specified by first bit.
+		// Since you can only select even (in base 0) tiles it is free for this purpose.
+		// Actual tile selection is bits 1-7.
+		int patternSelection = tile & 1;
+		// Nestopia tends to give tiles by absolute value, but seemingly only some of the time?
+		// So we need to correct to be sure
+		if (patternSelection && tile < 256)
+			tile += 256;
+		else if (!patternSelection && tile > 255)
+			tile -= 256;
+		if (patternSelection)
+			tile--;
+	}
+	else
+	{
+		// Select tile based on pattern table in CTRL register
+ 		if (tile > 255 && !getOAMSelectAtScanline(y))
+		{
+			tile -= 256;
+		}
+		else if (tile < 256 && getOAMSelectAtScanline(y))
+		{
+			tile += 256;
+		}
+	}
+	return tile;
+}
+
+int PpuSnapshot::getTrueNTTile(int i)
+{
+	Vector2D v = unwrapArrayindex(i, 64);
+	int tile = background.getTile(v.x, v.y, 0).tile;
+	if (ctrl.backgroundNameTable)
+		return tile + 256;
+	else
+		return tile;
+}

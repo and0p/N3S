@@ -60,8 +60,10 @@ Scene::Scene(shared_ptr<PpuSnapshot> snapshot)
 	displaySelection = make_shared<Selection>();
 	// Create scene from snapshot
 	// Grab all OAM
-	for each(OamSprite s in snapshot->sprites)
+	for (int i = 0; i < snapshot->sprites.size(); i++)
 	{
+		OamSprite s = snapshot->sprites[i];
+		int tile = snapshot->getTrueOamTile(i);
 		int id = N3sApp::virtualPatternTable->getSprite(s.tile)->defaultMesh->id; // lol
 		if (id >= 0)
 		{
@@ -75,6 +77,30 @@ Scene::Scene(shared_ptr<PpuSnapshot> snapshot)
 			sprites.push_back(ss);
 		}
 	}
+	// Grab all NT
+	for (int y = 0; y < sceneHeight; y++)
+	{
+		for (int x = 0; x < sceneWidth; x++)
+		{
+			NameTableTile t = snapshot->background.getTile(x, y, 0);
+			int index = getArrayIndexFromXY(x, y, sceneWidth);
+			int tile = snapshot->getTrueNTTile(index);
+			shared_ptr<VirtualSprite> s = N3sApp::virtualPatternTable->getSprite(tile);
+			int id = s->defaultMesh->id;
+			// Add to nametable index
+			SceneSprite ss;
+			ss.x = 0;
+			ss.y = 0;
+			ss.palette = t.palette;
+			ss.meshNum = id;
+			ss.mirrorH = false;
+			ss.mirrorV = false;
+			bg[index] = ss;
+		}
+	}
+	// Grab palette
+	for (int i = 0; i < 8; i++)
+		palettes[i] = snapshot->palette;
 }
 
 bool Scene::update(bool mouseAvailable)
