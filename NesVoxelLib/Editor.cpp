@@ -47,28 +47,6 @@ void Editor::render()
 	scene->render(true, true);
 	// Render overlays
 	scene->renderOverlays(true, true);
-	//// TEST render NT highlight
-	//if (scene->highlight.selectedIndex >= 0)
-	//{
-	//	N3s3d::setShader(overlay);
-	//	N3s3d::setRasterFillState(false);
-	//	// See if it's a OAM or nametable highlight
-	//	if (scene->highlight.getHighlightedOAM() >= 0)
-	//	{
-	//		SceneSprite s = scene->sprites[scene->highlight.getHighlightedOAM()];
-	//		Overlay::setColor(0.0f, 1.0f, 0.0f, 1.0f);
-	//		Overlay::drawSpriteSquare(s.x, s.y);
-	//	}
-	//	else if (scene->highlight.getHighlightedNT() >= 0)
-	//	{
-	//		int xNT = floor(mousePixelX / 8);
-	//		int yNT = floor(mousePixelY / 8);
-	//		Overlay::setColor(1.0f, 0.0f, 0.0f, 0.5f);
-	//		Overlay::drawSpriteSquare(xNT * 8, yNT * 8);
-	//	}
-	//	N3s3d::setRasterFillState(true);
-	//}
-	//// Test highlight effect
 	// Render GUI
 	N3s3d::setDepthBufferState(false);
 	N3s3d::setGuiProjection();

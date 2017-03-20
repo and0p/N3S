@@ -14,6 +14,8 @@ bool mouseCaptured = false;
 
 bool selectionClickedOn = false;
 bool draggingSelection = false;
+bool movingSelection = false;
+int moveX, moveY;
 MouseModifier modifier = no_mod;
 MouseFunction mouseFunction = no_func;
 Vector2D originMousePixelCoordinates;
@@ -199,7 +201,7 @@ void Scene::render(bool renderBackground, bool renderOAM)
 	N3s3d::setDepthBufferState(false);
 	N3s3d::updateMatricesWithCamera(&mainCamera);
 	N3s3d::setRasterFillState(false);
-	displaySelection->render(&sprites);
+	displaySelection->render(&sprites, moveX, moveY);
 	N3s3d::setRasterFillState(true);
 }
 
@@ -373,7 +375,10 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 				// If we highlighted any part of our selection, then mouse dragging should move the whole thing
 				if (selectionClickedOn)
 				{
-					// Create function within selection to do this, that makes the most sense
+					movingSelection = true;
+					// Set the movement amount
+					moveX = mousePixelCoordinates.x - originMousePixelCoordinates.x;
+					moveY = mousePixelCoordinates.y - originMousePixelCoordinates.y;
 				}
 				// If a modifier was held down, or no part of selection was highlighted, start drag selection
 				if (!selectionClickedOn)
@@ -468,16 +473,31 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 		// Set display selection to the new, real selection if we just stopped dragging
 		if(draggingSelection)
 			selection = displaySelection;
+		// Move the items, if we just finished moving
+		if (movingSelection)
+			moveSelection();
 		mouseFunction = no_func;
 		modifier = no_mod;
 		draggingSelection = false;
 		selectionClickedOn = false;
+		movingSelection = false;
+		moveX = 0;
+		moveY = 0;
 	}
 	// The displayed selection is just the current selection if we're not dragging
 	// (This might be redundant if we've just finished dragging, oh well)
 	if (!draggingSelection)
 		displaySelection = selection;
 	return true;
+}
+
+void Scene::moveSelection()
+{
+	for each(int i in selection->selectedSpriteIndices)
+	{
+		sprites[i].x += moveX;
+		sprites[i].y += moveY;
+	}
 }
 
 Vector2D Scene::getCoordinatesFromZIntersection(XMFLOAT3 zIntersect)
@@ -580,14 +600,14 @@ shared_ptr<Selection> Selection::getIntersection(shared_ptr<Selection> a, shared
 	return temp;
 }
 
-void Selection::render(vector<SceneSprite> * sprites)
+void Selection::render(vector<SceneSprite> * sprites, int moveX, int moveY)
 {
 	// Render all OAM highlights
 	Overlay::setColor(0.0f, 1.0f, 0.0f, 1.0f);
 	for each(int i in selectedSpriteIndices)
 	{
 		SceneSprite s = sprites->at(i);
-		Overlay::drawSpriteSquare(s.x, s.y);
+		Overlay::drawSpriteSquare(s.x + moveX, s.y + moveY);
 	}
 	// Render all NT highlights
 	Overlay::setColor(1.0f, 0.0f, 0.0f, 1.0f);
@@ -597,3 +617,5 @@ void Selection::render(vector<SceneSprite> * sprites)
 		Overlay::drawSpriteSquare(pos.x * 8, pos.y * 8);
 	}
 }
+
+

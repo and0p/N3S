@@ -51,7 +51,7 @@ public:
 	static shared_ptr<Selection> getUnion(shared_ptr<Selection> a, shared_ptr<Selection> b);
 	static shared_ptr<Selection> getSubtraction(shared_ptr<Selection> first, shared_ptr<Selection> second);
 	static shared_ptr<Selection> getIntersection(shared_ptr<Selection> a, shared_ptr<Selection> b);
-	void render(vector<SceneSprite> * sprites);
+	void render(vector<SceneSprite> * sprites, int moveX, int moveY);
 };
 
 class Scene {
@@ -75,6 +75,7 @@ public:
 	shared_ptr<Selection> displaySelection;
 	void updateHighlight2d(Vector2D mouse, bool highlightOAM, bool highlightNametable);
 	bool updateMouseActions(bool mouseAvailable);
+	void moveSelection();
 private:
 	SceneSprite bg[sceneWidth * sceneHeight];
 	static Vector2D Scene::getCoordinatesFromZIntersection(XMFLOAT3 zIntersect);
