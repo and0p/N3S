@@ -36,6 +36,7 @@ public:
 	void recieveKeyInput(int key, bool down);
 	void recieveMouseInput(MouseButtons button, bool down);
 	void recieveMouseMovement(int x, int y);
+	void recieveMouseScroll(int delta);
 	XMVECTORF32 getBackgroundColor();
 	retro_game_info *info;
 	static shared_ptr<GameData> gameData;

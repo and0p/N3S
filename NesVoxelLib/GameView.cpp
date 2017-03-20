@@ -2,7 +2,7 @@
 #include "GameView.hpp"
 #include "N3sConsole.hpp"
 
-Camera gameCamera = Camera();
+FreeCamera gameCamera = FreeCamera();
 
 void GameView::update()
 {
@@ -47,7 +47,7 @@ void GameView::render()
 	renderNameTables();
 }
 
-Camera * GameView::getCamera()
+FreeCamera * GameView::getCamera()
 {
 	return &gameCamera;
 }

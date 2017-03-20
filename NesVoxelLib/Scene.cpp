@@ -8,7 +8,7 @@ XMFLOAT3 zIntersect;
 
 Vector2D mousePixelCoordinates;
 
-Camera mainCamera;
+OrbitCamera mainCamera;
 
 bool mouseCaptured = false;
 
@@ -39,7 +39,7 @@ bool isSpriteIn2dRect(int top, int left, int bottom, int right, int x, int y)
 Scene::Scene()
 {
 	// Set camera to default position
-	mainCamera.SetPosition(0, 0, -2);
+	mainCamera.SetPosition(0, 0, 0);
 	// Clear BG with all "blank" (-1) sprites
 	for (int i = 0; i < sceneWidth * sceneHeight; i++)
 	{
@@ -52,7 +52,7 @@ Scene::Scene()
 Scene::Scene(shared_ptr<PpuSnapshot> snapshot)
 {
 	// Set camera to default position
-	mainCamera.SetPosition(0, 0, -2);
+	mainCamera.SetPosition(0, 0, 0);
 	// Clear BG with all "blank" (-1) sprites
 	for (int i = 0; i < sceneWidth * sceneHeight; i++)
 	{
@@ -110,10 +110,18 @@ bool Scene::update(bool mouseAvailable)
 	// Update camera position
 	if (InputState::keyboardMouse->mouseButtons[right_mouse].state > 0)
 	{
-		float xRot = InputState::keyboardMouse->mouseDeltaX / 3;
-		float yRot = InputState::keyboardMouse->mouseDeltaY / 3;
-		mainCamera.AdjustRotation(xRot, 0.0f, yRot);
+		float xRot = InputState::keyboardMouse->mouseDeltaX / 5;
+		float yRot = InputState::keyboardMouse->mouseDeltaY / 5;
+		mainCamera.AdjustRotation(xRot, yRot, 0.0f);
 	}
+	if (InputState::keyboardMouse->mouseButtons[middle_mouse].state > 0)
+	{
+		float xPos = InputState::keyboardMouse->mouseDeltaX / 400;
+		float yPos = InputState::keyboardMouse->mouseDeltaY / 400;
+		mainCamera.AdjustPosition(-xPos, yPos, 0.0f);
+	}
+	// Update camera zoom
+	mainCamera.adjustZoom((float)InputState::keyboardMouse->calculatedWheelDelta / 10);
 	// Update camera math
 	mainCamera.Render();
 	// Calculate mouse vector and z-intersect

@@ -243,10 +243,12 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam, HWND hwnd)
 			app.recieveMouseInput(right_mouse, false);
 			break;
 		case WM_MOUSEMOVE:
-			int x = LOWORD(lParam);
-			int y = HIWORD(lParam);
-			app.recieveMouseMovement(x, y);
-		break;
+			// Send X & Y
+			app.recieveMouseMovement(LOWORD(lParam), HIWORD(lParam));
+			break;
+		case WM_MOUSEWHEEL:
+			app.recieveMouseScroll(GET_WHEEL_DELTA_WPARAM(wParam));
+			break;
 		}
 	}
 }

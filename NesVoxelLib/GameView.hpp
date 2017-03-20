@@ -7,7 +7,7 @@ class GameView {
 public:
 	static void update();
 	static void render();
-	static Camera * getCamera();
+	static FreeCamera * getCamera();
 private:
 	static void parseInput();
 };

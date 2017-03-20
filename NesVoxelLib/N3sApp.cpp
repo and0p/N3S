@@ -227,6 +227,11 @@ void N3sApp::recieveMouseMovement(int x, int y)
 	InputState::keyboardMouse->mouseY = y;
 }
 
+void N3sApp::recieveMouseScroll(int delta)
+{
+	InputState::keyboardMouse->wheelDelta = delta;
+}
+
 XMVECTORF32 N3sApp::getBackgroundColor()
 {
 	Hue hue;

@@ -152,6 +152,8 @@ void KeyboardMouseDevice::update()
 	{
 		mouseButtons[i].update(mouseX, mouseY);
 	}
+	calculatedWheelDelta = wheelDelta / 120;
+	wheelDelta = 0;
 }
 
 bool KeyboardMouseDevice::hasMouseMoved()

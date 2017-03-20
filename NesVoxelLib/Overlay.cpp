@@ -139,7 +139,7 @@ void Overlay::drawVoxelGrid(int spriteX, int spriteY, int voxelPos, gridOrientat
 void Overlay::drawNametableGrid(int x, int y)
 {
 	N3s3d::setRasterFillState(false);
-	N3s3d::updateWorldMatrix(x * pixelSizeW * 8, -y * pixelSizeH * 8, 0);
+	N3s3d::updateWorldMatrix(x * pixelSizeW * 8, -y * pixelSizeH * 8, pixelSizeW * 16);
 	N3s3d::renderMesh(&nametableGridMesh);
 	N3s3d::setRasterFillState(true);
 }

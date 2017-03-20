@@ -97,6 +97,8 @@ public:
 	float mouseDeltaY;
 	shared_ptr<DigitalInput> keys[totalKeys];
 	MouseButton mouseButtons[MouseButtons::MOUSEBUTTONCOUNT];
+	int wheelDelta = 0;
+	float calculatedWheelDelta = 0;
 	void setDown(int key);
 	void setUp(int key);
 	void update();

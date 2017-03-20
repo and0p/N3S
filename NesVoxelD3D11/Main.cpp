@@ -302,6 +302,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		g_game->getAppMessage(message, wParam, lParam, hWnd);
 		break;
 
+	case WM_MOUSEWHEEL:
+		g_game->getAppMessage(message, wParam, lParam, hWnd);
+		break;
+
 	case WM_COMMAND:
 	{
 		switch (LOWORD(wParam))
