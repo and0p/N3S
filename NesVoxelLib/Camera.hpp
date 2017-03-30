@@ -72,4 +72,5 @@ private:
 	XMMATRIX* m_viewMatrix;
 	bool overhead = false;
 	float zoom = 2.0f;
+	XMFLOAT3 cameraPosition;
 };

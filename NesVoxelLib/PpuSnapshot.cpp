@@ -296,7 +296,7 @@ int PpuSnapshot::getTrueOamTile(int s)
 
 int PpuSnapshot::getTrueNTTile(int i)
 {
-	Vector2D v = unwrapArrayindex(i, 64);
+	Vector2D v = unwrapArrayIndex(i, 64);
 	int tile = background.getTile(v.x, v.y, 0).tile;
 	if (ctrl.backgroundNameTable)
 		return tile + 256;

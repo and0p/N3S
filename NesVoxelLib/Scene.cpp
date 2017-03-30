@@ -340,7 +340,7 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 				{
 					// See if the current selection is highlighted
 					if(selection->selectedSpriteIndices.count(highlight.getHighlightedOAM()) > 0 ||
-					   selection->selectedBackgroundIndices.count(highlight.getHighlightedNT() > 0))
+					   selection->selectedBackgroundIndices.count(highlight.getHighlightedNT()) > 0)
 						selectionClickedOn = true;
 				}
 				// Capture mod key
@@ -452,7 +452,8 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 								if (isSpriteIn2dRect(sel_top, sel_left, sel_bottom, sel_right, x * 8, y * 8))
 								{
 									int i = getArrayIndexFromXY(x, y, sceneWidth);
-									if(bg[i].meshNum >= 0)
+									// Check that we actually have something there, and the sprite isn't empty (no mesh)
+									if(bg[i].meshNum >= 0 && N3sApp::gameData->meshes[bg[i].meshNum]->meshExists)
 										tempSelection->selectedBackgroundIndices.insert(i);
 								}
 					}
@@ -483,7 +484,7 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 			selection = displaySelection;
 		// Move the items, if we just finished moving
 		if (movingSelection)
-			moveSelection();
+			moveSelection(true);
 		mouseFunction = no_func;
 		modifier = no_mod;
 		draggingSelection = false;
@@ -499,12 +500,58 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 	return true;
 }
 
-void Scene::moveSelection()
+void Scene::moveSelection(bool copy) // TODO add copy modifier parameter
 {
-	for each(int i in selection->selectedSpriteIndices)
+	// Move or copy OAM sprites
+	if (copy)
 	{
-		sprites[i].x += moveX;
-		sprites[i].y += moveY;
+		// Track indices of new OAM sprites, which will be selected after operation
+		unordered_set<int> newOAMIndices;
+		for each(int i in selection->selectedSpriteIndices)
+		{
+			int newIndex = sprites.size();	// Grab new index
+			SceneSprite newSprite = sprites[i];
+			newSprite.x += moveX;
+			newSprite.y += moveY;
+			sprites.push_back(newSprite);
+			newOAMIndices.insert(newIndex);
+		}
+		selection->selectedSpriteIndices = newOAMIndices;
+	}
+	else
+	{
+		for each(int i in selection->selectedSpriteIndices)
+		{
+			sprites[i].x += moveX;
+			sprites[i].y += moveY;
+		}
+	}
+
+	// Calculate how much the nametable sprites have moved
+	int ntX = roundDownPosOrNeg(moveX / 8);
+	int ntY = roundDownPosOrNeg(moveY / 8);
+	// Cache old values
+	unordered_map<int, SceneSprite> cache;
+	for each(int i in selection->selectedBackgroundIndices)
+	{
+		cache[i] = bg[i];
+	}
+	// Clear old values, if this isn't a duplication
+	for (auto kv : cache)
+	{
+		if (!copy)
+		{
+			bg[kv.first] = { -1, 0, false, false };
+		}
+		selection->selectedBackgroundIndices.erase(kv.first);
+	}
+	// Overwrite NT at new positions
+	for (auto kv : cache)
+	{
+		Vector2D oldXY = unwrapArrayIndex(kv.first, sceneWidth);
+		int newIndex = getArrayIndexFromXY(oldXY.x + ntX, oldXY.y + ntY, sceneWidth);
+		bg[newIndex] = kv.second;
+		selection->selectedBackgroundIndices.insert(newIndex);
 	}
 }
 
@@ -621,9 +668,9 @@ void Selection::render(vector<SceneSprite> * sprites, int moveX, int moveY)
 	Overlay::setColor(1.0f, 0.0f, 0.0f, 1.0f);
 	for each(int i in selectedBackgroundIndices)
 	{
-		Vector2D pos = unwrapArrayindex(i, sceneWidth);
-		Overlay::drawSpriteSquare(pos.x * 8, pos.y * 8);
+		int ntX = roundDownPosOrNeg(moveX / 8);
+		int ntY = roundDownPosOrNeg(moveY / 8);
+		Vector2D pos = unwrapArrayIndex(i, sceneWidth);
+		Overlay::drawSpriteSquare((pos.x + ntX) * 8, (pos.y + ntY) * 8);
 	}
 }
-
-

@@ -149,7 +149,7 @@ void OrbitCamera::AdjustRotation(float x, float y, float z)
 
 XMFLOAT3 OrbitCamera::GetPosition()
 {
-	return XMFLOAT3(targetX, targetY, targetZ);
+	return cameraPosition;
 }
 
 
@@ -169,6 +169,7 @@ void OrbitCamera::Render()
 
 	up = { 0.0f, 1.0f, 0.0f };
 	targetPos = { targetX, targetY, targetZ };
+	XMStoreFloat3(&cameraPosition, targetPos + v); // Store for picking later
 	*m_viewMatrix = XMMatrixLookAtLH(targetPos + v, targetPos, up);
 }
 

@@ -94,6 +94,9 @@
     <ClInclude Include="Gui.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="VoxelEditor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

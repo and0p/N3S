@@ -65,8 +65,16 @@ inline int getArrayIndexFromXY(int x, int y, int arrayWidth)
 	return (y * arrayWidth) + x;
 }
 
-inline Vector2D unwrapArrayindex(int i, int arrayWidth)
+inline Vector2D unwrapArrayIndex(int i, int arrayWidth)
 {
 	float y = floor(i / arrayWidth);
 	return { (float)(i % arrayWidth), y };
+}
+
+inline int roundDownPosOrNeg(float n)
+{
+	if (n < 0)
+		return ceil(n);
+	else
+		return floor(n);
 }

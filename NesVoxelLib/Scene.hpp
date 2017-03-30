@@ -75,7 +75,7 @@ public:
 	shared_ptr<Selection> displaySelection;
 	void updateHighlight2d(Vector2D mouse, bool highlightOAM, bool highlightNametable);
 	bool updateMouseActions(bool mouseAvailable);
-	void moveSelection();
+	void moveSelection(bool copy);
 private:
 	SceneSprite bg[sceneWidth * sceneHeight];
 	static Vector2D Scene::getCoordinatesFromZIntersection(XMFLOAT3 zIntersect);
