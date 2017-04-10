@@ -1,17 +1,18 @@
 #pragma once
 #include "stdafx.h"
 #include "N3s3d.hpp"
+#include "Gamedata.hpp"
 
 using namespace std;
 
 class VoxelEditor {
 public:
-	VoxelEditor(shared_ptr<VoxelMesh> mesh, int pixelX, int pixelY) : mesh(mesh), pixelX(pixelX), pixelY(pixelY) {}
+	VoxelEditor(shared_ptr<SpriteMesh> mesh, int pixelX, int pixelY, OrbitCamera referenceCamera);
 	bool update(bool mouseAvailable);
 	void render();
-	shared_ptr<OrbitCamera> camera;
+	OrbitCamera camera;
 private:
-	shared_ptr<VoxelMesh> mesh;
+	shared_ptr<SpriteMesh> mesh;
 	int pixelX;
 	int pixelY;
 };

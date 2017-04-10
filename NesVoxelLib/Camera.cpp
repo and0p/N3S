@@ -68,7 +68,6 @@ void FreeCamera::Render()
 	float yaw, pitch, roll;
 	XMMATRIX rotationMatrix;
 
-
 	// Setup the vector that points upwards.
 	up = { 0.0f, 1.0f, 0.0f };
 
@@ -82,7 +81,6 @@ void FreeCamera::Render()
 	pitch = m_rotationX * 0.0174532925f;
 	yaw = m_rotationY * 0.0174532925f;
 	roll = m_rotationZ * 0.0174532925f;
-
 
 	// Create the rotation matrix from the yaw, pitch, and roll values.
 	XMMATRIX mtxRotation = XMMatrixRotationRollPitchYaw(roll, pitch, yaw);;
@@ -181,6 +179,23 @@ XMMATRIX OrbitCamera::GetViewMatrix()
 void OrbitCamera::setOverhead(bool o) {
 	overhead = o;
 	// TODO change pitch/yaw if needed?
+}
+
+void OrbitCamera::setZoom(float z)
+{
+	zoom = z;
+}
+
+ViewSide OrbitCamera::getViewSide()
+{
+	if (rotationY >= 45)
+		return view_top;
+	else if (rotationY <= -45)
+		return view_bottom;
+	else if ((rotationX >= -45 && rotationX <= 45))
+		return view_front;
+	else
+		return view_right;
 }
 
 void OrbitCamera::adjustZoom(float amount)

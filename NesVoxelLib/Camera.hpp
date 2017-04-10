@@ -3,6 +3,8 @@
 #pragma once
 #include <malloc.h>
 
+enum ViewSide { view_front, view_back, view_left, view_right, view_top, view_bottom };
+
 using namespace DirectX;
 
 class Camera
@@ -65,7 +67,8 @@ public:
 
 	void setOverhead(bool o);
 	void adjustZoom(float amount);
-
+	void setZoom(float z);
+	ViewSide getViewSide();
 private:
 	float targetX, targetY, targetZ;
 	float rotationX, rotationY;

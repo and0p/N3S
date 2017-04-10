@@ -103,8 +103,8 @@ void Overlay::drawVoxelGrid(int spriteX, int spriteY, int voxelPos, gridOrientat
 	switch (orientation) {
 	case xAxis:
 		// Get true world coords
-		x = -1.0f + (spriteX * pixelSizeW * 8);
-		y = 1.0f - (spriteY * pixelSizeH * 8);
+		x = -1.0f + (spriteX * pixelSizeW);
+		y = 1.0f - (spriteY * pixelSizeH);
 		z = voxelPos * pixelSizeW;
 		// Update world transform based on position and orientation
 		N3s3d::updateWorldMatrix(x, y, z);
@@ -113,8 +113,8 @@ void Overlay::drawVoxelGrid(int spriteX, int spriteY, int voxelPos, gridOrientat
 		break;
 	case yAxis:
 		// Get true world coords
-		x = -1.0f + (spriteX * pixelSizeW * 8);
-		y = 1.0f - (spriteY * pixelSizeH * 8) - (voxelPos * pixelSizeH);
+		x = -1.0f + (spriteX * pixelSizeW);
+		y = 1.0f - (spriteY * pixelSizeH) - (voxelPos * pixelSizeH);
 		z = 0;
 		// Update world transform based on position and orientation
 		N3s3d::updateWorldMatrix(x, y, z, 90, -90, 0, 1);
@@ -123,8 +123,8 @@ void Overlay::drawVoxelGrid(int spriteX, int spriteY, int voxelPos, gridOrientat
 		break;
 	case zAxis:
 		// Get true world coords
-		x = -1.0f + (spriteX * pixelSizeW * 8) + (voxelPos * pixelSizeW);
-		y = 1.0f - (spriteY * pixelSizeH * 8);
+		x = -1.0f + (spriteX * pixelSizeW) + (voxelPos * pixelSizeW);
+		y = 1.0f - (spriteY * pixelSizeH);
 		z = 0;
 		// Update world transform based on position and orientation
 		N3s3d::updateWorldMatrix(x, y, z, 0, -90, 0, 1);

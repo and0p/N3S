@@ -2,6 +2,8 @@
 #include "Scene.hpp"
 #include "Camera.hpp"
 #include "Editor.hpp"
+#include "VoxelEditor.hpp"
+#include "N3sConsole.hpp"
 
 XMVECTOR mouseVector;
 XMFLOAT3 zIntersect;
@@ -19,6 +21,9 @@ int moveX, moveY;
 MouseModifier modifier = no_mod;
 MouseFunction mouseFunction = no_func;
 Vector2D originMousePixelCoordinates;
+
+bool voxelEditing = false;
+shared_ptr<VoxelEditor> voxelEditor;
 
 int sel_top, sel_left, sel_bottom, sel_right;
 
@@ -107,28 +112,36 @@ Scene::Scene(shared_ptr<PpuSnapshot> snapshot)
 
 bool Scene::update(bool mouseAvailable)
 {
-	// Update camera position
-	if (InputState::keyboardMouse->mouseButtons[right_mouse].state > 0)
+	if (!voxelEditing)
 	{
-		float xRot = InputState::keyboardMouse->mouseDeltaX / 5;
-		float yRot = InputState::keyboardMouse->mouseDeltaY / 5;
-		mainCamera.AdjustRotation(xRot, yRot, 0.0f);
+		// Update camera position
+		if (InputState::keyboardMouse->mouseButtons[right_mouse].state > 0)
+		{
+			float xRot = InputState::keyboardMouse->mouseDeltaX / 5;
+			float yRot = InputState::keyboardMouse->mouseDeltaY / 5;
+			mainCamera.AdjustRotation(xRot, yRot, 0.0f);
+		}
+		if (InputState::keyboardMouse->mouseButtons[middle_mouse].state > 0)
+		{
+			float xPos = InputState::keyboardMouse->mouseDeltaX / 400;
+			float yPos = InputState::keyboardMouse->mouseDeltaY / 400;
+			mainCamera.AdjustPosition(-xPos, yPos, 0.0f);
+		}
+		// Update camera zoom
+		mainCamera.adjustZoom((float)InputState::keyboardMouse->calculatedWheelDelta / 10);
+		// Update camera math
+		mainCamera.Render();
+		// Calculate mouse vector and z-intersect
+		mouseVector = N3s3d::getMouseVector(&mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
+		zIntersect = N3s3d::getZIntersection(&mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
+		mousePixelCoordinates = getCoordinatesFromZIntersection(zIntersect);
+		return updateMouseActions(mouseAvailable);
 	}
-	if (InputState::keyboardMouse->mouseButtons[middle_mouse].state > 0)
+	else
 	{
-		float xPos = InputState::keyboardMouse->mouseDeltaX / 400;
-		float yPos = InputState::keyboardMouse->mouseDeltaY / 400;
-		mainCamera.AdjustPosition(-xPos, yPos, 0.0f);
+		voxelEditor->camera.Render();
+		return voxelEditor->update(mouseAvailable);
 	}
-	// Update camera zoom
-	mainCamera.adjustZoom((float)InputState::keyboardMouse->calculatedWheelDelta / 10);
-	// Update camera math
-	mainCamera.Render();
-	// Calculate mouse vector and z-intersect
-	mouseVector = N3s3d::getMouseVector(&mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
-	zIntersect = N3s3d::getZIntersection(&mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
-	mousePixelCoordinates = getCoordinatesFromZIntersection(zIntersect);
-	return updateMouseActions(mouseAvailable);
 }
 
 void Scene::render(bool renderBackground, bool renderOAM)
@@ -136,7 +149,12 @@ void Scene::render(bool renderBackground, bool renderOAM)
 	// Enable depth buffer
 	N3s3d::setDepthBufferState(true);
 	// Update camera math
-	N3s3d::updateMatricesWithCamera(&mainCamera);
+	if (voxelEditing)
+	{
+		N3s3d::updateMatricesWithCamera(&voxelEditor->camera);
+	}
+	else
+		N3s3d::updateMatricesWithCamera(&mainCamera);
 	// Update palette in video card
 	palettes[selectedPalette].updateShaderPalette();
 	// Render background, if enabled
@@ -183,34 +201,43 @@ void Scene::render(bool renderBackground, bool renderOAM)
 			}
 		}
 	}
-	// Render highlight selections / mouse hover
-	N3s3d::setDepthStencilState(false, false, true);
-	N3s3d::setGuiProjection();
-	Overlay::setColor(1.0f, 1.0f, 1.0f, 0.3f);
-	Overlay::drawRectangle(0, 0, 1920, 1080); // TODO: How do I get actual screen size again..?
-	// Draw selection box, if currently dragging selection
-	if (draggingSelection)
+	// Branch based on voxel editing mode
+	if (voxelEditing)
 	{
-		N3s3d::setDepthBufferState(false);
-		Overlay::setColor(1.0f, 1.0f, 1.0f, 0.3f);
-		// Draw differently based on 2D or 3D editing mode
-		if (edittingIn3d)
-		{
-			Overlay::drawRectangle(sel_left, sel_top, sel_right - sel_left, sel_bottom - sel_top);
-		}
-		else
-		{
-			// Draw onto z-axis in pixel-space
-			N3s3d::updateMatricesWithCamera(&mainCamera);
-			Overlay::drawRectangleInScene(sel_left, sel_top, 0, sel_right - sel_left, sel_bottom - sel_top);
-		}
+		voxelEditor->render();
 	}
-	// Render selection boxes around OAM and NT
-	N3s3d::setDepthBufferState(false);
-	N3s3d::updateMatricesWithCamera(&mainCamera);
-	N3s3d::setRasterFillState(false);
-	displaySelection->render(&sprites, moveX, moveY);
-	N3s3d::setRasterFillState(true);
+	else
+	{
+		// Render highlight selections / mouse hover
+		N3s3d::setDepthStencilState(false, false, true);
+		N3s3d::setGuiProjection();
+		Overlay::setColor(1.0f, 1.0f, 1.0f, 0.3f);
+		Overlay::drawRectangle(0, 0, 1920, 1080); // TODO: How do I get actual screen size again..?
+												  // Draw selection box, if currently dragging selection
+		if (draggingSelection)
+		{
+			N3s3d::setDepthBufferState(false);
+			Overlay::setColor(1.0f, 1.0f, 1.0f, 0.3f);
+			// Draw differently based on 2D or 3D editing mode
+			if (edittingIn3d)
+			{
+				Overlay::drawRectangle(sel_left, sel_top, sel_right - sel_left, sel_bottom - sel_top);
+			}
+			else
+			{
+				// Draw onto z-axis in pixel-space
+				N3s3d::updateMatricesWithCamera(&mainCamera);
+				Overlay::drawRectangleInScene(sel_left, sel_top, 0, sel_right - sel_left, sel_bottom - sel_top);
+			}
+		}
+		// Render selection boxes around OAM and NT
+		N3s3d::setDepthBufferState(false);
+		N3s3d::updateMatricesWithCamera(&mainCamera);
+		N3s3d::setRasterFillState(false);
+		displaySelection->render(&sprites, moveX, moveY);
+		N3s3d::setRasterFillState(true);
+
+	}
 }
 
 void Scene::renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights)
@@ -359,20 +386,46 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 			}
 			else if (state == pressed)
 			{
-				// Clear previous selection when appropriate
-				if(modifier == no_mod)
-					selection->clear();
-				// Check for highlight and add to selection
+				// Check for highlight and add to selection or enter voxel editor
 				if (highlight.getHighlightedOAM() >= 0)
 				{
-					if (modifier == no_mod || modifier == mod_add)
+					if (modifier == no_mod && selection->selectedSpriteIndices.size() == 1)
+					{
+						auto selected = selection->selectedSpriteIndices.begin();
+						int s = *selected;
+						if (highlight.getHighlightedOAM() == s)
+						{
+							// Switch to editing that mesh
+							N3sConsole::writeLine("SWITCHED TO EDITOR!");
+							int meshNum = sprites[s].meshNum;
+							shared_ptr<SpriteMesh> mesh = N3sApp::gameData->meshes[meshNum];
+							voxelEditor = make_shared<VoxelEditor>(mesh, sprites[s].x, sprites[s].y, mainCamera);
+							voxelEditing = true;
+						}
+						else
+						{
+							selection->clear();
+							selection->selectedSpriteIndices.insert(highlight.getHighlightedOAM());
+						}
+					}
+					else if (modifier == no_mod)
+					{
+						selection->clear();
+						selection->selectedSpriteIndices.insert(highlight.getHighlightedOAM());
+					}
+					else if (modifier == mod_add)
 						selection->selectedSpriteIndices.insert(highlight.getHighlightedOAM());
 					else if (modifier == mod_remove)
 						selection->selectedSpriteIndices.erase(highlight.getHighlightedOAM());
 				}
 				else if (highlight.getHighlightedNT() >= 0)
 				{
-					if (modifier == no_mod || modifier == mod_add)
+					if (modifier == no_mod)
+					{
+						selection->clear();
+						selection->selectedBackgroundIndices.insert(highlight.getHighlightedNT());
+					}
+					else if (modifier == mod_add)
 						selection->selectedBackgroundIndices.insert(highlight.getHighlightedNT());
 					else if (modifier == mod_remove)
 						selection->selectedBackgroundIndices.erase(highlight.getHighlightedNT());
