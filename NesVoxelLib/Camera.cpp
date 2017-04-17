@@ -176,8 +176,8 @@ XMMATRIX OrbitCamera::GetViewMatrix()
 	return *m_viewMatrix;
 }
 
-void OrbitCamera::setOverhead(bool o) {
-	overhead = o;
+void OrbitCamera::setOverhead(bool value) {
+	overhead = value;
 	// TODO change pitch/yaw if needed?
 }
 
@@ -186,16 +186,30 @@ void OrbitCamera::setZoom(float z)
 	zoom = z;
 }
 
-ViewSide OrbitCamera::getViewSide()
+ViewingAngle OrbitCamera::getViewingAngle()
 {
+	ViewSide x;
+	ViewSide y;
+
+	// Get Y viewing angle
 	if (rotationY >= 45)
-		return view_top;
+		y = v_top;
 	else if (rotationY <= -45)
-		return view_bottom;
-	else if ((rotationX >= -45 && rotationX <= 45))
-		return view_front;
+		y =  v_bottom;
 	else
-		return view_right;
+		y = v_facing;
+
+	// Get X viewing angle
+	if ((rotationX > 315 && rotationX < 360) || (rotationX >= 0 && rotationX <= 45))
+		x = v_front;
+	else if (rotationX > 45 && rotationX <= 135)
+		x = v_right;
+	else if (rotationX > 135 && rotationX <= 225)
+		x = v_back;
+	else
+		x = v_left;
+
+	return{ x, y };
 }
 
 void OrbitCamera::adjustZoom(float amount)

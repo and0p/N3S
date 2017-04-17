@@ -18,6 +18,8 @@ enum inputFunctions {
 	tog_game, tog_editor,
 	cam_left, cam_right, cam_up, cam_down, cam_pan_in, cam_pan_out,
 	selection_add, selection_remove,
+	voxeleditor_moveleft, voxeleditor_moveright, voxeleditor_moveup, voxeleditor_movedown,
+	voxeleditor_movein, voxeleditor_moveout, voxeleditor_setvoxel, voxeleditor_deletevoxel,
 	INPUTCOUNT
 };
 

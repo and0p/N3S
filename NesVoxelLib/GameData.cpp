@@ -44,22 +44,33 @@ void SpriteMesh::setVoxel(int x, int y, int z, int color)
 	}
 }
 
+void SpriteMesh::updateVoxel(int x, int y, int z, int color)
+{
+	setVoxel(x, y, z, color);
+	buildMesh();
+	rebuildZMesh(x, y);
+}
+
 void SpriteMesh::buildZMeshes()
 {
-	int i = 0;
 	for (int y = 0; y < 8; y++)
 	{
 		for (int x = 0; x < 8; x++)
 		{
-			int zArray[32];
-			for (int z = 0; z < 32; z++)
-			{
-				zArray[z] = voxels->getVoxel(x, y, z).color;
-			}
-			zMeshes[i] = GameData::getSharedMesh(zArray);
-			i++;
+			rebuildZMesh(x, y);
 		}
 	}
+}
+
+void SpriteMesh::rebuildZMesh(int x, int y)
+{
+	int i = getArrayIndexFromXY(x, y, 8);
+	int zArray[32];
+	for (int z = 0; z < 32; z++)
+	{
+		zArray[z] = voxels->getVoxel(x, y, z).color;
+	}
+	zMeshes[i] = GameData::getSharedMesh(zArray);
 }
 
 VoxelMesh buildZMesh(int zArray[32])
@@ -352,6 +363,9 @@ string GameData::getJSON()
 
 bool SpriteMesh::buildMesh()
 {
+	// Release old buffer, if this mesh is being changed
+	if (meshExists)
+		mesh.buffer->Release();
 	vector<ColorVertex> vertices;
 	int sideCount = 0;
 	for (int z = 0; z < spriteDepth; z++)
@@ -400,7 +414,8 @@ bool SpriteMesh::buildMesh()
 	if (vertices.size() > 0)
 	{
 		mesh.buffer = N3s3d::createBufferFromColorVertices(&vertices, mesh.size);
-		buildZMeshes();
+		if(!meshExists)
+			buildZMeshes();
 		return true;
 	}
 	else

@@ -51,19 +51,20 @@ public:
 	VoxelMesh mesh;
 	VoxelMesh zMeshes[64];
 	void setVoxel(int x, int y, int z, int color);
+	void updateVoxel(int x, int y, int z, int color);
 	bool buildMesh();
 	bool meshExists = false;
 	void render(int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop);
 	json getJSON();
 private:
 	void buildZMeshes();
-	// void rebuildZMesh(int x, int y);
+	void rebuildZMesh(int x, int y);
 };
 
 class VirtualSprite
 {
 public:
-	VirtualSprite();
+	VirtualSprite() {}
 	VirtualSprite(string chrData, shared_ptr<SpriteMesh> mesh);
 	VirtualSprite(json j, map<int, shared_ptr<SpriteMesh>> meshes);
 	void render(int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop);
