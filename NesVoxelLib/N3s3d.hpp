@@ -12,7 +12,7 @@
 #include "N3sD3DContext.h"
 
 static float pixelSizeW = (2.0f / 256.0f);
-static float pixelSizeH = (2.0f / 240.0f);
+static float pixelSizeH = (2.0f / 240.0f); // normally 240
 
 using namespace DirectX;
 using namespace std;

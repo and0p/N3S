@@ -203,11 +203,11 @@ ViewingAngle OrbitCamera::getViewingAngle()
 	if ((rotationX > 315 && rotationX < 360) || (rotationX >= 0 && rotationX <= 45))
 		x = v_front;
 	else if (rotationX > 45 && rotationX <= 135)
-		x = v_right;
+		x = v_left;
 	else if (rotationX > 135 && rotationX <= 225)
 		x = v_back;
 	else
-		x = v_left;
+		x = v_right;
 
 	return{ x, y };
 }
