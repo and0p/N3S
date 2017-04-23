@@ -1,3 +1,4 @@
+#pragma once
 #include "stdafx.h"
 #include "VoxelEditor.hpp"
 #include "Input.hpp"
@@ -13,9 +14,9 @@ VoxelEditor::VoxelEditor(shared_ptr<SpriteMesh> mesh, int pixelX, int pixelY, Or
 	zSelect = floor(workingZ);
 	// Set world coordinates of VoxelEditor's origin
 	editorX = -1.0f + pixelX * pixelSizeW;
-	editorY = 1.0f - (pixelY + 4) * pixelSizeH;
+	editorY = 1.0f - (pixelY + 4) * pixelSizeW;
 	editorZ = 0.0f;
-	// Use scene camera as rotational reference, but adjust anposition to zero and zoom in
+	// Use scene camera as rotational reference, but adjust position to zero and zoom in
 	camera = referenceCamera;
 	camera.setZoom(0.3f);
 	updateCamera();
@@ -321,7 +322,7 @@ void VoxelEditor::updateCamera()
 	viewingAngle = camera.getViewingAngle();
 	camera.SetPosition(
 		editorX + (workingX * pixelSizeW),
-		editorY - (workingY * pixelSizeH),
-		editorZ + (workingZ * pixelSizeH)
+		editorY - (workingY * pixelSizeW),
+		editorZ + (workingZ * pixelSizeW)
 	);
 }

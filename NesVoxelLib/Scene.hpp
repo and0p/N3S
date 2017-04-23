@@ -13,7 +13,7 @@ const int scenePixelWidth = 512;
 const int scenePixelHeight = 480;
 
 const int sceneDXWidth = pixelSizeW * 8 * sceneWidth;
-const int sceneDXHeight = pixelSizeH * 8 * sceneHeight;
+const int sceneDXHeight = pixelSizeW * 8 * sceneHeight;
 
 enum MouseModifier { no_mod, mod_add, mod_remove, mod_intersect };
 enum MouseFunction { no_func, move_func, select_new, select_add, select_sub, select_intersect };

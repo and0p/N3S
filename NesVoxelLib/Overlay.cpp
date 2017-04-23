@@ -86,7 +86,7 @@ void Overlay::drawVoxelPreview(int x, int y, int z)
 {
 	// Get true coordinates
 	float xf = -1.0f + (pixelSizeW * x);
-	float yf = 1.0f - (pixelSizeH * y);
+	float yf = 1.0f - (pixelSizeW * y);
 	float zf = (float)z * pixelSizeW;
 	// Update world matrix
 	N3s3d::updateWorldMatrix(xf, yf, zf);
@@ -104,7 +104,7 @@ void Overlay::drawVoxelGrid(int spriteX, int spriteY, int voxelPos, gridOrientat
 	case xAxis:
 		// Get true world coords
 		x = -1.0f + (spriteX * pixelSizeW);
-		y = 1.0f - (spriteY * pixelSizeH);
+		y = 1.0f - (spriteY * pixelSizeW);
 		z = voxelPos * pixelSizeW;
 		// Update world transform based on position and orientation
 		N3s3d::updateWorldMatrix(x, y, z);
@@ -114,7 +114,7 @@ void Overlay::drawVoxelGrid(int spriteX, int spriteY, int voxelPos, gridOrientat
 	case yAxis:
 		// Get true world coords
 		x = -1.0f + (spriteX * pixelSizeW);
-		y = 1.0f - (spriteY * pixelSizeH) - (voxelPos * pixelSizeH);
+		y = 1.0f - (spriteY * pixelSizeW) - (voxelPos * pixelSizeW);
 		z = 0;
 		// Update world transform based on position and orientation
 		N3s3d::updateWorldMatrix(x, y, z, 90, -90, 0, 1);
@@ -124,7 +124,7 @@ void Overlay::drawVoxelGrid(int spriteX, int spriteY, int voxelPos, gridOrientat
 	case zAxis:
 		// Get true world coords
 		x = -1.0f + (spriteX * pixelSizeW) + (voxelPos * pixelSizeW);
-		y = 1.0f - (spriteY * pixelSizeH);
+		y = 1.0f - (spriteY * pixelSizeW);
 		z = 0;
 		// Update world transform based on position and orientation
 		N3s3d::updateWorldMatrix(x, y, z, 0, -90, 0, 1);
@@ -139,7 +139,7 @@ void Overlay::drawVoxelGrid(int spriteX, int spriteY, int voxelPos, gridOrientat
 void Overlay::drawNametableGrid(int x, int y)
 {
 	N3s3d::setRasterFillState(false);
-	N3s3d::updateWorldMatrix(x * pixelSizeW * 8, -y * pixelSizeH * 8, pixelSizeW * 16);
+	N3s3d::updateWorldMatrix(x * pixelSizeW * 8, -y * pixelSizeW * 8, pixelSizeW * 16);
 	N3s3d::renderMesh(&nametableGridMesh);
 	N3s3d::setRasterFillState(true);
 }
@@ -157,9 +157,9 @@ void Overlay::drawRectangle(int x, int y, int width, int height)
 void Overlay::drawRectangleInScene(int x, int y, int z, int width, int height)
 {
 	N3s3d::updateWorldMatrix(
-		-1.0f + x * pixelSizeW, 1.0f - (y * pixelSizeH), z * pixelSizeW,
+		-1.0f + x * pixelSizeW, 1.0f - (y * pixelSizeW), z * pixelSizeW,
 		0, 0, 0,
-		width * pixelSizeW, height * pixelSizeH, 1);
+		width * pixelSizeW, height * pixelSizeW, 1);
 	N3s3d::renderMesh(&rectangleMesh);
 }
 
@@ -167,7 +167,7 @@ void Overlay::drawSpriteSquare(int x, int y)
 {
 	// Get true coordinates
 	float xf = -1.0f + (pixelSizeW * x);
-	float yf = 1.0f - (pixelSizeH * y);
+	float yf = 1.0f - (pixelSizeW * y);
 	// Update world matrix
 	N3s3d::updateWorldMatrix(xf, yf, 0.0f);
 	// Render character
@@ -232,8 +232,8 @@ void buildVoxelPreviewMesh()
 	// Add left side
 	v1.Pos = XMFLOAT4(0, 0, 0 + pixelSizeW, 1.0f);
 	v2.Pos = XMFLOAT4(0, 0, 0, 1.0f);
-	v3.Pos = XMFLOAT4(0, 0 - pixelSizeH, 0, 1.0f);
-	v4.Pos = XMFLOAT4(0, 0 - pixelSizeH, 0 + pixelSizeW, 1.0f);
+	v3.Pos = XMFLOAT4(0, 0 - pixelSizeW, 0, 1.0f);
+	v4.Pos = XMFLOAT4(0, 0 - pixelSizeW, 0 + pixelSizeW, 1.0f);
 	vertices.push_back(v1);
 	vertices.push_back(v2);
 	vertices.push_back(v4);
@@ -243,8 +243,8 @@ void buildVoxelPreviewMesh()
 	// Add right side
 	v1.Pos = XMFLOAT4(0 + pixelSizeW, 0, 0, 1.0f);
 	v2.Pos = XMFLOAT4(0 + pixelSizeW, 0, 0 + pixelSizeW, 1.0f);
-	v3.Pos = XMFLOAT4(0 + pixelSizeW, 0 - pixelSizeH, 0 + pixelSizeW, 1.0f);
-	v4.Pos = XMFLOAT4(0 + pixelSizeW, 0 - pixelSizeH, 0, 1.0f);
+	v3.Pos = XMFLOAT4(0 + pixelSizeW, 0 - pixelSizeW, 0 + pixelSizeW, 1.0f);
+	v4.Pos = XMFLOAT4(0 + pixelSizeW, 0 - pixelSizeW, 0, 1.0f);
 	vertices.push_back(v1);
 	vertices.push_back(v2);
 	vertices.push_back(v4);
@@ -263,10 +263,10 @@ void buildVoxelPreviewMesh()
 	vertices.push_back(v3);
 	vertices.push_back(v4);
 	// Add bottom side
-	v1.Pos = XMFLOAT4(0, 0 - pixelSizeH, 0, 1.0f);
-	v2.Pos = XMFLOAT4(0 + pixelSizeW, 0 - pixelSizeH, 0, 1.0f);
-	v3.Pos = XMFLOAT4(0 + pixelSizeW, 0 - pixelSizeH, 0 + pixelSizeW, 1.0f);
-	v4.Pos = XMFLOAT4(0, 0 - pixelSizeH, 0 + pixelSizeW, 1.0f);
+	v1.Pos = XMFLOAT4(0, 0 - pixelSizeW, 0, 1.0f);
+	v2.Pos = XMFLOAT4(0 + pixelSizeW, 0 - pixelSizeW, 0, 1.0f);
+	v3.Pos = XMFLOAT4(0 + pixelSizeW, 0 - pixelSizeW, 0 + pixelSizeW, 1.0f);
+	v4.Pos = XMFLOAT4(0, 0 - pixelSizeW, 0 + pixelSizeW, 1.0f);
 	vertices.push_back(v1);
 	vertices.push_back(v2);
 	vertices.push_back(v4);
@@ -276,8 +276,8 @@ void buildVoxelPreviewMesh()
 	// Add front side
 	v1.Pos = XMFLOAT4(0, 0, 0, 1.0f);
 	v2.Pos = XMFLOAT4(0 + pixelSizeW, 0, 0, 1.0f);
-	v3.Pos = XMFLOAT4(0 + pixelSizeW, 0 - pixelSizeH, 0, 1.0f);
-	v4.Pos = XMFLOAT4(0, 0 - pixelSizeH, 0, 1.0f);
+	v3.Pos = XMFLOAT4(0 + pixelSizeW, 0 - pixelSizeW, 0, 1.0f);
+	v4.Pos = XMFLOAT4(0, 0 - pixelSizeW, 0, 1.0f);
 	vertices.push_back(v1);
 	vertices.push_back(v2);
 	vertices.push_back(v4);
@@ -287,8 +287,8 @@ void buildVoxelPreviewMesh()
 	// Add back side
 	v1.Pos = XMFLOAT4(0 + pixelSizeW, 0, 0 + pixelSizeW, 1.0f);
 	v2.Pos = XMFLOAT4(0, 0, 0 + pixelSizeW, 1.0f);
-	v3.Pos = XMFLOAT4(0, 0 - pixelSizeH, 0 + pixelSizeW, 1.0f);
-	v4.Pos = XMFLOAT4(0 + pixelSizeW, 0 - pixelSizeH, 0 + pixelSizeW, 1.0f);
+	v3.Pos = XMFLOAT4(0, 0 - pixelSizeW, 0 + pixelSizeW, 1.0f);
+	v4.Pos = XMFLOAT4(0 + pixelSizeW, 0 - pixelSizeW, 0 + pixelSizeW, 1.0f);
 	vertices.push_back(v1);
 	vertices.push_back(v2);
 	vertices.push_back(v4);
@@ -311,14 +311,14 @@ void buildGridMeshes()
 	for (float i = 0; i < 9; i += 1)
 	{
 		// Add horizontal line
-		v1.Pos = XMFLOAT4(0, i * -pixelSizeH, 0, 1.0f);
-		v2.Pos = XMFLOAT4(pixelSizeW * 8, i * -pixelSizeH, 0, 1.0f);
+		v1.Pos = XMFLOAT4(0, i * -pixelSizeW, 0, 1.0f);
+		v2.Pos = XMFLOAT4(pixelSizeW * 8, i * -pixelSizeW, 0, 1.0f);
 		vertices.push_back(v1);
 		vertices.push_back(v2);
 		vertices.push_back(v1);
 		// Add vertical line
 		v1.Pos = XMFLOAT4(i * pixelSizeW, 0, 0, 1.0f);
-		v2.Pos = XMFLOAT4(i * pixelSizeW, 8 * -pixelSizeH, 0, 1.0f);
+		v2.Pos = XMFLOAT4(i * pixelSizeW, 8 * -pixelSizeW, 0, 1.0f);
 		vertices.push_back(v1);
 		vertices.push_back(v2);
 		vertices.push_back(v1);
@@ -335,8 +335,8 @@ void buildGridMeshes()
 	// Add horizontal lines
 	for (int i = 0; i < 9; i++)
 	{
-		v1.Pos = XMFLOAT4(0, i * -pixelSizeH, 0, 1.0f);
-		v2.Pos = XMFLOAT4(pixelSizeW * 32, i * -pixelSizeH, 0, 1.0f);
+		v1.Pos = XMFLOAT4(0, i * -pixelSizeW, 0, 1.0f);
+		v2.Pos = XMFLOAT4(pixelSizeW * 32, i * -pixelSizeW, 0, 1.0f);
 		vertices.push_back(v1);
 		vertices.push_back(v2);
 		vertices.push_back(v1);
@@ -345,7 +345,7 @@ void buildGridMeshes()
 	for (int i = 0; i < 33; i++)
 	{
 		v1.Pos = XMFLOAT4(i * pixelSizeW, 0, 0, 1.0f);
-		v2.Pos = XMFLOAT4(i * pixelSizeW, -8 * pixelSizeH, 0, 1.0f);
+		v2.Pos = XMFLOAT4(i * pixelSizeW, -8 * pixelSizeW, 0, 1.0f);
 		vertices.push_back(v1);
 		vertices.push_back(v2);
 		vertices.push_back(v1);
@@ -360,7 +360,7 @@ void buildGridMeshes()
 	vertices.clear();
 
 	float spriteWidth = pixelSizeW * 8;
-	float spriteHeight = pixelSizeH * 8;
+	float spriteHeight = pixelSizeW * 8;
 
 	// Add horizontal lines
 	for (float i = 0; i < 31; i++)

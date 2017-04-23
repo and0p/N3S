@@ -113,7 +113,7 @@ VoxelMesh buildZMesh(int zArray[32])
 void buildSide(vector<ColorVertex> * vertices, int x, int y, int z, int color, VoxelSide side) {
 	// Translate voxel-space xyz into model-space based on pixel size in 3d space, phew
 	float xf = x * pixelSizeW;
-	float yf = y * -pixelSizeH;
+	float yf = y * -pixelSizeW;
 	float zf = z * pixelSizeW;
 	// Init 4 vertices
 	ColorVertex v1, v2, v3, v4;
@@ -145,14 +145,14 @@ void buildSide(vector<ColorVertex> * vertices, int x, int y, int z, int color, V
 	case VoxelSide::left:
 		v1.Pos = XMFLOAT4(xf, yf, zf + pixelSizeW, 1.0f);
 		v2.Pos = XMFLOAT4(xf, yf, zf, 1.0f);
-		v3.Pos = XMFLOAT4(xf, yf - pixelSizeH, zf, 1.0f);
-		v4.Pos = XMFLOAT4(xf, yf - pixelSizeH, zf + pixelSizeW, 1.0f);
+		v3.Pos = XMFLOAT4(xf, yf - pixelSizeW, zf, 1.0f);
+		v4.Pos = XMFLOAT4(xf, yf - pixelSizeW, zf + pixelSizeW, 1.0f);
 		break;
 	case VoxelSide::right:
 		v1.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf, 1.0f);
 		v2.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf + pixelSizeW, 1.0f);
-		v3.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeH, zf + pixelSizeW, 1.0f);
-		v4.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeH, zf, 1.0f);
+		v3.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeW, zf + pixelSizeW, 1.0f);
+		v4.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeW, zf, 1.0f);
 		break;
 	case VoxelSide::top:
 		v1.Pos = XMFLOAT4(xf, yf, zf + pixelSizeW, 1.0f);
@@ -161,22 +161,22 @@ void buildSide(vector<ColorVertex> * vertices, int x, int y, int z, int color, V
 		v4.Pos = XMFLOAT4(xf, yf, zf, 1.0f);
 		break;
 	case VoxelSide::bottom:
-		v1.Pos = XMFLOAT4(xf, yf - pixelSizeH, zf, 1.0f);
-		v2.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeH, zf, 1.0f);
-		v3.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeH, zf + pixelSizeW, 1.0f);
-		v4.Pos = XMFLOAT4(xf, yf - pixelSizeH, zf + pixelSizeW, 1.0f);
+		v1.Pos = XMFLOAT4(xf, yf - pixelSizeW, zf, 1.0f);
+		v2.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeW, zf, 1.0f);
+		v3.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeW, zf + pixelSizeW, 1.0f);
+		v4.Pos = XMFLOAT4(xf, yf - pixelSizeW, zf + pixelSizeW, 1.0f);
 		break;
 	case VoxelSide::front:
 		v1.Pos = XMFLOAT4(xf, yf, zf, 1.0f);
 		v2.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf, 1.0f);
-		v3.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeH, zf, 1.0f);
-		v4.Pos = XMFLOAT4(xf, yf - pixelSizeH, zf, 1.0f);
+		v3.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeW, zf, 1.0f);
+		v4.Pos = XMFLOAT4(xf, yf - pixelSizeW, zf, 1.0f);
 		break;
 	case VoxelSide::back:
 		v1.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf + pixelSizeW, 1.0f);
 		v2.Pos = XMFLOAT4(xf, yf, zf + pixelSizeW, 1.0f);
-		v3.Pos = XMFLOAT4(xf, yf - pixelSizeH, zf + pixelSizeW, 1.0f);
-		v4.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeH, zf + pixelSizeW, 1.0f);
+		v3.Pos = XMFLOAT4(xf, yf - pixelSizeW, zf + pixelSizeW, 1.0f);
+		v4.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeW, zf + pixelSizeW, 1.0f);
 		break;
 	}
 	vertices->push_back(v1);
@@ -636,12 +636,12 @@ void SpriteMesh::render(int x, int y, int palette, bool mirrorH, bool mirrorV, C
 			N3s3d::selectPalette(palette);
 			float posX, posY;
 			posX = -1.0f + (pixelSizeW * x);
-			posY = 1.0f - (pixelSizeH * y);
+			posY = 1.0f - (pixelSizeW * y);
 			N3s3d::updateMirroring(mirrorH, mirrorV);
 			if (mirrorH)
 				posX += (pixelSizeW * 8);
 			if (mirrorV)
-				posY -= (pixelSizeH * 8);
+				posY -= (pixelSizeW * 8);
 			N3s3d::updateWorldMatrix(posX, posY, 0);
 			N3s3d::renderMesh(&mesh);
 		}
@@ -667,7 +667,7 @@ void SpriteMesh::render(int x, int y, int palette, bool mirrorH, bool mirrorV, C
 						meshY = posY + crop.top;
 					if (zMeshes[(meshY * 8) + meshX].buffer != nullptr)
 					{
-						N3s3d::updateWorldMatrix(-1.0f + ((x + posX) * pixelSizeW), 1.0f - ((y + posY) * pixelSizeH), 0);
+						N3s3d::updateWorldMatrix(-1.0f + ((x + posX) * pixelSizeW), 1.0f - ((y + posY) * pixelSizeW), 0);
 						N3s3d::renderMesh(&zMeshes[(meshY * 8) + meshX]);
 					}
 				}
