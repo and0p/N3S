@@ -61,6 +61,8 @@ struct Vector2D {
 	float y;
 };
 
+
+
 inline int getArrayIndexFromXY(int x, int y, int arrayWidth)
 {
 	return (y * arrayWidth) + x;

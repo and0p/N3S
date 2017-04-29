@@ -20,6 +20,15 @@ using namespace std;
 enum ShaderType { color = 0, overlay = 1 };
 const int shaderCount = 2;	// UPDATE THIS WHEN ADDING SHADERS
 
+enum PlaneAxis { x_axis, y_axis, z_axis };
+
+struct Vector3D {
+	float x;
+	float y;
+	float z;
+};
+
+
 struct ColorVertex {
 	XMFLOAT4 Pos;
 	XMFLOAT4 Col;
@@ -96,7 +105,8 @@ public:
 	static D3D11_VIEWPORT viewport;
 	static void updateViewport(D3D11_VIEWPORT viewport);
 	static XMVECTOR getMouseVector(Camera * camera, int mouseX, int mouseY);
-	static XMFLOAT3 getZIntersection(Camera * camera, int mouseX, int mouseY);
+	static XMFLOAT3 getPlaneIntersection(PlaneAxis axis, int pixel, Camera * camera, int mouseX, int mouseY);
+	static Vector3D getPixelCoordsFromFloat3(XMFLOAT3 pos);
 private:
 	static void initShaders();
 	static void initShaderExtras();
