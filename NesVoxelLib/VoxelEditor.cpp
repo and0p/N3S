@@ -27,6 +27,12 @@ bool VoxelEditor::update(bool mouseAvailable)
 	// Check keys to shift working position
 	adjustWorkingPositionAnalog(InputState::functions[voxeleditor_moveright].value, InputState::functions[voxeleditor_movedown].value, 0);
 	adjustWorkingPositionAnalog(-InputState::functions[voxeleditor_moveleft].value, -InputState::functions[voxeleditor_moveup].value, 0);
+	if (InputState::keyboardMouse->mouseButtons[middle_mouse].state > 0)
+	{
+		float xPos = InputState::keyboardMouse->mouseDeltaX / 20;
+		float yPos = InputState::keyboardMouse->mouseDeltaY / 20;
+		adjustWorkingPositionAnalog(-xPos, -yPos, 0);
+	}
 
 	if (InputState::keyboardMouse->calculatedWheelDelta != 0)
 		adjustWorkingPosition(0, 0, InputState::keyboardMouse->calculatedWheelDelta);
@@ -144,7 +150,7 @@ void VoxelEditor::adjustWorkingPosition(int x, int y, int z)
 			workingZ -= x;
 			break;
 		}
-		workingZ += z;
+		workingY += z;
 	}
 	else if (viewingAngle.y == v_bottom)
 	{
@@ -167,7 +173,7 @@ void VoxelEditor::adjustWorkingPosition(int x, int y, int z)
 			workingZ -= x;
 			break;
 		}
-		workingZ -= z;
+		workingY -= z;
 	}
 	else // front
 	{
@@ -183,11 +189,11 @@ void VoxelEditor::adjustWorkingPosition(int x, int y, int z)
 			break;
 		case v_right:
 			workingZ += x;
-			workingX += z;
+			workingX -= z;
 			break;
 		case v_left:
 			workingZ -= x;
-			workingX -= z;
+			workingX += z;
 			break;
 		}
 		workingY += y; // Up is always up from the sides
