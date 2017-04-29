@@ -652,7 +652,7 @@ XMVECTOR N3s3d::getMouseVector(Camera * camera, int mouseX, int mouseY)
 	return XMVector3Unproject(v, 0, 0, viewport.Width, viewport.Height, 0.0f, 1.0f, projectionMatrix, viewMatrix, worldMatrix);
 }
 
-XMFLOAT3 N3s3d::getZIntersection(Camera * camera, int mouseX, int mouseY)
+XMFLOAT3 N3s3d::getPlaneIntersection(PlaneAxis axis, int pixel, Camera * camera, int mouseX, int mouseY)
 {
 	// Get mouse vector and store as XMFLOAT3
 	XMFLOAT3 mF;
@@ -662,19 +662,55 @@ XMFLOAT3 N3s3d::getZIntersection(Camera * camera, int mouseX, int mouseY)
 	XMFLOAT3 pos = camera->GetPosition();
 	origin = { pos.x, pos.y, pos.z, 0.0f };
 	distant = { pos.x + (mF.x * 10), pos.y + (mF.y * 10), pos.z + (mF.z * 10) };
-	// Create a plane on the z-axis with 3 XMVectors
+	// Create a plane on the specified axis with 3 vectors
 	XMVECTOR c1, c2, c3;
-	XMFLOAT3 source = { 0.0f, 0.0f, 0.0f };
-	c1 = XMLoadFloat3(&source);
-	source = { 0.0f, 1.0f, 0.0f };
-	c2 = XMLoadFloat3(&source);
-	source = { 1.0f, 0.0f, 0.0f };
-	c3 = XMLoadFloat3(&source);
+	XMFLOAT3 source;
+	float x, y, z;
+	switch (axis)
+	{
+	case x_axis:
+		x = -1.0f + (pixelSizeW * pixel) + (pixelSizeW * 0.5f);
+		source = { x, 0.0f, 0.0f };
+		c1 = XMLoadFloat3(&source);
+		source = { x, 0.0f, 1.0f };
+		c2 = XMLoadFloat3(&source);
+		source = { x, 1.0f, 0.0f };
+		c3 = XMLoadFloat3(&source);
+		break;
+	case y_axis:
+		y = 1.0f - (pixelSizeW * pixel) - (pixelSizeW * 0.5f);
+		source = { 0.0f, y, 0.0f };
+		c1 = XMLoadFloat3(&source);
+		source = { 0.0f, y, 1.0f };
+		c2 = XMLoadFloat3(&source);
+		source = { 1.0f, y, 0.0f };
+		c3 = XMLoadFloat3(&source);
+		break;
+	case z_axis:
+		z = 0.0f + (pixelSizeW * pixel) + (pixelSizeW * 0.5f);
+		source = { 0.0f, 0.0f, z };
+		c1 = XMLoadFloat3(&source);
+		source = { 0.0f, 1.0f, z };
+		c2 = XMLoadFloat3(&source);
+		source = { 1.0f, 0.0f, z };
+		c3 = XMLoadFloat3(&source);
+		break;
+	}
 	XMVECTOR plane = XMPlaneFromPoints(c1, c2, c3);
 	// Return float3 of where line from mouse/camera intersects the z-axis at 0
 	XMFLOAT3 r;
 	XMStoreFloat3(&r, XMPlaneIntersectLine(plane, origin, distant));
 	return r;
+}
+
+Vector3D N3s3d::getPixelCoordsFromFloat3(XMFLOAT3 pos)
+{
+	Vector3D v = {
+		roundDownPosOrNeg((pos.x + 1.0f) / pixelSizeW),
+		-1 * roundDownPosOrNeg((pos.y - 1.0f) / pixelSizeW),
+		roundDownPosOrNeg((pos.z / pixelSizeW))
+	};
+	return v;
 }
 
 void N3s3d::renderMesh(VoxelMesh *voxelMesh) {

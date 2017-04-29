@@ -24,9 +24,32 @@ VoxelEditor::VoxelEditor(shared_ptr<SpriteMesh> mesh, int pixelX, int pixelY, Or
 
 bool VoxelEditor::update(bool mouseAvailable)
 {
-	// Check keys to shift working position
-	adjustWorkingPositionAnalog(InputState::functions[voxeleditor_moveright].value, InputState::functions[voxeleditor_movedown].value, 0);
-	adjustWorkingPositionAnalog(-InputState::functions[voxeleditor_moveleft].value, -InputState::functions[voxeleditor_moveup].value, 0);
+	// Check for camera rotation
+	if (InputState::keyboardMouse->mouseButtons[right_mouse].state > 0)
+	{
+		float xRot = InputState::keyboardMouse->mouseDeltaX / 5;
+		float yRot = InputState::keyboardMouse->mouseDeltaY / 5;
+		camera.AdjustRotation(xRot, yRot, 0.0f);
+	}
+	// Check for camera panning, and pan along editing plane
+	if (InputState::keyboardMouse->mouseButtons[middle_mouse].state > 0)
+	{
+		float xPan = InputState::keyboardMouse->mouseDeltaX / 5;
+		float yPan = InputState::keyboardMouse->mouseDeltaY / 5;
+		// Pan along plane
+		adjustWorkingPositionAnalog(xPan, yPan, 0);
+	}
+	// Select point on editor plane using mouse or buttons
+	if (InputState::keyboardMouse->hasMouseMoved())
+	{
+		
+	}
+	else
+	{
+		// Check keys to shift working position
+		adjustWorkingPositionAnalog(InputState::functions[voxeleditor_moveright].value, InputState::functions[voxeleditor_movedown].value, 0);
+		adjustWorkingPositionAnalog(-InputState::functions[voxeleditor_moveleft].value, -InputState::functions[voxeleditor_moveup].value, 0);
+	}
 
 	if (InputState::keyboardMouse->calculatedWheelDelta != 0)
 		adjustWorkingPosition(0, 0, InputState::keyboardMouse->calculatedWheelDelta);
@@ -52,11 +75,17 @@ void VoxelEditor::render()
 	N3s3d::setShader(overlay);
 	N3s3d::updateMatricesWithCamera(&camera);
 	// Check which side the camera is facing and draw appropriate guides
-	// TEST
 	Overlay::setColor(1.0f, 1.0f, 1.0f, 0.2f);
 	N3s3d::setRasterFillState(true);
 	Overlay::drawVoxelPreview(pixelX + xSelect, pixelY + ySelect, zSelect);
 	N3s3d::setRasterFillState(false);
+	// TEST draw where the mouse is intersecting the editor plane
+	int mouseX = InputState::keyboardMouse->mouseX;
+	int mouseY = InputState::keyboardMouse->mouseY;
+	Vector3D v3d =
+		N3s3d::getPixelCoordsFromFloat3(N3s3d::getPlaneIntersection(z_axis, zSelect, &camera, mouseX, mouseY));
+	Overlay::setColor(0.5f, 0.5f, 0.5f, 1.0f);
+	Overlay::drawVoxelPreview(v3d.x, v3d.y, v3d.z);
 	if (viewingAngle.y == v_top)
 	{
 		N3s3d::setDepthBufferState(false);
@@ -313,13 +342,6 @@ void VoxelEditor::changeLayers(int amount)
 
 void VoxelEditor::updateCamera()
 {
-	if (InputState::keyboardMouse->mouseButtons[right_mouse].state > 0)
-	{
-		float xRot = InputState::keyboardMouse->mouseDeltaX / 5;
-		float yRot = InputState::keyboardMouse->mouseDeltaY / 5;
-		camera.AdjustRotation(xRot, yRot, 0.0f);
-	}
-	viewingAngle = camera.getViewingAngle();
 	camera.SetPosition(
 		editorX + (workingX * pixelSizeW),
 		editorY - (workingY * pixelSizeW),

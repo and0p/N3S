@@ -133,7 +133,7 @@ bool Scene::update(bool mouseAvailable)
 		mainCamera.Render();
 		// Calculate mouse vector and z-intersect
 		mouseVector = N3s3d::getMouseVector(&mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
-		zIntersect = N3s3d::getZIntersection(&mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
+		zIntersect = N3s3d::getPlaneIntersection(z_axis, 0, &mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
 		mousePixelCoordinates = getCoordinatesFromZIntersection(zIntersect);
 		return updateMouseActions(mouseAvailable);
 	}
