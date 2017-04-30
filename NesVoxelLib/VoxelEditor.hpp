@@ -15,11 +15,14 @@ public:
 	OrbitCamera camera;
 private:
 	void updateCamera();
+	void getMouseHighlight();
 	shared_ptr<SpriteMesh> mesh;
 	int pixelX;
 	int pixelY;
 	int xSelect, ySelect, zSelect;
 	float workingX, workingY, workingZ;
 	float editorX, editorY, editorZ;
+	Vector3D mouseHighlight;
+	bool mouseInEditor = false;
 	ViewingAngle viewingAngle;
 };

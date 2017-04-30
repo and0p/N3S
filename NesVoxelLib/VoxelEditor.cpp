@@ -31,28 +31,27 @@ bool VoxelEditor::update(bool mouseAvailable)
 		float yRot = InputState::keyboardMouse->mouseDeltaY / 5;
 		camera.AdjustRotation(xRot, yRot, 0.0f);
 	}
+	viewingAngle = camera.getViewingAngle();
 	// Check for camera panning, and pan along editing plane
 	if (InputState::keyboardMouse->mouseButtons[middle_mouse].state > 0)
 	{
-		float xPan = InputState::keyboardMouse->mouseDeltaX / 5;
-		float yPan = InputState::keyboardMouse->mouseDeltaY / 5;
+		float xPan = InputState::keyboardMouse->mouseDeltaX / 7;
+		float yPan = InputState::keyboardMouse->mouseDeltaY / 7;
 		// Pan along plane
-		adjustWorkingPositionAnalog(xPan, yPan, 0);
+		adjustWorkingPositionAnalog(-xPan, -yPan, 0);
 	}
 	// Select point on editor plane using mouse or buttons
-	if (InputState::keyboardMouse->hasMouseMoved())
-	{
-		
-	}
-	else
-	{
-		// Check keys to shift working position
-		adjustWorkingPositionAnalog(InputState::functions[voxeleditor_moveright].value, InputState::functions[voxeleditor_movedown].value, 0);
-		adjustWorkingPositionAnalog(-InputState::functions[voxeleditor_moveleft].value, -InputState::functions[voxeleditor_moveup].value, 0);
-	}
+	adjustWorkingPositionAnalog(InputState::functions[voxeleditor_moveright].value, InputState::functions[voxeleditor_movedown].value, 0);
+	adjustWorkingPositionAnalog(-InputState::functions[voxeleditor_moveleft].value, -InputState::functions[voxeleditor_moveup].value, 0);
 
 	if (InputState::keyboardMouse->calculatedWheelDelta != 0)
 		adjustWorkingPosition(0, 0, InputState::keyboardMouse->calculatedWheelDelta);
+
+	// Add or remove voxels with buttons or mouse
+	getMouseHighlight();
+
+	if (mouseInEditor && InputState::keyboardMouse->mouseButtons[left_mouse].down)
+		mesh->updateVoxel(mouseHighlight.x - pixelX, mouseHighlight.y - pixelY, mouseHighlight.z, 1);
 	
 	if (InputState::functions[voxeleditor_movein].activatedThisFrame)
 		adjustWorkingPosition(0, 0, 1);
@@ -78,14 +77,12 @@ void VoxelEditor::render()
 	Overlay::setColor(1.0f, 1.0f, 1.0f, 0.2f);
 	N3s3d::setRasterFillState(true);
 	Overlay::drawVoxelPreview(pixelX + xSelect, pixelY + ySelect, zSelect);
-	N3s3d::setRasterFillState(false);
 	// TEST draw where the mouse is intersecting the editor plane
-	int mouseX = InputState::keyboardMouse->mouseX;
-	int mouseY = InputState::keyboardMouse->mouseY;
-	Vector3D v3d =
-		N3s3d::getPixelCoordsFromFloat3(N3s3d::getPlaneIntersection(z_axis, zSelect, &camera, mouseX, mouseY));
-	Overlay::setColor(0.5f, 0.5f, 0.5f, 1.0f);
-	Overlay::drawVoxelPreview(v3d.x, v3d.y, v3d.z);
+	if (true) //(mouseInEditor)
+	{
+		Overlay::setColor(0.5f, 0.5f, 0.5f, 1.0f);
+		Overlay::drawVoxelPreview(mouseHighlight.x, mouseHighlight.y, mouseHighlight.z);
+	}
 	if (viewingAngle.y == v_top)
 	{
 		N3s3d::setDepthBufferState(false);
@@ -347,4 +344,28 @@ void VoxelEditor::updateCamera()
 		editorY - (workingY * pixelSizeW),
 		editorZ + (workingZ * pixelSizeW)
 	);
+}
+
+void VoxelEditor::getMouseHighlight()
+{
+	int mouseX = InputState::keyboardMouse->mouseX;
+	int mouseY = InputState::keyboardMouse->mouseY;
+	// Figure out which plane we're on
+	if (viewingAngle.y == v_top || viewingAngle.y == v_bottom)
+		mouseHighlight = N3s3d::getPixelCoordsFromFloat3(N3s3d::getPlaneIntersection(y_axis, ySelect + pixelY, &camera, mouseX, mouseY));
+	else
+		if ( viewingAngle.x == v_front || viewingAngle.x == v_back)
+			mouseHighlight = N3s3d::getPixelCoordsFromFloat3(N3s3d::getPlaneIntersection(z_axis, zSelect, &camera, mouseX, mouseY));
+		else
+			mouseHighlight = N3s3d::getPixelCoordsFromFloat3(N3s3d::getPlaneIntersection(x_axis, xSelect + pixelX, &camera, mouseX, mouseY));
+	// TODO: add shift-modifier to lock on X/Y/Z axis
+	// See if the highlighted area is even in the model
+	if (mouseHighlight.x >= pixelX && mouseHighlight.x < pixelX + 8 &&
+		mouseHighlight.y >= pixelY && mouseHighlight.y < pixelY + 8 &&
+		mouseHighlight.z >= 0 && mouseHighlight.z < 32)
+	{
+		mouseInEditor = true;
+	}
+	else
+		mouseInEditor = false;
 }
