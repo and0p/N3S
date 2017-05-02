@@ -4,6 +4,9 @@
 #include "Input.hpp"
 #include "Overlay.hpp"
 
+float gridOpacity = 1.0f;
+float gridCoveredOpacity = 0.1f;
+
 VoxelEditor::VoxelEditor(shared_ptr<SpriteMesh> mesh, int pixelX, int pixelY, OrbitCamera referenceCamera) : mesh(mesh), pixelX(pixelX), pixelY(pixelY)
 {
 	workingX = 0.5f;
@@ -86,19 +89,19 @@ void VoxelEditor::render()
 	if (viewingAngle.y == v_top)
 	{
 		N3s3d::setDepthBufferState(false);
-		Overlay::setColor(0.5f, 0.5f, 0.5f, 0.1f);
+		Overlay::setColor(0.5f, 0.5f, 0.5f, gridCoveredOpacity);
 		Overlay::drawVoxelGrid(pixelX, pixelY, ySelect + 1, yAxis);
 		N3s3d::setDepthBufferState(true);
-		Overlay::setColor(0.5f, 0.5f, 0.5f, 0.3f);
+		Overlay::setColor(0.5f, 0.5f, 0.5f, gridOpacity);
 		Overlay::drawVoxelGrid(pixelX, pixelY, ySelect + 1, yAxis);
 	}
 	else if (viewingAngle.y == v_bottom)
 	{
 		N3s3d::setDepthBufferState(false);
-		Overlay::setColor(0.5f, 0.5f, 0.5f, 0.1f);
+		Overlay::setColor(0.5f, 0.5f, 0.5f, gridCoveredOpacity);
 		Overlay::drawVoxelGrid(pixelX, pixelY, ySelect, yAxis);
 		N3s3d::setDepthBufferState(true);
-		Overlay::setColor(0.5f, 0.5f, 0.5f, 0.3f);
+		Overlay::setColor(0.5f, 0.5f, 0.5f, gridOpacity);
 		Overlay::drawVoxelGrid(pixelX, pixelY, ySelect, yAxis);
 	}
 	else
@@ -106,37 +109,37 @@ void VoxelEditor::render()
 		if (viewingAngle.x == v_front)
 		{
 			N3s3d::setDepthBufferState(false);
-			Overlay::setColor(0.5f, 0.5f, 0.5f, 0.1f);
+			Overlay::setColor(0.5f, 0.5f, 0.5f, gridCoveredOpacity);
 			Overlay::drawVoxelGrid(pixelX, pixelY, zSelect + 1, xAxis);
 			N3s3d::setDepthBufferState(true);
-			Overlay::setColor(0.5f, 0.5f, 0.5f, 0.3f);
+			Overlay::setColor(0.5f, 0.5f, 0.5f, gridOpacity);
 			Overlay::drawVoxelGrid(pixelX, pixelY, zSelect + 1, xAxis);
 		}
 		else if (viewingAngle.x == v_back)
 		{
 			N3s3d::setDepthBufferState(false);
-			Overlay::setColor(0.5f, 0.5f, 0.5f, 0.1f);
+			Overlay::setColor(0.5f, 0.5f, 0.5f, gridCoveredOpacity);
 			Overlay::drawVoxelGrid(pixelX, pixelY, zSelect, xAxis);
 			N3s3d::setDepthBufferState(true);
-			Overlay::setColor(0.5f, 0.5f, 0.5f, 0.3f);
+			Overlay::setColor(0.5f, 0.5f, 0.5f, gridOpacity);
 			Overlay::drawVoxelGrid(pixelX, pixelY, zSelect, xAxis);
 		}
 		else if (viewingAngle.x == v_left)
 		{
 			N3s3d::setDepthBufferState(false);
-			Overlay::setColor(0.5f, 0.5f, 0.5f, 0.1f);
+			Overlay::setColor(0.5f, 0.5f, 0.5f, gridCoveredOpacity);
 			Overlay::drawVoxelGrid(pixelX, pixelY, xSelect + 1, zAxis);
 			N3s3d::setDepthBufferState(true);
-			Overlay::setColor(0.5f, 0.5f, 0.5f, 0.3f);
+			Overlay::setColor(0.5f, 0.5f, 0.5f, gridOpacity);
 			Overlay::drawVoxelGrid(pixelX, pixelY, xSelect + 1, zAxis);
 		}
 		else
 		{
 			N3s3d::setDepthBufferState(false);
-			Overlay::setColor(0.5f, 0.5f, 0.5f, 0.1f);
+			Overlay::setColor(0.5f, 0.5f, 0.5f, gridCoveredOpacity);
 			Overlay::drawVoxelGrid(pixelX, pixelY, xSelect, zAxis);
 			N3s3d::setDepthBufferState(true);
-			Overlay::setColor(0.5f, 0.5f, 0.5f, 0.3f);
+			Overlay::setColor(0.5f, 0.5f, 0.5f, gridOpacity);
 			Overlay::drawVoxelGrid(pixelX, pixelY, xSelect, zAxis);
 		}
 	}

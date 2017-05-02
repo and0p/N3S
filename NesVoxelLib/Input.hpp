@@ -15,11 +15,12 @@ enum inputFunctions {
 	nes_p1_a, nes_p1_b, nes_p1_up, nes_p1_left, nes_p1_down, nes_p1_right, nes_p1_start, nes_p1_select,
 	nes_p2_a, nes_p2_b, nes_p2_up, nes_p2_left, nes_p2_down, nes_p2_right, nes_p2_start, nes_p2_select,
 	emu_pause, emu_reset, 
-	tog_game, tog_editor,
+	tog_game, tog_editor, editor_alt,
 	cam_left, cam_right, cam_up, cam_down, cam_pan_in, cam_pan_out,
-	selection_add, selection_remove,
+	selection_add, selection_remove, selection_copy,
 	voxeleditor_moveleft, voxeleditor_moveright, voxeleditor_moveup, voxeleditor_movedown,
 	voxeleditor_movein, voxeleditor_moveout, voxeleditor_setvoxel, voxeleditor_deletevoxel,
+	voxeleditor_exit,
 	INPUTCOUNT
 };
 

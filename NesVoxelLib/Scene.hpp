@@ -15,7 +15,7 @@ const int scenePixelHeight = 480;
 const int sceneDXWidth = pixelSizeW * 8 * sceneWidth;
 const int sceneDXHeight = pixelSizeW * 8 * sceneHeight;
 
-enum MouseModifier { no_mod, mod_add, mod_remove, mod_intersect };
+enum MouseModifier { no_mod, mod_add, mod_remove, mod_intersect, mod_copy };
 enum MouseFunction { no_func, move_func, select_new, select_add, select_sub, select_intersect };
 
 struct SceneSprite {
@@ -73,7 +73,7 @@ public:
 	Highlight highlight;
 	shared_ptr<Selection> selection;
 	shared_ptr<Selection> displaySelection;
-	void updateHighlight2d(Vector2D mouse, bool highlightOAM, bool highlightNametable);
+	void updateHighlight2d(Vector3D mouse, bool highlightOAM, bool highlightNametable);
 	bool updateMouseActions(bool mouseAvailable);
 	void moveSelection(bool copy);
 private:

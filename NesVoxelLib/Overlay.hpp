@@ -18,6 +18,7 @@ public:
 	static void drawRectangle(int x, int y, int width, int height);
 	static void drawRectangleInScene(int x, int y, int z, int width, int height);
 	static void drawSpriteSquare(int x, int y);
+	static void drawAxisLine(XMFLOAT3 pos);
 	static void setColor(int r, int g, int b, int a);
 	static void setColor(float r, float g, float b, float a);
 	static bool shadow;
@@ -33,6 +34,7 @@ VoxelMesh createMeshFromBitmapCharacter(BitmapCharacter bitmap);
 void buildVoxelPreviewMesh();
 void buildGridMeshes();
 void buildRectangleMesh();
+void buildAxisMesh();
 
 //						  012345678901234567890123456789012345678901234567890123456789012
 // starting with a space: !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVQXYZ[\]^`

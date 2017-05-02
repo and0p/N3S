@@ -11,6 +11,7 @@ VoxelMesh voxelGridMeshLong;	// 32x8 grid, voxel-size
 VoxelMesh nametableGridMesh;	// 32x30 grid, sprite-size
 VoxelMesh spriteSquareMesh;		// 2D box for flat sprite selection and highlights
 VoxelMesh rectangleMesh;		// 1x1 rectangle, for resizing and drawing
+VoxelMesh axisMesh;
 
 int getScreenX(int x)
 {
@@ -36,6 +37,7 @@ void Overlay::init()
 	buildVoxelPreviewMesh();
 	buildGridMeshes();
 	buildRectangleMesh();
+	buildAxisMesh();
 }
 
 void Overlay::unload()
@@ -172,6 +174,37 @@ void Overlay::drawSpriteSquare(int x, int y)
 	N3s3d::updateWorldMatrix(xf, yf, 0.0f);
 	// Render character
 	N3s3d::renderMesh(&spriteSquareMesh);
+}
+
+void Overlay::drawAxisLine(XMFLOAT3 pos)
+{
+	N3s3d::setRasterFillState(false);
+	N3s3d::setDepthBufferState(true);
+	// Draw red x-axis
+	N3s3d::updateWorldMatrix(pos.x, pos.y, pos.z, 0, 0, 0, 1);
+	setColor(1.0f, 0.0f, 0.0f, 1.0f);
+	N3s3d::renderMesh(&axisMesh);
+	// Draw green y-axis
+	N3s3d::updateWorldMatrix(pos.x, pos.y, pos.z, 0, 0, 90, 1);
+	setColor(0.0f, 1.0f, 0.0f, 1.0f);
+	N3s3d::renderMesh(&axisMesh);
+	// Draw blue z-axis
+	N3s3d::updateWorldMatrix(pos.x, pos.y, pos.z, 0, 90, 0, 1);
+	setColor(0.0f, 0.0f, 1.0f, 1.0f);
+	N3s3d::renderMesh(&axisMesh);
+	// Draw again, transparent but without depth buffer
+	N3s3d::setDepthBufferState(false);
+	// Z
+	setColor(0.0f, 0.0f, 1.0f, 0.2f);
+	N3s3d::renderMesh(&axisMesh);
+	// X
+	N3s3d::updateWorldMatrix(pos.x, pos.y, pos.z, 0, 0, 0, 1);
+	setColor(1.0f, 0.0f, 0.0f, 0.2f);
+	N3s3d::renderMesh(&axisMesh);
+	// Y
+	N3s3d::updateWorldMatrix(pos.x, pos.y, pos.z, 0, 0, 90, 1);
+	setColor(0.0f, 1.0f, 0.0f, 0.2f);
+	N3s3d::renderMesh(&axisMesh);
 }
 
 void Overlay::setColor(int r, int g, int b, int a)
@@ -435,4 +468,22 @@ void buildRectangleMesh()
 	vertices.push_back(v4);
 
 	rectangleMesh.buffer = N3s3d::createBufferFromOverlayVertices(&vertices, rectangleMesh.size);
+}
+
+void buildAxisMesh()
+{
+	axisMesh.type = overlay;
+	axisMesh.size = 3;
+
+	vector<OverlayVertex> vertices;
+	OverlayVertex v1, v2;
+
+	v1.Pos = XMFLOAT4(-1.5f, 0, 0, 1);
+	v2.Pos = XMFLOAT4(1.5f, 0, 0, 1);
+
+	vertices.push_back(v1);
+	vertices.push_back(v2);
+	vertices.push_back(v1);
+
+	axisMesh.buffer = N3s3d::createBufferFromOverlayVertices(&vertices, axisMesh.size);
 }
