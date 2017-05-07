@@ -140,6 +140,8 @@ bool Scene::update(bool mouseAvailable)
 		mouseVector = N3s3d::getMouseVector(&mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
 		zIntersect = N3s3d::getPlaneIntersection(z_axis, 15, &mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
 		mousePixelCoordinates = N3s3d::getPixelCoordsFromFloat3(zIntersect);
+		// See if the modifier is being pressed to show additional guides
+		showGuides = InputState::functions[editor_alt].active;
 		return updateMouseActions(mouseAvailable);
 	}
 	else
@@ -243,7 +245,8 @@ void Scene::render(bool renderBackground, bool renderOAM)
 		N3s3d::setRasterFillState(true);
 		
 		// Render 3-axis mouse guide
-		Overlay::drawAxisLine(zIntersect);
+		if(showGuides)
+			Overlay::drawAxisLine(zIntersect);
 
 	}
 }
@@ -256,7 +259,7 @@ void Scene::renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights)
 	// Update camera math (was probably left at GUI projection after scene rendering)
 	N3s3d::updateMatricesWithCamera(&mainCamera);
 	// Render background grid, if enabled
-	if (drawBackgroundGrid)
+	if (drawBackgroundGrid && showGuides)
 	{
 		Overlay::setColor(1.0f, 0.0f, 0.0f, 0.1f);
 		Overlay::drawNametableGrid(0, 0);
@@ -265,14 +268,15 @@ void Scene::renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights)
 		Overlay::drawNametableGrid(32, 30);
 	}
 	// Draw OAM highlights, if enabled
-	if (drawOamHighlights)
+	if (drawOamHighlights && showGuides)
 	{
-		Overlay::setColor(1.0f, 1.0f, 1.0f, 1.0f);
+		Overlay::setColor(0.0f, 1.0f, 0.0f, 1.0f);
 		for each(SceneSprite s in sprites)
 		{
 			Overlay::drawSpriteSquare(s.x, s.y);
 		}
 	}
+	N3s3d::setRasterFillState(true);
 }
 
 void Scene::setBackgroundSprite(int x, int y, SceneSprite sprite)

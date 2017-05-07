@@ -77,6 +77,7 @@ public:
 	bool updateMouseActions(bool mouseAvailable);
 	void moveSelection(bool copy);
 private:
+	bool showGuides = false;
 	SceneSprite bg[sceneWidth * sceneHeight];
 	static Vector2D Scene::getCoordinatesFromZIntersection(XMFLOAT3 zIntersect);
 };
