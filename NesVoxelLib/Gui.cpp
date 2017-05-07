@@ -81,9 +81,63 @@ void SceneSelector::render()
 	}
 }
 
-bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene)
+bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene, shared_ptr<VoxelEditor> editor)
 {
 	N3sPalette * palette = scene->getSelectedPalette();
+	// See if we're modifying any selection's palette(s)
+	int oamSelected = scene->selection->selectedSpriteIndices.size();
+	int ntSelected = scene->selection->selectedBackgroundIndices.size();
+	// Check for selections, but only if it's strictly OAM or NT, not both
+	if ((oamSelected > 0 && ntSelected == 0) || (ntSelected > 0 && oamSelected == 0))
+	{
+		bool allPalettesIdentical = true;
+		// Check for all identical OAM
+		if (oamSelected > 0)
+		{
+			auto it = scene->selection->selectedSpriteIndices.begin();
+			int p = scene->sprites[*it].palette;
+
+			// See if this palette is different from one that may have been selected in the previous frame
+			if (selectedPalette <= 0 && selectedPalette != p)
+			{
+				// Cancel out of color picker if open
+				selectionLevel = 1;
+			}
+				
+			// See if all selected items have the same palette
+			for each(int i in scene->selection->selectedSpriteIndices)
+			{
+				if (scene->sprites[i].palette != p)
+					allPalettesIdentical = false;
+			}
+			if (allPalettesIdentical)
+				selectedPalette = p;
+			else
+				selectedPalette = -1;
+		}
+		else
+		{
+			auto it = scene->selection->selectedBackgroundIndices.begin();
+			int p = scene->bg[*it].palette;
+
+			// See if all selected items have the same palette
+			for each(int i in scene->selection->selectedBackgroundIndices)
+			{
+				if (scene->bg[i].palette != p)
+					allPalettesIdentical = false;
+			}
+			if (allPalettesIdentical)
+				selectedPalette = p;
+			else
+				selectedPalette = -1;
+		}
+	}
+	else
+	{
+		// No palette is selected
+		selectedPalette = -1;
+		//selectionLevel = 0;
+	}
 	// Check for mouse hover, if mouse is available
 	if (mouseAvailable || mouseCaptured)
 	{
@@ -125,7 +179,7 @@ bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene)
 			highlightedIndex = next_palettte;
 		}
 		// Check for highlights in color picker, if it is open
-		if (selectedIndex >= 0)
+		if (selectedIndex >= 0 && selectionLevel == 2)
 		{
 			// Check for color highlight / selection
 			for (int x = 0; x < 8; x++)
@@ -157,11 +211,25 @@ bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene)
 			// React to button presses
 			if (state == pressed)
 			{
-				mouseCaptured = false;	// Uncapture mouse, since it is up this frame 
+				// mouseCaptured = false;	// Uncapture mouse, since it is up this frame 
 				if (highlightedIndex >= palette_start && highlightedIndex <= bg_swatch)	
 				{
+					int paletteHighlighted = floor(highlightedIndex / 3);
+					// See if this palette is different from the one that belongs to any selected sprites/nt
+					if (selectedPalette != paletteHighlighted)
+					{
+						scene->changeSelectionPalette(paletteHighlighted);
+					}
 					// Palette color/bg selection
 					selectedIndex = highlightedIndex;
+					if (selectedPalette == paletteHighlighted || selectedPalette == -1)
+					{
+						selectionLevel = 2;
+					}
+					else
+					{
+						selectionLevel = 1;
+					}
 				}
 				else if (highlightedIndex >= colors_start && highlightedIndex < colors_close)
 				{
@@ -174,6 +242,7 @@ bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene)
 				}
 				else
 				{
+					selectionLevel = 0;
 					// Some other button was pressed
 					switch (highlightedIndex)
 					{
@@ -203,11 +272,19 @@ bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene)
 		return true;
 }
 
-void PaletteSelector::render(shared_ptr<Scene> scene)
+void PaletteSelector::render(shared_ptr<Scene> scene, shared_ptr<VoxelEditor> editor)
 {
 	N3sPalette * palette = scene->getSelectedPalette();
 	Overlay::setColor(0, 0, 0, 128);
 	Overlay::drawRectangle(leftMargin, 0, boxSize * 15, boxSize * 2);
+	// Render palette selection
+	if (selectedPalette >= 0)
+	{
+		int x = (selectedPalette % 4) * 3;
+		int y = floor(selectedPalette / 4);
+		Overlay::setColor(255, 255, 255, 64);
+		Overlay::drawRectangle(leftMargin + (x * boxSize), y * boxSize, boxSize * 3, boxSize);
+	}
 	// Render color swatches
 	for (int r = 0; r < 2; r++)
 	{
@@ -218,12 +295,18 @@ void PaletteSelector::render(shared_ptr<Scene> scene)
 			if (selectedIndex == index)
 			{
 				Overlay::setColor(255, 255, 255, 128);
-				Overlay::drawRectangle(leftMargin + (i * boxSize), r * boxSize, boxSize, boxSize);
+				if (selectionLevel == 2)
+				{
+					Overlay::drawRectangle(leftMargin + (i * boxSize), r * boxSize, boxSize, boxSize);
+				}
 			}
 			if (highlightedIndex == index && selectedIndex != index)
 			{
-				Overlay::setColor(255, 255, 255, 64);
-				Overlay::drawRectangle(leftMargin + (i * boxSize), r * boxSize, boxSize, boxSize);
+				if (selectionLevel == 2)
+				{
+					Overlay::setColor(255, 255, 255, 64);
+					Overlay::drawRectangle(leftMargin + (i * boxSize), r * boxSize, boxSize, boxSize);
+				}
 			}
 			// Set the overlay color to the color of this palette swatch
 			int color = palette->colorIndices[(r * 12) + i];
@@ -253,7 +336,7 @@ void PaletteSelector::render(shared_ptr<Scene> scene)
 	Overlay::setColor(h.red, h.green, h.blue, 1.0f);
 	Overlay::drawRectangle(leftMargin + boxSize * 12 + borderSize, borderSize, swatchSize, (swatchSize * 2) + (borderSize * 2));
 	// If a swatch is selected, render the pop-out color selector
-	if (selectedIndex >= 0)
+	if (selectedIndex >= 0 && selectionLevel == 2)
 	{
 		Overlay::setColor(0, 0, 0, 128);
 		int top = boxSize * 2;

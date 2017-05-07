@@ -2,6 +2,7 @@
 
 #include "N3sPalette.hpp"
 #include "Scene.hpp"
+#include "VoxelEditor.hpp"
 
 using namespace std;
 
@@ -42,14 +43,16 @@ class PaletteSelector
 public:
 	PaletteSelector() {}
 	bool update(bool mouseAvailable) { return false; }
-	bool update(bool mouseAvailable, shared_ptr<Scene> scene );
-	void render(shared_ptr<Scene> scene);
+	bool update(bool mouseAvailable, shared_ptr<Scene> scene, shared_ptr<VoxelEditor> editor);
+	void render(shared_ptr<Scene> scene, shared_ptr<VoxelEditor> editor);
 private:
 	bool mouseCaptured = false;
 	bool open = false;
 	bool optionsOpen = false;
 	int highlightedIndex = -1;
 	int selectedIndex = -1;
+	int selectedPalette = -1;
+	int selectionLevel = 0;
 	static const int leftMargin = 40;
 	static const int boxSize = 30;
 	static const int borderSize = 2;

@@ -30,7 +30,7 @@ void Editor::init()
 void Editor::update()
 {
 	mouseAvailable = sceneSelector.update(mouseAvailable);
-	mouseAvailable = paletteSelector.update(mouseAvailable, scenes[selectedScene]);
+	mouseAvailable = paletteSelector.update(mouseAvailable, scenes[selectedScene], scenes[selectedScene]->voxelEditor);
 	scenes[selectedScene]->update(mouseAvailable);
 }
 
@@ -51,7 +51,7 @@ void Editor::render()
 	N3s3d::setDepthBufferState(false);
 	N3s3d::setGuiProjection();
 	sceneSelector.render();
-	paletteSelector.render(scene);
+	paletteSelector.render(scene, nullptr);
 }
 
 void Editor::setScene(int s)
