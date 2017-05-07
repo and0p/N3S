@@ -8,7 +8,7 @@
 XMVECTOR mouseVector;
 XMFLOAT3 zIntersect;
 
-Vector2D mousePixelCoordinates;
+Vector3D mousePixelCoordinates;
 
 OrbitCamera mainCamera;
 
@@ -20,7 +20,7 @@ bool movingSelection = false;
 int moveX, moveY;
 MouseModifier modifier = no_mod;
 MouseFunction mouseFunction = no_func;
-Vector2D originMousePixelCoordinates;
+Vector3D originMousePixelCoordinates;
 
 bool voxelEditing = false;
 
@@ -111,6 +111,11 @@ Scene::Scene(shared_ptr<PpuSnapshot> snapshot)
 
 bool Scene::update(bool mouseAvailable)
 {
+	if (voxelEditing && InputState::functions[voxeleditor_exit].activatedThisFrame)
+	{
+		voxelEditing = false;
+		voxelEditor = nullptr;
+	}
 	if (!voxelEditing)
 	{
 		// Update camera position
@@ -132,8 +137,8 @@ bool Scene::update(bool mouseAvailable)
 		mainCamera.Render();
 		// Calculate mouse vector and z-intersect
 		mouseVector = N3s3d::getMouseVector(&mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
-		zIntersect = N3s3d::getPlaneIntersection(z_axis, 0, &mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
-		mousePixelCoordinates = getCoordinatesFromZIntersection(zIntersect);
+		zIntersect = N3s3d::getPlaneIntersection(z_axis, 15, &mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
+		mousePixelCoordinates = N3s3d::getPixelCoordsFromFloat3(zIntersect);
 		return updateMouseActions(mouseAvailable);
 	}
 	else
@@ -212,7 +217,7 @@ void Scene::render(bool renderBackground, bool renderOAM)
 		N3s3d::setGuiProjection();
 		Overlay::setColor(1.0f, 1.0f, 1.0f, 0.3f);
 		Overlay::drawRectangle(0, 0, 1920, 1080); // TODO: How do I get actual screen size again..?
-												  // Draw selection box, if currently dragging selection
+		// Draw selection box, if currently dragging selection
 		if (draggingSelection)
 		{
 			N3s3d::setDepthBufferState(false);
@@ -226,7 +231,7 @@ void Scene::render(bool renderBackground, bool renderOAM)
 			{
 				// Draw onto z-axis in pixel-space
 				N3s3d::updateMatricesWithCamera(&mainCamera);
-				Overlay::drawRectangleInScene(sel_left, sel_top, 0, sel_right - sel_left, sel_bottom - sel_top);
+				Overlay::drawRectangleInScene(sel_left, sel_top, 15, sel_right - sel_left, sel_bottom - sel_top);
 			}
 		}
 		// Render selection boxes around OAM and NT
@@ -235,6 +240,9 @@ void Scene::render(bool renderBackground, bool renderOAM)
 		N3s3d::setRasterFillState(false);
 		displaySelection->render(&sprites, moveX, moveY);
 		N3s3d::setRasterFillState(true);
+		
+		// Render 3-axis mouse guide
+		Overlay::drawAxisLine(zIntersect);
 
 	}
 }
@@ -334,7 +342,7 @@ void Scene::selectPreviousPalette()
 		selectedPalette = 7;
 }
 
-void Scene::updateHighlight2d(Vector2D mouse, bool highlightOAM, bool highlightNametable)
+void Scene::updateHighlight2d(Vector3D mouse, bool highlightOAM, bool highlightNametable)
 {
 	// Clear previous highlight
 	highlight.clear();
@@ -394,12 +402,14 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 					modifier = mod_add;
 				else if (InputState::functions[selection_remove].active)
 					modifier = mod_remove;
+				else if (InputState::functions[selection_copy].active)
+					modifier = mod_copy;
 				else
 				{
 					modifier = no_mod;
 				}
 				// Capture Z-intersect at click
-				originMousePixelCoordinates = getCoordinatesFromZIntersection(zIntersect);
+				originMousePixelCoordinates = mousePixelCoordinates; //N3s3d::getPixelCoordsFromFloat3(zIntersect);
 			}
 			else if (state == pressed)
 			{
@@ -554,7 +564,10 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 			selection = displaySelection;
 		// Move the items, if we just finished moving
 		if (movingSelection)
-			moveSelection(true);
+			if (modifier == mod_copy)
+				moveSelection(true);
+			else
+				moveSelection(false);
 		mouseFunction = no_func;
 		modifier = no_mod;
 		draggingSelection = false;

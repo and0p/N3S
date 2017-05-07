@@ -77,7 +77,7 @@ public:
 	Highlight highlight;
 	shared_ptr<Selection> selection;
 	shared_ptr<Selection> displaySelection;
-	void updateHighlight2d(Vector2D mouse, bool highlightOAM, bool highlightNametable);
+	void updateHighlight2d(Vector3D mouse, bool highlightOAM, bool highlightNametable);
 	bool updateMouseActions(bool mouseAvailable);
 	void moveSelection(bool copy);
 	SceneSprite bg[sceneWidth * sceneHeight];
