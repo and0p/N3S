@@ -13,6 +13,7 @@ public:
 	void adjustWorkingPositionAnalog(float x, float y, float z);
 	void changeLayers(int amount);
 	OrbitCamera camera;
+	int selectedColor = 1;
 private:
 	void updateCamera();
 	void getMouseHighlight();

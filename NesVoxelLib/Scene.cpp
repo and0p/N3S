@@ -2,7 +2,7 @@
 #include "Scene.hpp"
 #include "Camera.hpp"
 #include "Editor.hpp"
-#include "VoxelEditor.hpp"
+
 #include "N3sConsole.hpp"
 
 XMVECTOR mouseVector;
@@ -23,7 +23,6 @@ MouseFunction mouseFunction = no_func;
 Vector3D originMousePixelCoordinates;
 
 bool voxelEditing = false;
-shared_ptr<VoxelEditor> voxelEditor;
 
 int sel_top, sel_left, sel_bottom, sel_right;
 
@@ -279,6 +278,24 @@ void Scene::renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights)
 	N3s3d::setRasterFillState(true);
 }
 
+void Scene::changeSelectionPalette(int p)
+{
+	if (p <= 3)
+	{
+		for each (auto i in selection->selectedBackgroundIndices)
+		{
+			bg[i].palette = p;
+		}
+	}
+	else
+	{
+		for each (auto i in selection->selectedSpriteIndices)
+		{
+			sprites[i].palette = p;
+		}
+	}
+}
+
 void Scene::setBackgroundSprite(int x, int y, SceneSprite sprite)
 {
 	bg[y * sceneWidth + x] = sprite;
@@ -363,7 +380,7 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 	if (mouseAvailable || mouseCaptured)
 	{
 		MouseState state = InputState::keyboardMouse->mouseButtons[left_mouse].state;
-		if (state > 0)
+		if (state > 0 && mouseAvailable)
 			mouseCaptured = true;
 		else
 			mouseCaptured = false;
@@ -620,8 +637,12 @@ void Scene::moveSelection(bool copy) // TODO add copy modifier parameter
 	{
 		Vector2D oldXY = unwrapArrayIndex(kv.first, sceneWidth);
 		int newIndex = getArrayIndexFromXY(oldXY.x + ntX, oldXY.y + ntY, sceneWidth);
-		bg[newIndex] = kv.second;
-		selection->selectedBackgroundIndices.insert(newIndex);
+		// Make sure this new index is within bounds
+		if (newIndex >= 0 && newIndex < bgSize)
+		{
+			bg[newIndex] = kv.second;
+			selection->selectedBackgroundIndices.insert(newIndex);
+		}
 	}
 }
 

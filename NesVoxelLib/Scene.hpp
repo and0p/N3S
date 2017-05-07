@@ -3,6 +3,7 @@
 #include <vector>
 #include "N3sApp.hpp"
 #include "N3sPalette.hpp"
+#include "VoxelEditor.hpp"
 
 using namespace std;
 
@@ -15,7 +16,9 @@ const int scenePixelHeight = 480;
 const int sceneDXWidth = pixelSizeW * 8 * sceneWidth;
 const int sceneDXHeight = pixelSizeW * 8 * sceneHeight;
 
-enum MouseModifier { no_mod, mod_add, mod_remove, mod_intersect, mod_copy };
+const int bgSize = sceneWidth * sceneHeight;
+
+enum MouseModifier { no_mod, mod_add, mod_remove, mod_intersect };
 enum MouseFunction { no_func, move_func, select_new, select_add, select_sub, select_intersect };
 
 struct SceneSprite {
@@ -61,6 +64,7 @@ public:
 	bool update(bool mouseAvailable);
 	void render(bool renderBackground, bool renderOAM);
 	void renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights);
+	void changeSelectionPalette(int p);
 	vector<SceneSprite> sprites;
 	void setBackgroundSprite(int x, int y, SceneSprite sprite);
 	void addOAMSprite(SceneSprite s);
@@ -76,6 +80,8 @@ public:
 	void updateHighlight2d(Vector3D mouse, bool highlightOAM, bool highlightNametable);
 	bool updateMouseActions(bool mouseAvailable);
 	void moveSelection(bool copy);
+	SceneSprite bg[sceneWidth * sceneHeight];
+	shared_ptr<VoxelEditor> voxelEditor;
 private:
 	bool showGuides = false;
 	SceneSprite bg[sceneWidth * sceneHeight];
