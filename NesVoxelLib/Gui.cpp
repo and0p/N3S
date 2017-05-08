@@ -84,6 +84,7 @@ void SceneSelector::render()
 bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene, shared_ptr<VoxelEditor> editor)
 {
 	N3sPalette * palette = scene->getSelectedPalette();
+	int previouslySelectedIndex = selectedIndex;
 	// See if we're modifying any selection's palette(s)
 	int oamSelected = scene->selection->selectedSpriteIndices.size();
 	int ntSelected = scene->selection->selectedBackgroundIndices.size();
@@ -179,7 +180,7 @@ bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene, share
 			highlightedIndex = next_palettte;
 		}
 		// Check for highlights in color picker, if it is open
-		if (selectedIndex >= 0 && selectionLevel == 2)
+		if (selectedIndex >= 0 && selectionLevel == 3)
 		{
 			// Check for color highlight / selection
 			for (int x = 0; x < 8; x++)
@@ -211,10 +212,10 @@ bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene, share
 			// React to button presses
 			if (state == pressed)
 			{
-				// mouseCaptured = false;	// Uncapture mouse, since it is up this frame 
-				if (highlightedIndex >= palette_start && highlightedIndex <= bg_swatch)	
+				if (highlightedIndex >= palette_start && highlightedIndex <= bg_swatch)
 				{
 					int paletteHighlighted = floor(highlightedIndex / 3);
+					int colorWithinPalette = selectedIndex % 3;
 					// See if this palette is different from the one that belongs to any selected sprites/nt
 					if (selectedPalette != paletteHighlighted)
 					{
@@ -222,9 +223,27 @@ bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene, share
 					}
 					// Palette color/bg selection
 					selectedIndex = highlightedIndex;
-					if (selectedPalette == paletteHighlighted || selectedPalette == -1)
+					// no sprites selected
+					if (selectedPalette == -1)
 					{
-						selectionLevel = 2;
+						// open color picker
+						selectionLevel = 3;
+					}
+					// sprites selected
+					else if (selectedPalette == paletteHighlighted)
+					{
+						if (editor == nullptr)	// editor not open
+						{
+							selectionLevel = 3;
+						}
+						else					// voxel editor open
+						{
+							// See if color is already selected and open color picker if so
+							if(selectionLevel <= 2)
+								selectionLevel ++;
+							// Either way, change the selected color in the voxel editor
+							editor->selectedColor = colorWithinPalette + 1;
+						}
 					}
 					else
 					{
@@ -295,14 +314,14 @@ void PaletteSelector::render(shared_ptr<Scene> scene, shared_ptr<VoxelEditor> ed
 			if (selectedIndex == index)
 			{
 				Overlay::setColor(255, 255, 255, 128);
-				if (selectionLevel == 2)
+				if (selectionLevel >= 2)
 				{
 					Overlay::drawRectangle(leftMargin + (i * boxSize), r * boxSize, boxSize, boxSize);
 				}
 			}
 			if (highlightedIndex == index && selectedIndex != index)
 			{
-				if (selectionLevel == 2)
+				if (selectionLevel >= 2)
 				{
 					Overlay::setColor(255, 255, 255, 64);
 					Overlay::drawRectangle(leftMargin + (i * boxSize), r * boxSize, boxSize, boxSize);
@@ -336,7 +355,7 @@ void PaletteSelector::render(shared_ptr<Scene> scene, shared_ptr<VoxelEditor> ed
 	Overlay::setColor(h.red, h.green, h.blue, 1.0f);
 	Overlay::drawRectangle(leftMargin + boxSize * 12 + borderSize, borderSize, swatchSize, (swatchSize * 2) + (borderSize * 2));
 	// If a swatch is selected, render the pop-out color selector
-	if (selectedIndex >= 0 && selectionLevel == 2)
+	if (selectedIndex >= 0 && selectionLevel == 3)
 	{
 		Overlay::setColor(0, 0, 0, 128);
 		int top = boxSize * 2;

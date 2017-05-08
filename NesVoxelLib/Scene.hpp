@@ -18,7 +18,7 @@ const int sceneDXHeight = pixelSizeW * 8 * sceneHeight;
 
 const int bgSize = sceneWidth * sceneHeight;
 
-enum MouseModifier { no_mod, mod_add, mod_remove, mod_intersect };
+enum MouseModifier { no_mod, mod_add, mod_remove, mod_intersect, mod_copy };
 enum MouseFunction { no_func, move_func, select_new, select_add, select_sub, select_intersect };
 
 struct SceneSprite {
@@ -84,6 +84,5 @@ public:
 	shared_ptr<VoxelEditor> voxelEditor;
 private:
 	bool showGuides = false;
-	SceneSprite bg[sceneWidth * sceneHeight];
 	static Vector2D Scene::getCoordinatesFromZIntersection(XMFLOAT3 zIntersect);
 };

@@ -54,7 +54,7 @@ bool VoxelEditor::update(bool mouseAvailable)
 	getMouseHighlight();
 
 	if (mouseInEditor && InputState::keyboardMouse->mouseButtons[left_mouse].down)
-		mesh->updateVoxel(mouseHighlight.x - pixelX, mouseHighlight.y - pixelY, mouseHighlight.z, 1);
+		mesh->updateVoxel(mouseHighlight.x - pixelX, mouseHighlight.y - pixelY, mouseHighlight.z, selectedColor);
 	
 	if (InputState::functions[voxeleditor_movein].activatedThisFrame)
 		adjustWorkingPosition(0, 0, 1);
@@ -66,7 +66,7 @@ bool VoxelEditor::update(bool mouseAvailable)
 
 	// Add or remove voxels
 	if (InputState::functions[voxeleditor_setvoxel].active)
-		mesh->updateVoxel(xSelect, ySelect, zSelect, 1);
+		mesh->updateVoxel(xSelect, ySelect, zSelect, selectedColor);
 	else if (InputState::functions[voxeleditor_deletevoxel].active)
 		mesh->updateVoxel(xSelect, ySelect, zSelect, 0);
 	return false;
