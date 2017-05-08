@@ -376,6 +376,14 @@ void InputState::createBindings()
 	functions[voxeleditor_deletevoxel].bindings.push_back({ keyboardMouse->keys[0x4A] });
 	functions[voxeleditor_movein].bindings.push_back({ keyboardMouse->keys[0x55] });
 	functions[voxeleditor_moveout].bindings.push_back({ keyboardMouse->keys[0x49] });
+	functions[voxeleditor_color0].bindings.push_back({ keyboardMouse->keys[0x30] });
+	functions[voxeleditor_color0].bindings.push_back({ keyboardMouse->keys[VK_NUMPAD0] });
+	functions[voxeleditor_color1].bindings.push_back({ keyboardMouse->keys[0x31] });
+	functions[voxeleditor_color1].bindings.push_back({ keyboardMouse->keys[VK_NUMPAD1] });
+	functions[voxeleditor_color2].bindings.push_back({ keyboardMouse->keys[0x32] });
+	functions[voxeleditor_color2].bindings.push_back({ keyboardMouse->keys[VK_NUMPAD2] });
+	functions[voxeleditor_color3].bindings.push_back({ keyboardMouse->keys[0x33] });
+	functions[voxeleditor_color3].bindings.push_back({ keyboardMouse->keys[VK_NUMPAD3] });
 	functions[voxeleditor_exit].bindings.push_back({ keyboardMouse->keys[VK_ESCAPE] });
 }
 

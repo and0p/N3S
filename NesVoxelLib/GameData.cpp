@@ -396,7 +396,7 @@ bool SpriteMesh::buildMesh()
 						buildSide(&vertices, x, y, z, color, VoxelSide::bottom);
 						sideCount++;
 					}
-					if (z == 0 || voxels->getVoxel(x - 1, y, z - 1).color == 0) {
+					if (z == 0 || voxels->getVoxel(x, y, z - 1).color == 0) {
 						buildSide(&vertices, x, y, z, color, VoxelSide::front);
 						sideCount++;
 					}

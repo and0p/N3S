@@ -20,7 +20,7 @@ enum inputFunctions {
 	selection_add, selection_remove, selection_copy,
 	voxeleditor_moveleft, voxeleditor_moveright, voxeleditor_moveup, voxeleditor_movedown,
 	voxeleditor_movein, voxeleditor_moveout, voxeleditor_setvoxel, voxeleditor_deletevoxel,
-	voxeleditor_exit,
+	voxeleditor_color0, voxeleditor_color1, voxeleditor_color2, voxeleditor_color3,	voxeleditor_exit,
 	INPUTCOUNT
 };
 

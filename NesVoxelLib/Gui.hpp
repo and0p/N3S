@@ -57,6 +57,8 @@ private:
 	static const int boxSize = 30;
 	static const int borderSize = 2;
 	static const int swatchSize = boxSize - (borderSize * 2);
+	void selectColor(int color, shared_ptr<Scene> scene, shared_ptr<VoxelEditor> editor);
+	int getRelativeColor(int i);
 };
 
 inline bool mouseInRectangle(int mouseX, int mouseY, int rectX, int rectY, int rectWidth, int rectHeight) {
