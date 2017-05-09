@@ -677,6 +677,30 @@ void SpriteMesh::render(int x, int y, int palette, bool mirrorH, bool mirrorV, C
 	}
 }
 
+void SpriteMesh::moveLayer(int oldX, int oldY, int oldZ, int newX, int newY, int newZ, bool copy)
+{
+	if (oldZ != newZ)
+	{
+		if (oldZ > 0 && oldZ < 32 && newZ > 0 && newZ < 32)
+		{
+			// Move layer on Z axis
+			for (int x = 0; x < 8; x++)
+				for (int y = 0; y < 8; y++)
+					setVoxel(x, y, newZ, voxels->getVoxel(x, y, oldZ).color);
+			if (!copy)
+			{
+				for (int x = 0; x < 8; x++)
+					for (int y = 0; y < 8; y++)
+						setVoxel(x, y, oldZ, 0);
+			}
+		}
+		// Rebuild the mesh
+		buildMesh();
+	}
+
+	// Rebuild whichever Z indices are necessary
+}
+
 json SpriteMesh::getJSON()
 {
 	json j;

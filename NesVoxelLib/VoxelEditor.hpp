@@ -23,6 +23,7 @@ private:
 	int xSelect, ySelect, zSelect;
 	float workingX, workingY, workingZ;
 	float editorX, editorY, editorZ;
+	int layerNumber;
 	Vector3D mouseHighlight;
 	bool mouseInEditor = false;
 	ViewingAngle viewingAngle;

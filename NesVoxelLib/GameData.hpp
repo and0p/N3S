@@ -55,6 +55,7 @@ public:
 	bool buildMesh();
 	bool meshExists = false;
 	void render(int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop);
+	void moveLayer(int x, int y, int z, int newX, int newY, int newZ, bool copy);
 	json getJSON();
 private:
 	void buildZMeshes();

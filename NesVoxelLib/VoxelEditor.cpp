@@ -57,7 +57,10 @@ bool VoxelEditor::update(bool mouseAvailable)
 		mesh->updateVoxel(mouseHighlight.x - pixelX, mouseHighlight.y - pixelY, mouseHighlight.z, selectedColor);
 	
 	if (InputState::functions[voxeleditor_movein].activatedThisFrame)
+	{
 		adjustWorkingPosition(0, 0, 1);
+	}
+
 	else if (InputState::functions[voxeleditor_moveout].activatedThisFrame)
 		adjustWorkingPosition(0, 0, -1);
 
@@ -151,6 +154,8 @@ void VoxelEditor::adjustWorkingPosition(int x, int y, int z)
 	workingX = floor(workingX) + 0.5f;
 	workingY = floor(workingY) + 0.5f;
 	workingZ = floor(workingZ) + 0.5f;
+	// Cache the old position
+	int oldX = workingX; int oldY = workingY; int oldZ = workingZ;
 	// Change working position based on camera view side
 	if (viewingAngle.y == v_top)
 	{
@@ -238,6 +243,12 @@ void VoxelEditor::adjustWorkingPosition(int x, int y, int z)
 	xSelect = floor(workingX);
 	ySelect = floor(workingY);
 	zSelect = floor(workingZ);
+
+	// See if we should copy/move the old layer as well
+	if (InputState::functions[selection_copy].active)
+		mesh->moveLayer(oldX, oldY, oldZ, workingX, workingY, workingZ, true);
+	else if (InputState::functions[selection_add].active)
+		mesh->moveLayer(oldX, oldY, oldZ, workingX, workingY, workingZ, false);
 }
 
 void VoxelEditor::adjustWorkingPositionAnalog(float x, float y, float z)
