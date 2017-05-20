@@ -3,6 +3,7 @@
 #include "VoxelEditor.hpp"
 #include "Input.hpp"
 #include "Overlay.hpp"
+#include "Gui.hpp"
 
 float gridOpacity = 1.0f;
 float gridCoveredOpacity = 0.1f;
@@ -54,7 +55,7 @@ bool VoxelEditor::update(bool mouseAvailable)
 	getMouseHighlight();
 
 	if (mouseInEditor && InputState::keyboardMouse->mouseButtons[left_mouse].down)
-		mesh->updateVoxel(mouseHighlight.x - pixelX, mouseHighlight.y - pixelY, mouseHighlight.z, selectedColor);
+		mesh->updateVoxel(mouseHighlight.x, mouseHighlight.y, mouseHighlight.z, selectedColor);
 	
 	if (InputState::functions[voxeleditor_movein].activatedThisFrame)
 	{
@@ -72,7 +73,8 @@ bool VoxelEditor::update(bool mouseAvailable)
 		mesh->updateVoxel(xSelect, ySelect, zSelect, selectedColor);
 	else if (InputState::functions[voxeleditor_deletevoxel].active)
 		mesh->updateVoxel(xSelect, ySelect, zSelect, 0);
-	return false;
+
+	return mouseAvailable;
 }
 
 void VoxelEditor::render()
@@ -84,10 +86,10 @@ void VoxelEditor::render()
 	N3s3d::setRasterFillState(true);
 	Overlay::drawVoxelPreview(pixelX + xSelect, pixelY + ySelect, zSelect);
 	// TEST draw where the mouse is intersecting the editor plane
-	if (true) //(mouseInEditor)
+	if (mouseInEditor)
 	{
 		Overlay::setColor(0.5f, 0.5f, 0.5f, 1.0f);
-		Overlay::drawVoxelPreview(mouseHighlight.x, mouseHighlight.y, mouseHighlight.z);
+		Overlay::drawVoxelPreview(mouseHighlight.x + pixelX, mouseHighlight.y + pixelY, mouseHighlight.z);
 	}
 	if (viewingAngle.y == v_top)
 	{
@@ -373,9 +375,11 @@ void VoxelEditor::getMouseHighlight()
 		else
 			mouseHighlight = N3s3d::getPixelCoordsFromFloat3(N3s3d::getPlaneIntersection(x_axis, xSelect + pixelX, &camera, mouseX, mouseY));
 	// TODO: add shift-modifier to lock on X/Y/Z axis
+	mouseHighlight.x -= pixelX;
+	mouseHighlight.y -= pixelY;
 	// See if the highlighted area is even in the model
-	if (mouseHighlight.x >= pixelX && mouseHighlight.x < pixelX + 8 &&
-		mouseHighlight.y >= pixelY && mouseHighlight.y < pixelY + 8 &&
+	if (mouseHighlight.x >= 0 && mouseHighlight.x < 8 &&
+		mouseHighlight.y >= 0 && mouseHighlight.y < 8 &&
 		mouseHighlight.z >= 0 && mouseHighlight.z < 32)
 	{
 		mouseInEditor = true;

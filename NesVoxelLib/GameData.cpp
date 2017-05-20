@@ -708,3 +708,9 @@ json SpriteMesh::getJSON()
 	j["voxels"] = voxels->getJSON();
 	return j;
 }
+
+void SpriteMesh::setOutline(int o)
+{
+	if (o >= -1 && o <= 3)
+		outlineColor = o;
+}

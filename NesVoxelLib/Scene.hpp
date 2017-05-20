@@ -22,6 +22,7 @@ enum MouseModifier { no_mod, mod_add, mod_remove, mod_intersect, mod_copy };
 enum MouseFunction { no_func, move_func, select_new, select_add, select_sub, select_intersect };
 
 struct SceneSprite {
+	shared_ptr<SpriteMesh> mesh;
 	int meshNum;
 	int palette;
 	int x;
@@ -68,7 +69,6 @@ public:
 	vector<SceneSprite> sprites;
 	void setBackgroundSprite(int x, int y, SceneSprite sprite);
 	void addOAMSprite(SceneSprite s);
-	static void createSceneFromCurrentSnapshot();
 	N3sPalette palettes[8];
 	int selectedPalette = 0;
 	N3sPalette * getSelectedPalette();
@@ -82,6 +82,7 @@ public:
 	void moveSelection(bool copy);
 	SceneSprite bg[sceneWidth * sceneHeight];
 	shared_ptr<VoxelEditor> voxelEditor;
+	shared_ptr<SpriteMesh> getSelectedMesh();
 private:
 	bool showGuides = false;
 	static Vector2D Scene::getCoordinatesFromZIntersection(XMFLOAT3 zIntersect);

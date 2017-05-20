@@ -14,17 +14,17 @@ public:
 	void changeLayers(int amount);
 	OrbitCamera camera;
 	int selectedColor = 1;
+	shared_ptr<SpriteMesh> mesh;
+	float workingX, workingY, workingZ;
+	Vector3D mouseHighlight;
+	bool mouseInEditor = false;
 private:
 	void updateCamera();
 	void getMouseHighlight();
-	shared_ptr<SpriteMesh> mesh;
 	int pixelX;
 	int pixelY;
 	int xSelect, ySelect, zSelect;
-	float workingX, workingY, workingZ;
 	float editorX, editorY, editorZ;
 	int layerNumber;
-	Vector3D mouseHighlight;
-	bool mouseInEditor = false;
 	ViewingAngle viewingAngle;
 };

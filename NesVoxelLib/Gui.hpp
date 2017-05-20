@@ -34,8 +34,8 @@ private:
 	bool mouseCaptured = false;
 	int highlightedTab = 0;
 	static const int buttonHeight = 20;
-	static const int buttonWidth = 20;
-	static const int buttonGap = 10;
+	static const int buttonWidth = 36;
+	static const int buttonGap = 2;
 };
 
 class PaletteSelector
@@ -61,7 +61,38 @@ private:
 	int getRelativeColor(int i);
 };
 
-inline bool mouseInRectangle(int mouseX, int mouseY, int rectX, int rectY, int rectWidth, int rectHeight) {
+class MeshInfo
+{
+public:
+	// MeshInfo() {}
+	static bool update(bool mouseAvailable, shared_ptr<SpriteMesh> mesh);
+	static void render();
+	static void clear();
+	static const int topMargin = (20 * 18);
+private:
+	static shared_ptr<SpriteMesh> m;
+
+	static const int width = 8;
+	static const int height = 3;
+	static const int scale = 2;
+};
+
+class VoxelEditorInfo
+{
+public:
+	static bool update(bool mouseAvailable, shared_ptr<VoxelEditor> editor);
+	static void render();
+	static void clear();
+private:
+	static shared_ptr<VoxelEditor> e;
+	static const int topMargin = MeshInfo::topMargin + (16 * 4);
+	static const int width = 8;
+	static const int height = 5;
+	static const int scale = 2;
+};
+
+inline bool mouseInRectangle(int mouseX, int mouseY, int rectX, int rectY, int rectWidth, int rectHeight)
+{
 	if (mouseX >= rectX && mouseX < rectX + rectWidth && mouseY >= rectY && mouseY < rectY + rectHeight)
 		return true;
 	else

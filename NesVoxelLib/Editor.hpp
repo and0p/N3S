@@ -3,6 +3,7 @@
 #include "Scene.hpp"
 
 using namespace std;
+const int sceneCount = 16;
 
 struct interactionOptions
 {

@@ -57,6 +57,8 @@ public:
 	void render(int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop);
 	void moveLayer(int x, int y, int z, int newX, int newY, int newZ, bool copy);
 	json getJSON();
+	void setOutline(int o);
+	int outlineColor = -1;
 private:
 	void buildZMeshes();
 	void rebuildZMesh(int x, int y);

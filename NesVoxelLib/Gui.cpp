@@ -4,6 +4,9 @@
 #include "Input.hpp"
 #include "Editor.hpp"
 
+shared_ptr<SpriteMesh> MeshInfo::m = nullptr;
+shared_ptr<VoxelEditor> VoxelEditorInfo::e = nullptr;
+
 bool SceneSelector::update(bool mouseAvailable)
 {
 	// Check for mouse hover, if mouse is available
@@ -17,7 +20,7 @@ bool SceneSelector::update(bool mouseAvailable)
 		int mouseY = InputState::keyboardMouse->mouseY;
 		int currentY = buttonGap;
 		// Check each button
-		for (int i = 0; i < 8; i++)
+		for (int i = 0; i < sceneCount; i++)
 		{
 			// See if mouse is in button bounds
 			if (mouseInRectangle(mouseX, mouseY, 0, currentY, buttonWidth, buttonHeight))
@@ -56,7 +59,7 @@ void SceneSelector::render()
 	Overlay::setColor(0, 0, 0, 60);
 	int currentY = buttonGap;
 	// Draw buttons
-	for (int i = 0; i < 8; i++)
+	for (int i = 0; i < sceneCount; i++)
 	{
 		if (highlightedTab == i)
 		{
@@ -73,9 +76,9 @@ void SceneSelector::render()
 	// Draw scene numbers
 	currentY = buttonGap + 3;
 	Overlay::setColor(255, 255, 255, 128);
-	for (int i = 0; i < 8; i++)
+	for (int i = 0; i < sceneCount; i++)
 	{
-		string s(1, i + 48 + 1);
+		string s = to_string(i);
 		Overlay::drawString(2, currentY, 2, s);
 		currentY += buttonHeight + buttonGap;
 	}
@@ -441,4 +444,120 @@ void PaletteSelector::render(shared_ptr<Scene> scene, shared_ptr<VoxelEditor> ed
 		Overlay::setColor(255, 255, 255, 128);
 		Overlay::drawString(leftMargin + (boxSize * 4) - 6, boxSize * 10 + 6, 2, "X");
 	}
+}
+
+bool MeshInfo::update(bool mouseAvailable, shared_ptr<SpriteMesh> mesh)
+{
+	m = mesh;
+	int mouseCaptured = 0;
+	// Check to see if mesh color has been clicked on
+	int y = topMargin + (8 * 2 * scale);
+	if (mouseAvailable)
+	{
+		MouseState state = InputState::keyboardMouse->mouseButtons[left_mouse].state;
+		int mouseX = InputState::keyboardMouse->mouseX;
+		int mouseY = InputState::keyboardMouse->mouseY;
+		if (state == pressed && mouseInRectangle(mouseX, mouseY, 0, topMargin, 8 * width * scale, 8 * height * scale))
+		{
+			// See if we've pressed the "none" button
+			if (mouseInRectangle(mouseX, mouseY, 0, y, 8 * scale, 8 * scale))
+			{
+				mesh->setOutline(-1);
+			}
+			else
+			{
+				// See if we're setting a differect color
+				int x = 8 * scale;
+				for (int i = 0; i <= 3; i++)
+				{
+					if (mouseInRectangle(mouseX, mouseY, x + (8 * scale * i), y, 8 * scale, 8 * scale))
+					{
+						mesh->setOutline(i);
+					}
+				}
+			}
+			return false;
+		}
+		else
+		{
+			return true;
+		}
+	}
+	return true;
+}
+
+void MeshInfo::render()
+{
+	if (m != nullptr)
+	{
+		N3s3d::setShader(overlay);
+		N3s3d::setGuiProjection();
+		Overlay::setColor(0, 0, 0, 128);
+		Overlay::drawRectangle(0, topMargin, width * 8 * scale, height * 8 * scale);
+		Overlay::setColor(255, 255, 255, 128);
+		string meshNumString = "MESH #" + std::to_string(m->id);
+		Overlay::drawString(0, topMargin, scale, meshNumString);
+		Overlay::drawString(0, topMargin + 8 * scale, scale, "OUTLINE:");
+		// Draw selected outline
+		Overlay::setColor(255, 255, 255, 64);
+		Overlay::drawRectangle(8 * scale * (m->outlineColor + 1), topMargin + (8 * 2 * scale), 8 * scale, 8 * scale);
+		Overlay::setColor(255, 255, 255, 128);
+		Overlay::drawString(0, topMargin + 8 * 2 * scale, scale, "N0123");
+	}
+}
+
+void MeshInfo::clear()
+{
+	m = nullptr;
+}
+
+bool VoxelEditorInfo::update(bool mouseAvailable, shared_ptr<VoxelEditor> editor)
+{
+	e = editor;
+	if (mouseAvailable)
+	{
+		MouseState state = InputState::keyboardMouse->mouseButtons[left_mouse].state;
+		int mouseX = InputState::keyboardMouse->mouseX;
+		int mouseY = InputState::keyboardMouse->mouseY;
+		if (state == pressed && mouseInRectangle(mouseX, mouseY, 0, topMargin, 8 * width * scale, 8 * height * scale))
+		{
+
+		}
+	}
+	return false;
+}
+
+void VoxelEditorInfo::render()
+{
+	if (e != nullptr)
+	{
+		N3s3d::setShader(overlay);
+		N3s3d::setGuiProjection();
+		Overlay::setColor(0, 0, 0, 128);
+		Overlay::drawRectangle(0, topMargin, width * 8 * scale, height * 8 * scale);
+		Overlay::setColor(255, 255, 255, 128);
+		int x, y, z;
+		x = static_cast<int>(floor(e->workingX));
+		y = static_cast<int>(floor(e->workingY));
+		z = static_cast<int>(floor(e->workingZ));
+		string positionString = to_string(x) + "," + to_string(y) + "," + to_string(z);
+		Overlay::drawString(0, topMargin, scale, positionString);
+		if (e->mouseInEditor)
+		{
+			x = e->mouseHighlight.x;
+			y = e->mouseHighlight.y;
+			z = e->mouseHighlight.z;
+			positionString = to_string(x) + "," + to_string(y) + "," + to_string(z);
+		}
+		else
+		{ 
+			positionString = "-,-,-";
+		}
+		Overlay::drawString(0, topMargin + (8 * scale), scale, positionString);
+	}
+}
+
+void VoxelEditorInfo::clear()
+{
+	e = nullptr;
 }

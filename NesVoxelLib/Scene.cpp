@@ -47,7 +47,7 @@ Scene::Scene()
 	// Clear BG with all "blank" (-1) sprites
 	for (int i = 0; i < sceneWidth * sceneHeight; i++)
 	{
-		bg[i] = { -1, 0, false, false };	
+		bg[i] = { nullptr, -1, 0, false, false };	
 	}
 	selection = make_shared<Selection>();
 	displaySelection = make_shared<Selection>();
@@ -60,7 +60,7 @@ Scene::Scene(shared_ptr<PpuSnapshot> snapshot)
 	// Clear BG with all "blank" (-1) sprites
 	for (int i = 0; i < sceneWidth * sceneHeight; i++)
 	{
-		bg[i] = { -1, 0, false, false };
+		bg[i] = { nullptr, -1, 0, false, false };
 	}
 	selection = make_shared<Selection>();
 	displaySelection = make_shared<Selection>();
@@ -70,10 +70,12 @@ Scene::Scene(shared_ptr<PpuSnapshot> snapshot)
 	{
 		OamSprite s = snapshot->sprites[i];
 		int tile = snapshot->getTrueOamTile(i);
-		int id = N3sApp::virtualPatternTable->getSprite(s.tile)->defaultMesh->id; // lol
+		shared_ptr<SpriteMesh> spriteMesh = N3sApp::virtualPatternTable->getSprite(s.tile)->defaultMesh; // TODO get virtually defined mesh?
+		int id = spriteMesh->id;
 		if (id >= 0)
 		{
 			SceneSprite ss;
+			ss.mesh = spriteMesh;
 			ss.x = s.x;
 			ss.y = s.y;
 			ss.palette = s.palette;
@@ -81,6 +83,10 @@ Scene::Scene(shared_ptr<PpuSnapshot> snapshot)
 			ss.mirrorH = s.hFlip;
 			ss.mirrorV = s.vFlip;
 			sprites.push_back(ss);
+		}
+		if (snapshot->ctrl.spriteSize16x8)
+		{
+			// TODO: get 16x8 sprites as well
 		}
 	}
 	// Grab all NT
@@ -93,8 +99,10 @@ Scene::Scene(shared_ptr<PpuSnapshot> snapshot)
 			int tile = snapshot->getTrueNTTile(index);
 			shared_ptr<VirtualSprite> s = N3sApp::virtualPatternTable->getSprite(tile);
 			int id = s->defaultMesh->id;
+			shared_ptr<SpriteMesh> spriteMesh = s->defaultMesh;
 			// Add to nametable index
 			SceneSprite ss;
+			ss.mesh = spriteMesh;
 			ss.x = 0;
 			ss.y = 0;
 			ss.palette = t.palette;
@@ -304,27 +312,6 @@ void Scene::setBackgroundSprite(int x, int y, SceneSprite sprite)
 void Scene::addOAMSprite(SceneSprite s)
 {
 	sprites.push_back(s);
-}
-
-void Scene::createSceneFromCurrentSnapshot()
-{
-	int scrollX = N3sApp::snapshot->scrollSections[0].x;
-	int scrollY = N3sApp::snapshot->scrollSections[0].y;
-	int nameTable = N3sApp::snapshot->scrollSections[0].nameTable;
-	// todo: adjust scroll x and y by nametable selection
-
-	// Grab all background tiles
-	for (int y = 0; y < sceneHeight; y++)
-	{
-		int yName = floor(y / 30);
-		int yCalc = y * sceneWidth;
-		for (int x = 0; x < sceneWidth; x++)
-		{
-			int xName = floor(x / 32);
-			NameTableTile t = N3sApp::snapshot->background.getTile(x, y, yName + xName);
-			SceneSprite s = { t.tile, t.palette, false, false }; // NOPE gotta get the mesh #
-		}
-	}
 }
 
 N3sPalette * Scene::getSelectedPalette()
@@ -628,7 +615,7 @@ void Scene::moveSelection(bool copy) // TODO add copy modifier parameter
 	{
 		if (!copy)
 		{
-			bg[kv.first] = { -1, 0, false, false };
+			bg[kv.first] = { nullptr, -1, 0, false, false };
 		}
 		selection->selectedBackgroundIndices.erase(kv.first);
 	}
@@ -644,6 +631,11 @@ void Scene::moveSelection(bool copy) // TODO add copy modifier parameter
 			selection->selectedBackgroundIndices.insert(newIndex);
 		}
 	}
+}
+
+shared_ptr<SpriteMesh> Scene::getSelectedMesh()
+{
+		return nullptr;
 }
 
 Vector2D Scene::getCoordinatesFromZIntersection(XMFLOAT3 zIntersect)
