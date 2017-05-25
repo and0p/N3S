@@ -697,8 +697,53 @@ void SpriteMesh::moveLayer(int oldX, int oldY, int oldZ, int newX, int newY, int
 		// Rebuild the mesh
 		buildMesh();
 	}
-
-	// Rebuild whichever Z indices are necessary
+	else if (oldX != newX)
+	{
+		if (oldX > 0 && oldX < 8 && newZ > 0 && newX < 8)
+		{
+			// Move layer on X axis
+			for (int z = 0; z < 32; z++)
+				for (int y = 0; y < 8; y++)
+					setVoxel(newX, y, z, voxels->getVoxel(oldX, y, z).color);
+			if (!copy)
+			{
+				for (int z = 0; z < 32; z++)
+					for (int y = 0; y < 8; y++)
+						setVoxel(oldX, y, z, 0);
+			}
+		}
+		// Rebuild the mesh
+		buildMesh();
+	}
+	else if (oldY != newY)
+	{
+		if (oldX > 0 && oldX < 8 && newZ > 0 && newX < 8)
+		{
+			// Move layer on X axis
+			for (int z = 0; z < 32; z++)
+				for (int y = 0; y < 8; y++)
+					setVoxel(newX, y, z, voxels->getVoxel(oldX, y, z).color);
+			if (!copy)
+			{
+				for (int z = 0; z < 32; z++)
+					for (int y = 0; y < 8; y++)
+						setVoxel(oldX, y, z, 0);
+			}
+		}
+		// Rebuild the mesh
+		buildMesh();
+	}
+	if (newZ != oldZ)
+	{
+		// Rebuild all
+		buildZMeshes();
+	}
+	else
+	{
+		// If on a X or Y axis, only rebuild needed Z meshes
+		//TODO actually check which are necessary
+		buildZMeshes();
+	}
 }
 
 json SpriteMesh::getJSON()

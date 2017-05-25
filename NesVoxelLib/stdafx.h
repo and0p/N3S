@@ -81,3 +81,13 @@ inline int roundDownPosOrNeg(float n)
 	else
 		return floor(n);
 }
+
+// Snap to nearest nametable point
+inline Vector2D nametableSnap(int x, int y)
+{
+	float xDiv = x / 8;
+	float yDiv = y / 8;
+	xDiv += 0.5f;
+	yDiv += 0.5f;
+	return { floor(xDiv) * 8, floor(yDiv) * 8 };
+}

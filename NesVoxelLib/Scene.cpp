@@ -21,6 +21,7 @@ int moveX, moveY;
 MouseModifier modifier = no_mod;
 MouseFunction mouseFunction = no_func;
 Vector3D originMousePixelCoordinates;
+Vector3D originMousePixelCoordinatesModified;
 
 bool voxelEditing = false;
 
@@ -44,11 +45,6 @@ Scene::Scene()
 {
 	// Set camera to default position
 	mainCamera.SetPosition(0, 0, 0);
-	// Clear BG with all "blank" (-1) sprites
-	for (int i = 0; i < sceneWidth * sceneHeight; i++)
-	{
-		bg[i] = { nullptr, -1, 0, false, false };	
-	}
 	selection = make_shared<Selection>();
 	displaySelection = make_shared<Selection>();
 }
@@ -60,7 +56,7 @@ Scene::Scene(shared_ptr<PpuSnapshot> snapshot)
 	// Clear BG with all "blank" (-1) sprites
 	for (int i = 0; i < sceneWidth * sceneHeight; i++)
 	{
-		bg[i] = { nullptr, -1, 0, false, false };
+		//bg[i] = { nullptr, 0, false, false };
 	}
 	selection = make_shared<Selection>();
 	displaySelection = make_shared<Selection>();
@@ -70,23 +66,42 @@ Scene::Scene(shared_ptr<PpuSnapshot> snapshot)
 	{
 		OamSprite s = snapshot->sprites[i];
 		int tile = snapshot->getTrueOamTile(i);
-		shared_ptr<SpriteMesh> spriteMesh = N3sApp::virtualPatternTable->getSprite(s.tile)->defaultMesh; // TODO get virtually defined mesh?
-		int id = spriteMesh->id;
-		if (id >= 0)
+		shared_ptr<SpriteMesh> spriteMesh = N3sApp::virtualPatternTable->getSprite(tile)->defaultMesh; // TODO get virtually defined mesh?
+		if (spriteMesh->meshExists >= 0)
 		{
 			SceneSprite ss;
 			ss.mesh = spriteMesh;
 			ss.x = s.x;
 			ss.y = s.y;
 			ss.palette = s.palette;
-			ss.meshNum = id;
 			ss.mirrorH = s.hFlip;
 			ss.mirrorV = s.vFlip;
+			// Mirror and change position differently based on 16x8 mode
+			if (snapshot->ctrl.spriteSize16x8)
+			{
+				if (s.vFlip)
+					ss.y += 8;
+			}
 			sprites.push_back(ss);
 		}
 		if (snapshot->ctrl.spriteSize16x8)
 		{
-			// TODO: get 16x8 sprites as well
+			// Get 16x8 sprites as well
+			tile++;
+			spriteMesh = N3sApp::virtualPatternTable->getSprite(tile)->defaultMesh;
+			if (spriteMesh->meshExists >= 0)
+			{
+				SceneSprite ss;
+				ss.mesh = spriteMesh;
+				ss.x = s.x;
+				ss.y = s.y + 8;
+				ss.palette = s.palette;
+				ss.mirrorH = s.hFlip;
+				ss.mirrorV = s.vFlip;
+				if (s.vFlip)
+					ss.y -= 8;
+				sprites.push_back(ss);
+			}
 		}
 	}
 	// Grab all NT
@@ -100,16 +115,18 @@ Scene::Scene(shared_ptr<PpuSnapshot> snapshot)
 			shared_ptr<VirtualSprite> s = N3sApp::virtualPatternTable->getSprite(tile);
 			int id = s->defaultMesh->id;
 			shared_ptr<SpriteMesh> spriteMesh = s->defaultMesh;
-			// Add to nametable index
-			SceneSprite ss;
-			ss.mesh = spriteMesh;
-			ss.x = 0;
-			ss.y = 0;
-			ss.palette = t.palette;
-			ss.meshNum = id;
-			ss.mirrorH = false;
-			ss.mirrorV = false;
-			bg[index] = ss;
+			if (spriteMesh->meshExists)
+			{
+				SceneSprite ss;
+				ss.mesh = spriteMesh;
+				ss.x = x * 8;
+				ss.y = y * 8;
+				ss.palette = t.palette;
+				ss.mirrorH = false;
+				ss.mirrorV = false;
+				sprites.push_back(ss);
+			}
+
 		}
 	}
 	// Grab palette
@@ -171,47 +188,23 @@ void Scene::render(bool renderBackground, bool renderOAM)
 		N3s3d::updateMatricesWithCamera(&mainCamera);
 	// Update palette in video card
 	palettes[selectedPalette].updateShaderPalette();
-	// Render background, if enabled
-	if (renderBackground)
+	// Render sprites
+	for (int i = 0; i < sprites.size(); i++)
 	{
-		for (int y = 0; y < sceneHeight; y++)
+		SceneSprite s = sprites[i];
+		// See if sprite has any mesh
+		if (s.mesh != nullptr)
 		{
-			int yCalc = y * sceneWidth;
-			for (int x = 0; x < sceneWidth; x++)
-			{
-				SceneSprite sprite = bg[yCalc + x];
-				// Only render non-empty spots, which are 0 or greater
-				if (sprite.meshNum >= 0)
-				{
-					int i = getArrayIndexFromXY(x, y, sceneWidth);
-					if (displaySelection->selectedBackgroundIndices.count(i) > 0 || highlight.getHighlightedNT() == i)
-					{
-						N3s3d::setDepthStencilState(true, true, false);
-						N3sApp::gameData->meshes[sprite.meshNum]->render(x * 8, y * 8, sprite.palette, sprite.mirrorH, sprite.mirrorV, { 0,0,0,0 });
-						N3s3d::setDepthStencilState(true, false, false);
-					}
-					// See if this tile is selected or highlighted
-					N3sApp::gameData->meshes[sprite.meshNum]->render(x * 8, y * 8, sprite.palette, sprite.mirrorH, sprite.mirrorV, { 0,0,0,0 });
-				}
-			}
-		}
-	}
-	// Render OAM, if enabled
-	if (renderOAM)
-	{
-		for (int i = 0; i < sprites.size(); i++)
-		{
-			SceneSprite s = sprites[i];
 			// See if sprite is highlighted and write to stencil buffer if so
-			if (displaySelection->selectedSpriteIndices.count(i) > 0 || highlight.getHighlightedOAM() == i)
+			if (displaySelection->selectedIndices.count(i) > 0 || highlight.highlightedIndices.count(i) > 0)
 			{
 				N3s3d::setDepthStencilState(true, true, false);
-				N3sApp::gameData->meshes[s.meshNum]->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
+				s.mesh->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
 				N3s3d::setDepthStencilState(true, false, false);
 			}
 			else
 			{
-				N3sApp::gameData->meshes[s.meshNum]->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
+				s.mesh->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
 			}
 		}
 	}
@@ -288,28 +281,13 @@ void Scene::renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights)
 
 void Scene::changeSelectionPalette(int p)
 {
-	if (p <= 3)
+	for each (auto i in selection->selectedIndices)
 	{
-		for each (auto i in selection->selectedBackgroundIndices)
-		{
-			bg[i].palette = p;
-		}
-	}
-	else
-	{
-		for each (auto i in selection->selectedSpriteIndices)
-		{
-			sprites[i].palette = p;
-		}
+		sprites[i].palette = p;
 	}
 }
 
-void Scene::setBackgroundSprite(int x, int y, SceneSprite sprite)
-{
-	bg[y * sceneWidth + x] = sprite;
-}
-
-void Scene::addOAMSprite(SceneSprite s)
+void Scene::addSprite(SceneSprite s)
 {
 	sprites.push_back(s);
 }
@@ -337,25 +315,15 @@ void Scene::updateHighlight2d(Vector3D mouse, bool highlightOAM, bool highlightN
 {
 	// Clear previous highlight
 	highlight.clear();
-	// See if any OAM sprites intersect selection
-	if (highlightOAM)
+	// See if any sprites intersect selection
+	for (int i = 0; i < sprites.size(); i++)
 	{
-		for (int i = 0; i < sprites.size(); i++)
-		{
-			SceneSprite s = sprites[i];
-			if (mouse.x >= s.x && mouse.x < s.x + 8 && mouse.y >= s.y && mouse.y < s.y + 8)
-				highlight.highlightedSpriteIndices.push_back(i);
-		}
+		SceneSprite s = sprites[i];
+		if (mouse.x >= s.x && mouse.x < s.x + 8 && mouse.y >= s.y && mouse.y < s.y + 8)
+			highlight.highlightedIndices.insert(i);
 	}
-	// See if any part of the background intersects selection
-	if (highlightNametable)
-	{
-		if (mouse.x >= 0 && mouse.x < scenePixelWidth && mouse.y >= 0 && mouse.y < scenePixelHeight)
-			highlight.highlightedBackgroundIndex = floor(mouse.y / 8) * 64 + floor(mouse.x / 8);
-	}
-	// Set the index
-	if (highlight.highlightedBackgroundIndex >= 0 || highlight.highlightedSpriteIndices.size() > 0)
-		highlight.selectedIndex = 0;
+	if (highlight.highlightedIndices.size() > 0)
+		highlight.anythingHighlighted = true;
 }
 
 bool Scene::updateMouseActions(bool mouseAvailable)
@@ -379,12 +347,15 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 			if (state == clicked)
 			{
 				// See if OAM or NT is highlighted at all
-				if (highlight.anythingHighlighted())
+				if (highlight.anythingHighlighted)
 				{
+					selectionClickedOn = false;
 					// See if the current selection is highlighted
-					if(selection->selectedSpriteIndices.count(highlight.getHighlightedOAM()) > 0 ||
-					   selection->selectedBackgroundIndices.count(highlight.getHighlightedNT()) > 0)
-						selectionClickedOn = true;
+					for each(int i in selection->selectedIndices)
+					{
+						if(i == highlight.getHighlight())
+							selectionClickedOn = true;
+					}
 				}
 				// Capture mod key
 				if (InputState::functions[selection_add].active && InputState::functions[selection_remove].active)
@@ -405,48 +376,34 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 			else if (state == pressed)
 			{
 				// Check for highlight and add to selection or enter voxel editor
-				if (highlight.getHighlightedOAM() >= 0)
+				if (highlight.getHighlight() >= 0)
 				{
-					if (modifier == no_mod && selection->selectedSpriteIndices.size() == 1)
+					if (modifier == no_mod && selection->selectedIndices.size() == 1)
 					{
-						auto selected = selection->selectedSpriteIndices.begin();
+						auto selected = selection->selectedIndices.begin();
 						int s = *selected;
-						if (highlight.getHighlightedOAM() == s)
+						if (highlight.getHighlight() == s)
 						{
 							// Switch to editing that mesh
 							N3sConsole::writeLine("SWITCHED TO EDITOR!");
-							int meshNum = sprites[s].meshNum;
-							shared_ptr<SpriteMesh> mesh = N3sApp::gameData->meshes[meshNum];
-							voxelEditor = make_shared<VoxelEditor>(mesh, sprites[s].x, sprites[s].y, mainCamera);
+							voxelEditor = make_shared<VoxelEditor>(sprites[s].mesh, sprites[s].x, sprites[s].y, mainCamera);
 							voxelEditing = true;
 						}
 						else
 						{
 							selection->clear();
-							selection->selectedSpriteIndices.insert(highlight.getHighlightedOAM());
+							selection->selectedIndices.insert(highlight.getHighlight());
 						}
 					}
 					else if (modifier == no_mod)
 					{
 						selection->clear();
-						selection->selectedSpriteIndices.insert(highlight.getHighlightedOAM());
+						selection->selectedIndices.insert(highlight.getHighlight());
 					}
 					else if (modifier == mod_add)
-						selection->selectedSpriteIndices.insert(highlight.getHighlightedOAM());
+						selection->selectedIndices.insert(highlight.getHighlight());
 					else if (modifier == mod_remove)
-						selection->selectedSpriteIndices.erase(highlight.getHighlightedOAM());
-				}
-				else if (highlight.getHighlightedNT() >= 0)
-				{
-					if (modifier == no_mod)
-					{
-						selection->clear();
-						selection->selectedBackgroundIndices.insert(highlight.getHighlightedNT());
-					}
-					else if (modifier == mod_add)
-						selection->selectedBackgroundIndices.insert(highlight.getHighlightedNT());
-					else if (modifier == mod_remove)
-						selection->selectedBackgroundIndices.erase(highlight.getHighlightedNT());
+						selection->selectedIndices.erase(highlight.getHighlight());
 				}
 			}
 			else if (state == dragging)
@@ -458,6 +415,25 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 					// Set the movement amount
 					moveX = mousePixelCoordinates.x - originMousePixelCoordinates.x;
 					moveY = mousePixelCoordinates.y - originMousePixelCoordinates.y;
+					if (modifier == mod_add)
+					{
+						Vector2D xy = nametableSnap(moveX, moveY);
+						moveX = xy.x;
+						moveY = xy.y;
+						originMousePixelCoordinatesModified = originMousePixelCoordinates;
+					}
+					else if (modifier == mod_intersect)
+					{
+						Vector2D xy = nametableSnap(moveX, moveY);
+						moveX = xy.x;
+						moveY = xy.y;
+						Vector2D oxy = nametableSnap(originMousePixelCoordinates.x, originMousePixelCoordinates.y);
+						originMousePixelCoordinatesModified = { oxy.x, oxy.y, 0 };
+					}
+					else
+					{
+						originMousePixelCoordinatesModified = originMousePixelCoordinates;
+					}
 				}
 				// If a modifier was held down, or no part of selection was highlighted, start drag selection
 				if (!selectionClickedOn)
@@ -483,6 +459,23 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 						y = mousePixelCoordinates.y;
 						startX = originMousePixelCoordinates.x;
 						startY = originMousePixelCoordinates.y;
+
+						// See if we're holding keys that would make dragging snap to NT grid
+						if (modifier == mod_add)
+						{
+							Vector2D xy = nametableSnap(x, y);
+							x = xy.x;
+							y = xy.y;
+						}
+						else if (modifier == mod_intersect)
+						{
+							Vector2D xy = nametableSnap(x, y);
+							Vector2D startXY = nametableSnap(startX, startY);
+							x = xy.x;
+							y = xy.y;
+							startX = startXY.x;
+							startY = startXY.y;
+						}
 					}
 					// Set sides of selection
 					if (x > startX)
@@ -513,20 +506,8 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 						{
 							SceneSprite s = sprites[i];
 							if (isSpriteIn2dRect(sel_top, sel_left, sel_bottom, sel_right, sprites[i].x, sprites[i].y))
-								tempSelection->selectedSpriteIndices.insert(i);
+								tempSelection->selectedIndices.insert(i);
 						}
-					}
-					if (true)
-					{
-						for (y = 0; y < sceneHeight; y++)
-							for (x = 0; x < sceneWidth; x++)
-								if (isSpriteIn2dRect(sel_top, sel_left, sel_bottom, sel_right, x * 8, y * 8))
-								{
-									int i = getArrayIndexFromXY(x, y, sceneWidth);
-									// Check that we actually have something there, and the sprite isn't empty (no mesh)
-									if(bg[i].meshNum >= 0 && N3sApp::gameData->meshes[bg[i].meshNum]->meshExists)
-										tempSelection->selectedBackgroundIndices.insert(i);
-								}
 					}
 					// Set new display selection to be some combination of the two, depending on modifier key
 					switch (modifier)
@@ -580,55 +561,24 @@ void Scene::moveSelection(bool copy) // TODO add copy modifier parameter
 	if (copy)
 	{
 		// Track indices of new OAM sprites, which will be selected after operation
-		unordered_set<int> newOAMIndices;
-		for each(int i in selection->selectedSpriteIndices)
+		unordered_set<int> newIndices;
+		for each(int i in selection->selectedIndices)
 		{
 			int newIndex = sprites.size();	// Grab new index
 			SceneSprite newSprite = sprites[i];
 			newSprite.x += moveX;
 			newSprite.y += moveY;
 			sprites.push_back(newSprite);
-			newOAMIndices.insert(newIndex);
+			newIndices.insert(newIndex);
 		}
-		selection->selectedSpriteIndices = newOAMIndices;
+		selection->selectedIndices = newIndices;
 	}
 	else
 	{
-		for each(int i in selection->selectedSpriteIndices)
+		for each(int i in selection->selectedIndices)
 		{
 			sprites[i].x += moveX;
 			sprites[i].y += moveY;
-		}
-	}
-
-	// Calculate how much the nametable sprites have moved
-	int ntX = roundDownPosOrNeg(moveX / 8);
-	int ntY = roundDownPosOrNeg(moveY / 8);
-	// Cache old values
-	unordered_map<int, SceneSprite> cache;
-	for each(int i in selection->selectedBackgroundIndices)
-	{
-		cache[i] = bg[i];
-	}
-	// Clear old values, if this isn't a duplication
-	for (auto kv : cache)
-	{
-		if (!copy)
-		{
-			bg[kv.first] = { nullptr, -1, 0, false, false };
-		}
-		selection->selectedBackgroundIndices.erase(kv.first);
-	}
-	// Overwrite NT at new positions
-	for (auto kv : cache)
-	{
-		Vector2D oldXY = unwrapArrayIndex(kv.first, sceneWidth);
-		int newIndex = getArrayIndexFromXY(oldXY.x + ntX, oldXY.y + ntY, sceneWidth);
-		// Make sure this new index is within bounds
-		if (newIndex >= 0 && newIndex < bgSize)
-		{
-			bg[newIndex] = kv.second;
-			selection->selectedBackgroundIndices.insert(newIndex);
 		}
 	}
 }
@@ -656,54 +606,32 @@ Vector2D Scene::getCoordinatesFromZIntersection(XMFLOAT3 zIntersect)
 	return mouse;
 }
 
+int Highlight::getHighlight()
+{
+	if (highlightedIndices.size() > 0)
+		return *highlightedIndices.begin();
+	else
+		return -1;
+}
+
 void Highlight::clear()
 {
-	highlightedSpriteIndices.clear();
-	highlightedBackgroundIndex = -1;
-	selectedIndex = -1;
-}
-
-int Highlight::getHighlightedOAM()
-{
-	if (selectedIndex >= 0 && selectedIndex < highlightedSpriteIndices.size())
-		return highlightedSpriteIndices[selectedIndex];
-	else
-		return -1;
-}
-
-int Highlight::getHighlightedNT()
-{
-	if (selectedIndex == highlightedSpriteIndices.size())
-		return highlightedBackgroundIndex;
-	else
-		return -1;
-}
-
-bool Highlight::anythingHighlighted()
-{
-	if (selectedIndex >= 0)
-		return true;
-	else
-		return false;
+	highlightedIndices.clear();
+	anythingHighlighted = false;
 }
 
 void Selection::clear()
 {
-	selectedSpriteIndices.clear();
-	selectedBackgroundIndices.clear();
+	selectedIndices.clear();
 }
 
 shared_ptr<Selection> Selection::getUnion(shared_ptr<Selection> a, shared_ptr<Selection> b)
 {
 	shared_ptr<Selection> temp = make_shared<Selection>();
-	for each(int i in a->selectedSpriteIndices)
-		temp->selectedSpriteIndices.insert(i);
-	for each(int i in b->selectedSpriteIndices)
-		temp->selectedSpriteIndices.insert(i);
-	for each(int i in a->selectedBackgroundIndices)
-		temp->selectedBackgroundIndices.insert(i);
-	for each(int i in b->selectedBackgroundIndices)
-		temp->selectedBackgroundIndices.insert(i);
+	for each(int i in a->selectedIndices)
+		temp->selectedIndices.insert(i);
+	for each(int i in b->selectedIndices)
+		temp->selectedIndices.insert(i);
 	return temp;
 }
 
@@ -711,13 +639,10 @@ shared_ptr<Selection> Selection::getSubtraction(shared_ptr<Selection> first, sha
 {
 	shared_ptr<Selection> temp = make_shared<Selection>();
 	// Get all selections for first sets
-	temp->selectedSpriteIndices = first->selectedSpriteIndices;
-	temp->selectedBackgroundIndices = first->selectedBackgroundIndices;
+	temp->selectedIndices = first->selectedIndices;
 	// Remove any that are also in the second sets
-	for each(int i in second->selectedSpriteIndices)
-		temp->selectedSpriteIndices.erase(i);
-	for each(int i in second->selectedBackgroundIndices)
-		temp->selectedBackgroundIndices.erase(i);
+	for each(int i in second->selectedIndices)
+		temp->selectedIndices.erase(i);
 	return temp;
 }
 
@@ -725,15 +650,10 @@ shared_ptr<Selection> Selection::getIntersection(shared_ptr<Selection> a, shared
 {
 	shared_ptr<Selection> temp = make_shared<Selection>();
 	// Add sprite and nt indices if both selections have them
-	for each(int i in a->selectedSpriteIndices)
+	for each(int i in a->selectedIndices)
 	{
-		if(b->selectedSpriteIndices.count(i) > 0)
-			temp->selectedSpriteIndices.insert(i);
-	}
-	for each(int i in b->selectedBackgroundIndices)
-	{
-		if (b->selectedBackgroundIndices.count(i) > 0)
-			temp->selectedBackgroundIndices.insert(i);
+		if(b->selectedIndices.count(i) > 0)
+			temp->selectedIndices.insert(i);
 	}
 	return temp;
 }
@@ -742,18 +662,9 @@ void Selection::render(vector<SceneSprite> * sprites, int moveX, int moveY)
 {
 	// Render all OAM highlights
 	Overlay::setColor(0.0f, 1.0f, 0.0f, 1.0f);
-	for each(int i in selectedSpriteIndices)
+	for each(int i in selectedIndices)
 	{
 		SceneSprite s = sprites->at(i);
 		Overlay::drawSpriteSquare(s.x + moveX, s.y + moveY);
-	}
-	// Render all NT highlights
-	Overlay::setColor(1.0f, 0.0f, 0.0f, 1.0f);
-	for each(int i in selectedBackgroundIndices)
-	{
-		int ntX = roundDownPosOrNeg(moveX / 8);
-		int ntY = roundDownPosOrNeg(moveY / 8);
-		Vector2D pos = unwrapArrayIndex(i, sceneWidth);
-		Overlay::drawSpriteSquare((pos.x + ntX) * 8, (pos.y + ntY) * 8);
 	}
 }

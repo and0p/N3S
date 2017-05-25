@@ -78,6 +78,7 @@ public:
 	vector<int> appearancesInRomChr;	// Where does this sprite appear in CHR data? For reference.
 	string chrData;
 	shared_ptr<SpriteMesh> defaultMesh;
+	VoxelMesh previewMeshFront;
 private:
 	string description = "";
 	string serializeChrDataAsText();

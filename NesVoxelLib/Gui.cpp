@@ -89,16 +89,15 @@ bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene, share
 	N3sPalette * palette = scene->getSelectedPalette();
 	int previouslySelectedIndex = selectedIndex;
 	// See if we're modifying any selection's palette(s)
-	int oamSelected = scene->selection->selectedSpriteIndices.size();
-	int ntSelected = scene->selection->selectedBackgroundIndices.size();
+	int selected = scene->selection->selectedIndices.size();
 	// Check for selections, but only if it's strictly OAM or NT, not both
-	if ((oamSelected > 0 && ntSelected == 0) || (ntSelected > 0 && oamSelected == 0))
+	if (selected > 0)
 	{
 		bool allPalettesIdentical = true;
 		// Check for all identical OAM
-		if (oamSelected > 0)
+		if (selected > 0)
 		{
-			auto it = scene->selection->selectedSpriteIndices.begin();
+			auto it = scene->selection->selectedIndices.begin();
 			int p = scene->sprites[*it].palette;
 
 			// See if this palette is different from one that may have been selected in the previous frame
@@ -109,31 +108,13 @@ bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene, share
 			}
 				
 			// See if all selected items have the same palette
-			for each(int i in scene->selection->selectedSpriteIndices)
+			for each(int i in scene->selection->selectedIndices)
 			{
 				if (scene->sprites[i].palette != p)
 					allPalettesIdentical = false;
 			}
 			if (allPalettesIdentical)
 				selectedPalette = p;
-			else
-				selectedPalette = -1;
-		}
-		else
-		{
-			auto it = scene->selection->selectedBackgroundIndices.begin();
-			int p = scene->bg[*it].palette;
-
-			// See if all selected items have the same palette
-			for each(int i in scene->selection->selectedBackgroundIndices)
-			{
-				if (scene->bg[i].palette != p)
-					allPalettesIdentical = false;
-			}
-			if (allPalettesIdentical)
-			{
-				selectedPalette = p;
-			}
 			else
 				selectedPalette = -1;
 		}

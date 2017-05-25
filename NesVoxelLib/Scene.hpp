@@ -23,7 +23,6 @@ enum MouseFunction { no_func, move_func, select_new, select_add, select_sub, sel
 
 struct SceneSprite {
 	shared_ptr<SpriteMesh> mesh;
-	int meshNum;
 	int palette;
 	int x;
 	int y;
@@ -38,20 +37,17 @@ public:
 
 class Highlight {
 public:
-	int selectedIndex = -1;
-	vector<int> highlightedSpriteIndices;
-	int highlightedBackgroundIndex = -1;
+	unordered_set<int> highlightedIndices;
+	int getHighlight();
 	void clear();
-	int getHighlightedOAM();
-	int getHighlightedNT();
-	bool anythingHighlighted();
+	bool anythingHighlighted;
 };
 
 class Selection {
 public:
-	unordered_set<int> selectedSpriteIndices;
-	unordered_set<int> selectedBackgroundIndices;
+	unordered_set<int> selectedIndices;
 	void clear();
+	bool anythingSelected;
 	static shared_ptr<Selection> getUnion(shared_ptr<Selection> a, shared_ptr<Selection> b);
 	static shared_ptr<Selection> getSubtraction(shared_ptr<Selection> first, shared_ptr<Selection> second);
 	static shared_ptr<Selection> getIntersection(shared_ptr<Selection> a, shared_ptr<Selection> b);
@@ -67,8 +63,7 @@ public:
 	void renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights);
 	void changeSelectionPalette(int p);
 	vector<SceneSprite> sprites;
-	void setBackgroundSprite(int x, int y, SceneSprite sprite);
-	void addOAMSprite(SceneSprite s);
+	void addSprite(SceneSprite s);
 	N3sPalette palettes[8];
 	int selectedPalette = 0;
 	N3sPalette * getSelectedPalette();
@@ -80,7 +75,6 @@ public:
 	void updateHighlight2d(Vector3D mouse, bool highlightOAM, bool highlightNametable);
 	bool updateMouseActions(bool mouseAvailable);
 	void moveSelection(bool copy);
-	SceneSprite bg[sceneWidth * sceneHeight];
 	shared_ptr<VoxelEditor> voxelEditor;
 	shared_ptr<SpriteMesh> getSelectedMesh();
 private:

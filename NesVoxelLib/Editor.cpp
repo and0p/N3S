@@ -20,11 +20,10 @@ void Editor::init()
 	{
 		scenes[i] = make_shared<Scene>();
 	}
-	scenes[0]->setBackgroundSprite(15, 15, { nullptr,3,1,0,0,false,false });
-	scenes[0]->addOAMSprite({ nullptr, 3, 0, 0, 0, false, false });
-	scenes[0]->addOAMSprite({ nullptr, 3, 0, 200, 171, false, false });
-	scenes[0]->addOAMSprite({ nullptr, 3, 0, 133, 117, false, false });
-	scenes[0]->addOAMSprite({ nullptr, 3, 0, 32, 32, false, false });
+	scenes[0]->addSprite({ nullptr, 0, 0, 0, false, false });
+	scenes[0]->addSprite({ nullptr, 0, 200, 171, false, false });
+	scenes[0]->addSprite({ nullptr, 0, 133, 117, false, false });
+	scenes[0]->addSprite({ nullptr, 0, 32, 32, false, false });
 }
 
 void Editor::update()
