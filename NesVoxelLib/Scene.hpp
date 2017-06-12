@@ -4,6 +4,7 @@
 #include "N3sApp.hpp"
 #include "N3sPalette.hpp"
 #include "VoxelEditor.hpp"
+#include "N3sMath.hpp"
 
 using namespace std;
 
@@ -72,12 +73,16 @@ public:
 	Highlight highlight;
 	shared_ptr<Selection> selection;
 	shared_ptr<Selection> displaySelection;
-	void updateHighlight2d(Vector3D mouse, bool highlightOAM, bool highlightNametable);
+	void updateHighlight2d(Vector2D mouse, bool highlightOAM, bool highlightNametable);
 	bool updateMouseActions(bool mouseAvailable);
 	void moveSelection(bool copy);
 	shared_ptr<VoxelEditor> voxelEditor;
 	shared_ptr<SpriteMesh> getSelectedMesh();
+	Vector2D dragStart;
+	Vector2D dragDestination;
 private:
+	void deleteSelection();
 	bool showGuides = false;
-	static Vector2D Scene::getCoordinatesFromZIntersection(XMFLOAT3 zIntersect);
+	static Vector3F Scene::getCoordinatesFromZIntersection(XMFLOAT3 zIntersect);
+	Vector2D getTopLeftSpriteInSelection(shared_ptr<Selection> s);
 };

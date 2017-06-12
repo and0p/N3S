@@ -3,6 +3,7 @@
 #include "Overlay.hpp"
 #include "Input.hpp"
 #include "Editor.hpp"
+#include "N3sMath.hpp"
 
 shared_ptr<SpriteMesh> MeshInfo::m = nullptr;
 shared_ptr<VoxelEditor> VoxelEditorInfo::e = nullptr;

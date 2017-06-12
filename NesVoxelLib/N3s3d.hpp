@@ -10,6 +10,7 @@
 #include <DirectXColors.h>
 #include <wrl/client.h>
 #include "N3sD3DContext.h"
+#include "N3sMath.hpp"
 
 static float pixelSizeW = (2.0f / 256.0f);
 static float pixelSizeH = (2.0f / 240.0f); // normally 240
@@ -21,13 +22,6 @@ enum ShaderType { color = 0, overlay = 1 };
 const int shaderCount = 2;	// UPDATE THIS WHEN ADDING SHADERS
 
 enum PlaneAxis { x_axis, y_axis, z_axis };
-
-struct Vector3D {
-	float x;
-	float y;
-	float z;
-};
-
 
 struct ColorVertex {
 	XMFLOAT4 Pos;
@@ -106,7 +100,7 @@ public:
 	static void updateViewport(D3D11_VIEWPORT viewport);
 	static XMVECTOR getMouseVector(Camera * camera, int mouseX, int mouseY);
 	static XMFLOAT3 getPlaneIntersection(PlaneAxis axis, int pixel, Camera * camera, int mouseX, int mouseY);
-	static Vector3D getPixelCoordsFromFloat3(XMFLOAT3 pos);
+	static Vector3F getPixelCoordsFromFloat3(XMFLOAT3 pos);
 private:
 	static void initShaders();
 	static void initShaderExtras();

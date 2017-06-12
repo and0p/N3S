@@ -1,6 +1,7 @@
 #pragma once
 #include "N3s3d.hpp"
 #include "Gamedata.hpp"
+#include "N3sMath.hpp"
 
 using namespace std;
 
@@ -16,7 +17,7 @@ public:
 	int selectedColor = 1;
 	shared_ptr<SpriteMesh> mesh;
 	float workingX, workingY, workingZ;
-	Vector3D mouseHighlight;
+	Vector3F mouseHighlight;
 	bool mouseInEditor = false;
 private:
 	void updateCamera();

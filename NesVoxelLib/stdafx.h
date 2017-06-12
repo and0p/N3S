@@ -53,41 +53,5 @@ inline bool toggleBool(bool b)
 	if (b == false)
 		return true;
 	else
-		return false;;
-}
-
-struct Vector2D {
-	float x;
-	float y;
-};
-
-
-
-inline int getArrayIndexFromXY(int x, int y, int arrayWidth)
-{
-	return (y * arrayWidth) + x;
-}
-
-inline Vector2D unwrapArrayIndex(int i, int arrayWidth)
-{
-	float y = floor(i / arrayWidth);
-	return { (float)(i % arrayWidth), y };
-}
-
-inline int roundDownPosOrNeg(float n)
-{
-	if (n < 0)
-		return ceil(n);
-	else
-		return floor(n);
-}
-
-// Snap to nearest nametable point
-inline Vector2D nametableSnap(int x, int y)
-{
-	float xDiv = x / 8;
-	float yDiv = y / 8;
-	xDiv += 0.5f;
-	yDiv += 0.5f;
-	return { floor(xDiv) * 8, floor(yDiv) * 8 };
+		return false;
 }

@@ -703,9 +703,9 @@ XMFLOAT3 N3s3d::getPlaneIntersection(PlaneAxis axis, int pixel, Camera * camera,
 	return r;
 }
 
-Vector3D N3s3d::getPixelCoordsFromFloat3(XMFLOAT3 pos)
+Vector3F N3s3d::getPixelCoordsFromFloat3(XMFLOAT3 pos)
 {
-	Vector3D v = {
+	Vector3F v = {
 		roundDownPosOrNeg((pos.x + 1.0f) / pixelSizeW),
 		-1 * roundDownPosOrNeg((pos.y - 1.0f) / pixelSizeW),
 		roundDownPosOrNeg((pos.z / pixelSizeW))

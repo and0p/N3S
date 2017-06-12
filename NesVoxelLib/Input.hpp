@@ -17,7 +17,7 @@ enum inputFunctions {
 	emu_pause, emu_reset, 
 	tog_game, tog_editor, editor_alt,
 	cam_left, cam_right, cam_up, cam_down, cam_pan_in, cam_pan_out,
-	selection_add, selection_remove, selection_copy,
+	selection_add, selection_remove, selection_copy, selection_delete,
 	voxeleditor_moveleft, voxeleditor_moveright, voxeleditor_moveup, voxeleditor_movedown,
 	voxeleditor_movein, voxeleditor_moveout, voxeleditor_setvoxel, voxeleditor_deletevoxel,
 	voxeleditor_color0, voxeleditor_color1, voxeleditor_color2, voxeleditor_color3,	voxeleditor_exit,

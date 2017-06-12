@@ -2,13 +2,12 @@
 #include "Scene.hpp"
 #include "Camera.hpp"
 #include "Editor.hpp"
-
 #include "N3sConsole.hpp"
 
 XMVECTOR mouseVector;
 XMFLOAT3 zIntersect;
 
-Vector3D mousePixelCoordinates;
+Vector2D mousePixelCoordinates;
 
 OrbitCamera mainCamera;
 
@@ -20,8 +19,8 @@ bool movingSelection = false;
 int moveX, moveY;
 MouseModifier modifier = no_mod;
 MouseFunction mouseFunction = no_func;
-Vector3D originMousePixelCoordinates;
-Vector3D originMousePixelCoordinatesModified;
+Vector2D originMousePixelCoordinates;
+Vector2D originMousePixelCoordinatesModified;
 
 bool voxelEditing = false;
 
@@ -163,9 +162,14 @@ bool Scene::update(bool mouseAvailable)
 		// Calculate mouse vector and z-intersect
 		mouseVector = N3s3d::getMouseVector(&mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
 		zIntersect = N3s3d::getPlaneIntersection(z_axis, 15, &mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
-		mousePixelCoordinates = N3s3d::getPixelCoordsFromFloat3(zIntersect);
+		Vector3F zIntersectPixels = N3s3d::getPixelCoordsFromFloat3(zIntersect);
+		mousePixelCoordinates.x = zIntersectPixels.x;
+		mousePixelCoordinates.y = zIntersectPixels.y;
 		// See if the modifier is being pressed to show additional guides
 		showGuides = InputState::functions[editor_alt].active;
+		// If we have a selection and user has pressed delete, delete the selected sprites
+		if (InputState::functions[selection_delete].activatedThisFrame)
+			deleteSelection();
 		return updateMouseActions(mouseAvailable);
 	}
 	else
@@ -311,7 +315,7 @@ void Scene::selectPreviousPalette()
 		selectedPalette = 7;
 }
 
-void Scene::updateHighlight2d(Vector3D mouse, bool highlightOAM, bool highlightNametable)
+void Scene::updateHighlight2d(Vector2D mouse, bool highlightOAM, bool highlightNametable)
 {
 	// Clear previous highlight
 	highlight.clear();
@@ -408,31 +412,44 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 			}
 			else if (state == dragging)
 			{
+				// Get the scene X/Y of the dragging destination, possibly modified (snapped)
+				dragStart = originMousePixelCoordinates;
+				dragDestination = mousePixelCoordinates;
 				// If we highlighted any part of our selection, then mouse dragging should move the whole thing
 				if (selectionClickedOn)
 				{
 					movingSelection = true;
-					// Set the movement amount
-					moveX = mousePixelCoordinates.x - originMousePixelCoordinates.x;
-					moveY = mousePixelCoordinates.y - originMousePixelCoordinates.y;
-					if (modifier == mod_add)
+					// Get top-left sprite in selection, and snap based off that if needed
+					Vector2D topLeftSpriteXY = getTopLeftSpriteInSelection(displaySelection);
+					// Use mod keys to snap to nametable
+
+					if (InputState::functions[selection_add].active && InputState::functions[selection_remove].active)
 					{
-						Vector2D xy = nametableSnap(moveX, moveY);
-						moveX = xy.x;
-						moveY = xy.y;
-						originMousePixelCoordinatesModified = originMousePixelCoordinates;
+						// Get top-left sprites offset from nearest snap point
+						Vector2D offset = { topLeftSpriteXY.x % 8, topLeftSpriteXY.y % 8 };
+						// Grab drag destination X and Y but only in multiples of 8
+						Vector2D diffSnapped = Vector2D::diff(dragStart, dragDestination);
+						diffSnapped.snap();
+						// Subtract this from current dragging destination
+						dragDestination.sub(offset);
+						dragDestination.add(diffSnapped);
+						// Set the movement amount
+						moveX = -offset.x + diffSnapped.x;
+						moveY = -offset.y + diffSnapped.y;
 					}
-					else if (modifier == mod_intersect)
+					 else if (InputState::functions[selection_add].active)
 					{
-						Vector2D xy = nametableSnap(moveX, moveY);
-						moveX = xy.x;
-						moveY = xy.y;
-						Vector2D oxy = nametableSnap(originMousePixelCoordinates.x, originMousePixelCoordinates.y);
-						originMousePixelCoordinatesModified = { oxy.x, oxy.y, 0 };
+						// Snap to relative 8
+						dragDestination.snapRelative(dragStart);
+						// Set the movement amount
+						moveX = dragDestination.x - dragStart.x;
+						moveY = dragDestination.y - dragStart.y;
 					}
 					else
 					{
-						originMousePixelCoordinatesModified = originMousePixelCoordinates;
+						// Set the movement amount
+						moveX = dragDestination.x - dragStart.x;
+						moveY = dragDestination.y - dragStart.y;
 					}
 				}
 				// If a modifier was held down, or no part of selection was highlighted, start drag selection
@@ -459,23 +476,6 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 						y = mousePixelCoordinates.y;
 						startX = originMousePixelCoordinates.x;
 						startY = originMousePixelCoordinates.y;
-
-						// See if we're holding keys that would make dragging snap to NT grid
-						if (modifier == mod_add)
-						{
-							Vector2D xy = nametableSnap(x, y);
-							x = xy.x;
-							y = xy.y;
-						}
-						else if (modifier == mod_intersect)
-						{
-							Vector2D xy = nametableSnap(x, y);
-							Vector2D startXY = nametableSnap(startX, startY);
-							x = xy.x;
-							y = xy.y;
-							startX = startXY.x;
-							startY = startXY.y;
-						}
 					}
 					// Set sides of selection
 					if (x > startX)
@@ -588,9 +588,24 @@ shared_ptr<SpriteMesh> Scene::getSelectedMesh()
 		return nullptr;
 }
 
-Vector2D Scene::getCoordinatesFromZIntersection(XMFLOAT3 zIntersect)
+void Scene::deleteSelection()
 {
-	Vector2D mouse;
+	// TODO super inefficient!
+	// languages that don't have basic, simple collection functions are real cool!~
+	vector<SceneSprite> newList;
+	for (int i = 0; i < sprites.size(); i++)
+	{
+		if (selection->selectedIndices.count(i) < 1)
+			newList.push_back(sprites[i]);
+	}
+	sprites = newList;
+	selection->selectedIndices.clear();
+	displaySelection = selection;
+}
+
+Vector3F Scene::getCoordinatesFromZIntersection(XMFLOAT3 zIntersect)
+{
+	Vector3F mouse;
 	float xAtIntersect = zIntersect.x;
 	float yAtIntersect = zIntersect.y;
 	// Normalize top-left of all screens to 0,0
@@ -667,4 +682,18 @@ void Selection::render(vector<SceneSprite> * sprites, int moveX, int moveY)
 		SceneSprite s = sprites->at(i);
 		Overlay::drawSpriteSquare(s.x + moveX, s.y + moveY);
 	}
+}
+
+Vector2D Scene::getTopLeftSpriteInSelection(shared_ptr<Selection> s)
+{
+	int x = 100000;
+	int y = 100000;
+	for each(int i in s->selectedIndices)
+	{
+		if (sprites[i].x < x)
+			x = sprites[i].x;
+		if (sprites[i].y < y)
+			y = sprites[i].y;
+	}
+	return { x, y };
 }

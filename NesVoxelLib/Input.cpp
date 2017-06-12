@@ -86,8 +86,8 @@ void MouseButton::update(int newX, int newY)
 				// Get distance between possible action start and this X/Y
 				int xDelta = abs(actionXStart - x);
 				int yDelta = abs(actionYStart - y);
-				// See if X or Y are further than 5 pixels away
-				if (xDelta > 5 || yDelta > 5)
+				// See if X or Y are further than 0 pixels away
+				if (xDelta > 1 || yDelta > 1)
 				{
 					state = dragging;
 				}
@@ -100,12 +100,12 @@ void MouseButton::update(int newX, int newY)
 	else
 	{
 		// If we're releasing near the click start it counts as "pressed" for buttons
-		if (framesActive > 0 && framesActive < 1000)
+		if (framesActive > 0 && framesActive < 200)
 		{
 			// Get distance between possible action start and this X/Y
 			int xDelta = abs(actionXStart - x);
 			int yDelta = abs(actionYStart - y);
-			if (xDelta < 5 || yDelta < 5)
+			if (xDelta < 1 && yDelta < 1)
 				state = pressed;
 		}
 		else
@@ -367,6 +367,7 @@ void InputState::createBindings()
 	functions[selection_add].bindings.push_back({ keyboardMouse->keys[VK_SHIFT] });
 	functions[selection_remove].bindings.push_back({ keyboardMouse->keys[VK_MENU] });
 	functions[selection_copy].bindings.push_back({ keyboardMouse->keys[VK_CONTROL] });
+	functions[selection_delete].bindings.push_back({ keyboardMouse->keys[VK_DELETE] });
 	functions[editor_alt].bindings.push_back({ keyboardMouse->keys[VK_MENU] });
 	functions[voxeleditor_moveleft].bindings.push_back({ keyboardMouse->keys[VK_LEFT] });
 	functions[voxeleditor_moveright].bindings.push_back({ keyboardMouse->keys[VK_RIGHT] });
