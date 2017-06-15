@@ -368,6 +368,7 @@ void InputState::createBindings()
 	functions[selection_remove].bindings.push_back({ keyboardMouse->keys[VK_MENU] });
 	functions[selection_copy].bindings.push_back({ keyboardMouse->keys[VK_CONTROL] });
 	functions[selection_delete].bindings.push_back({ keyboardMouse->keys[VK_DELETE] });
+	functions[selection_deselect].bindings.push_back({ keyboardMouse->keys[VK_ESCAPE] });
 	functions[editor_alt].bindings.push_back({ keyboardMouse->keys[VK_MENU] });
 	functions[voxeleditor_moveleft].bindings.push_back({ keyboardMouse->keys[VK_LEFT] });
 	functions[voxeleditor_moveright].bindings.push_back({ keyboardMouse->keys[VK_RIGHT] });

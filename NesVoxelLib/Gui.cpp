@@ -167,10 +167,27 @@ bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene, share
 				}
 			}
 		}
-		if (mouseInRectangle(mouseX, mouseY, leftMargin + (boxSize * 12), 0, boxSize, boxSize * 2))
+		// Branch on bg color if we are in editor, in which case bottom half becomes eraser
+		if (editor != nullptr)
 		{
-			anythingHighlighted = true;
-			highlightedIndex = bg_swatch;
+			if (mouseInRectangle(mouseX, mouseY, leftMargin + (boxSize * 12), 0, boxSize, boxSize))
+			{
+				anythingHighlighted = true;
+				highlightedIndex = bg_swatch;
+			}
+			else if (mouseInRectangle(mouseX, mouseY, leftMargin + (boxSize * 12), boxSize, boxSize, boxSize))
+			{
+				anythingHighlighted = true;
+				highlightedIndex = eraser;
+			}
+		}
+		else
+		{
+			if (mouseInRectangle(mouseX, mouseY, leftMargin + (boxSize * 12), 0, boxSize, boxSize * 2))
+			{
+				anythingHighlighted = true;
+				highlightedIndex = bg_swatch;
+			}
 		}
 		// Check for palette switching and option highlights/presses
 		if (mouseInRectangle(mouseX, mouseY, leftMargin + (boxSize * 13), 0, boxSize, boxSize))
@@ -229,6 +246,14 @@ bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene, share
 					else
 						palette->backgroundColorIndex = selectedColor;
 				}
+				else if (highlightedIndex = eraser)
+				{
+					selectionLevel = 1;
+					if (editor != nullptr)
+					{
+						selectColor(-1, scene, editor);
+					}
+				}
 				else
 				{
 					selectionLevel = 0;
@@ -266,58 +291,65 @@ bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene, share
 
 void PaletteSelector::selectColor(int color, shared_ptr<Scene> scene, shared_ptr<VoxelEditor> editor)
 {
-	int previouslySelectedIndex = selectedIndex;
-	selectedIndex = color;
-	int paletteHighlighted = floor(color / 3);
-	int colorWithinPalette = color % 3;
-	// See if this palette is different from the one that belongs to any selected sprites/nt
-	if (selectedPalette != paletteHighlighted)
+	if (color == 0)
 	{
-		scene->changeSelectionPalette(paletteHighlighted);
-	}
-	// Palette color/bg selection
-	// no sprites selected
-	if (selectedPalette == -1)
-	{
-		// open color picker
-		selectionLevel = 3;
-	}
-	// sprites selected
-	else if (selectedPalette == paletteHighlighted || selectedIndex == bg_swatch)
-	{
-		if (editor == nullptr)	// editor not open
-		{
-			selectionLevel = 3;
-		}
-		else					// voxel editor open
-		{
-			// See if color is already selected and open color picker if so
-			if (previouslySelectedIndex == selectedIndex && selectionLevel <= 2)
-				selectionLevel++;
-			else
-				selectionLevel = 2;
-			// See if color is different, and close color picker if it was open
-			if (selectionLevel == 3 && selectedIndex != previouslySelectedIndex)
-				selectionLevel = 2;
-			// Either way, change the selected color in the voxel editor
-			if (selectedIndex < bg_swatch)
-				editor->selectedColor = colorWithinPalette + 1;
-			else
-			{
-				// TODO once I add background-colored voxels, 
-			}
-
-		}
+		editor->selectedColor = 0;
 	}
 	else
 	{
-		if (editor != nullptr)
+		int previouslySelectedIndex = selectedIndex;
+		selectedIndex = color;
+		int paletteHighlighted = floor(color / 3);
+		int colorWithinPalette = color % 3;
+		// See if this palette is different from the one that belongs to any selected sprites/nt
+		if (selectedPalette != paletteHighlighted)
 		{
-			selectionLevel = 2;
-			editor->selectedColor = colorWithinPalette + 1;
+			scene->changeSelectionPalette(paletteHighlighted);
+		}
+		// Palette color/bg selection
+		// no sprites selected
+		if (selectedPalette == -1)
+		{
+			// open color picker
+			selectionLevel = 3;
+		}
+		// sprites selected
+		else if (selectedPalette == paletteHighlighted || selectedIndex == bg_swatch)
+		{
+			if (editor == nullptr)	// editor not open
+			{
+				selectionLevel = 3;
+			}
+			else					// voxel editor open
+			{
+				// See if color is already selected and open color picker if so
+				if (previouslySelectedIndex == selectedIndex && selectionLevel <= 2)
+					selectionLevel++;
+				else
+					selectionLevel = 2;
+				// See if color is different, and close color picker if it was open
+				if (selectionLevel == 3 && selectedIndex != previouslySelectedIndex)
+					selectionLevel = 2;
+				// Either way, change the selected color in the voxel editor
+				if (selectedIndex < bg_swatch)
+					editor->selectedColor = colorWithinPalette + 1;
+				else
+				{
+					// TODO once I add background-colored voxels, 
+				}
+
+			}
 		}
 		else
-			selectionLevel = 1;
+		{
+			if (editor != nullptr)
+			{
+				selectionLevel = 2;
+				editor->selectedColor = colorWithinPalette + 1;
+			}
+			else
+				selectionLevel = 1;
+		}
 	}
 }
 
@@ -373,8 +405,16 @@ void PaletteSelector::render(shared_ptr<Scene> scene, shared_ptr<VoxelEditor> ed
 	// Render the BG color swatch
 	if (highlightedIndex == bg_swatch)
 	{
-		Overlay::setColor(255, 255, 255, 64);
-		Overlay::drawRectangle(leftMargin + boxSize * 12, 0, boxSize, boxSize * 2);
+		if (editor != nullptr)
+		{
+			Overlay::setColor(255, 255, 255, 64);
+			Overlay::drawRectangle(leftMargin + boxSize * 12, 0, boxSize, boxSize);
+		}
+		else
+		{
+			Overlay::setColor(255, 255, 255, 64);
+			Overlay::drawRectangle(leftMargin + boxSize * 12, 0, boxSize, boxSize * 2);
+		}
 	}
 	else if (selectedIndex == bg_swatch)
 	{

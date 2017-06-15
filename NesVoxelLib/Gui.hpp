@@ -15,7 +15,8 @@ enum PaletteButtons {
 	colors_close = 90,
 	next_palettte = 91,
 	previous_palette = 92,
-	options_toggle = 93
+	options_toggle = 93,
+	eraser = 94
 };
 
 class GuiElement

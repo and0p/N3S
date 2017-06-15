@@ -66,7 +66,7 @@ Scene::Scene(shared_ptr<PpuSnapshot> snapshot)
 		OamSprite s = snapshot->sprites[i];
 		int tile = snapshot->getTrueOamTile(i);
 		shared_ptr<SpriteMesh> spriteMesh = N3sApp::virtualPatternTable->getSprite(tile)->defaultMesh; // TODO get virtually defined mesh?
-		if (spriteMesh->meshExists >= 0)
+		if (spriteMesh->meshExists >= 0 && s.x >= 0 && s.x < 256 && s.y >= 0 && s.y < 240)
 		{
 			SceneSprite ss;
 			ss.mesh = spriteMesh;
@@ -167,6 +167,9 @@ bool Scene::update(bool mouseAvailable)
 		mousePixelCoordinates.y = zIntersectPixels.y;
 		// See if the modifier is being pressed to show additional guides
 		showGuides = InputState::functions[editor_alt].active;
+		// If we have selection and user has hit ESC, unselect all
+		if (InputState::functions[selection_deselect].activatedThisFrame)
+			selection->selectedIndices.clear();
 		// If we have a selection and user has pressed delete, delete the selected sprites
 		if (InputState::functions[selection_delete].activatedThisFrame)
 			deleteSelection();
