@@ -84,8 +84,8 @@ public:
 	static bool update(bool mouseAvailable, shared_ptr<VoxelEditor> editor);
 	static void render();
 	static void clear();
-private:
 	static shared_ptr<VoxelEditor> e;
+private:
 	static const int topMargin = MeshInfo::topMargin + (16 * 4);
 	static const int width = 8;
 	static const int height = 5;

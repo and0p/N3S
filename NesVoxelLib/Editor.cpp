@@ -42,6 +42,15 @@ void Editor::update()
 		VoxelEditorInfo::clear();
 	}
 
+	// See if close button was pressed, when voxel editing
+	if (editor != nullptr && VoxelEditorInfo::e == nullptr)
+	{
+		editor = nullptr;
+		scenes[selectedScene]->voxelEditor = nullptr;
+		MeshInfo::clear();
+		VoxelEditorInfo::clear();
+	}
+
 	scenes[selectedScene]->update(mouseAvailable);
 }
 
@@ -62,7 +71,7 @@ void Editor::render()
 	N3s3d::setDepthBufferState(false);
 	N3s3d::setGuiProjection();
 	sceneSelector.render();
-	paletteSelector.render(scene, nullptr);
+	paletteSelector.render(scene, scenes[selectedScene]->voxelEditor);
 	MeshInfo::render();
 	VoxelEditorInfo::render();
 }

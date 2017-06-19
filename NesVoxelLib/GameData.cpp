@@ -34,21 +34,21 @@ SpriteMesh::SpriteMesh(json j)
 	// voxels.release();
 }
 
-void SpriteMesh::setVoxel(int x, int y, int z, int color)
+void SpriteMesh::setVoxel(Vector3D v, int color)
 {
 	// Calculate which slot in 'flattened' array this pertains to
-	int voxelSlot = x + (y * spriteWidth) + (z * (spriteHeight * spriteWidth));
+	int voxelSlot = v.x + (v.y * spriteWidth) + (v.z * (spriteHeight * spriteWidth));
 	if (voxelSlot >= 0 && voxelSlot < spriteSize) 
 	{
 		voxels->voxels[voxelSlot].color = color;
 	}
 }
 
-void SpriteMesh::updateVoxel(int x, int y, int z, int color)
+void SpriteMesh::updateVoxel(Vector3D v, int color)
 {
-	setVoxel(x, y, z, color);
+	setVoxel(v, color);
 	buildMesh();
-	rebuildZMesh(x, y);
+	rebuildZMesh(v.x, v.y);
 }
 
 void SpriteMesh::buildZMeshes()
@@ -686,12 +686,12 @@ void SpriteMesh::moveLayer(int oldX, int oldY, int oldZ, int newX, int newY, int
 			// Move layer on Z axis
 			for (int x = 0; x < 8; x++)
 				for (int y = 0; y < 8; y++)
-					setVoxel(x, y, newZ, voxels->getVoxel(x, y, oldZ).color);
+					setVoxel({ x, y, newZ }, voxels->getVoxel(x, y, oldZ).color);
 			if (!copy)
 			{
 				for (int x = 0; x < 8; x++)
 					for (int y = 0; y < 8; y++)
-						setVoxel(x, y, oldZ, 0);
+						setVoxel({ x, y, oldZ }, 0);
 			}
 		}
 		// Rebuild the mesh
@@ -704,12 +704,12 @@ void SpriteMesh::moveLayer(int oldX, int oldY, int oldZ, int newX, int newY, int
 			// Move layer on X axis
 			for (int z = 0; z < 32; z++)
 				for (int y = 0; y < 8; y++)
-					setVoxel(newX, y, z, voxels->getVoxel(oldX, y, z).color);
+					setVoxel({ newX, y, z }, voxels->getVoxel(oldX, y, z).color);
 			if (!copy)
 			{
 				for (int z = 0; z < 32; z++)
 					for (int y = 0; y < 8; y++)
-						setVoxel(oldX, y, z, 0);
+						setVoxel({ oldX, y, z }, 0);
 			}
 		}
 		// Rebuild the mesh
@@ -722,12 +722,12 @@ void SpriteMesh::moveLayer(int oldX, int oldY, int oldZ, int newX, int newY, int
 			// Move layer on X axis
 			for (int z = 0; z < 32; z++)
 				for (int y = 0; y < 8; y++)
-					setVoxel(newX, y, z, voxels->getVoxel(oldX, y, z).color);
+					setVoxel({ newX, y, z }, voxels->getVoxel(oldX, y, z).color);
 			if (!copy)
 			{
 				for (int z = 0; z < 32; z++)
 					for (int y = 0; y < 8; y++)
-						setVoxel(oldX, y, z, 0);
+						setVoxel({ oldX, y, z }, 0);
 			}
 		}
 		// Rebuild the mesh

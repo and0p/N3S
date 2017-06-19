@@ -8,7 +8,7 @@
 float gridOpacity = 1.0f;
 float gridCoveredOpacity = 0.1f;
 
-VoxelEditor::VoxelEditor(shared_ptr<SpriteMesh> mesh, int pixelX, int pixelY, OrbitCamera referenceCamera) : mesh(mesh), pixelX(pixelX), pixelY(pixelY)
+VoxelEditor::VoxelEditor(shared_ptr<SpriteMesh> mesh, int pixelX, int pixelY, bool mirrorH, bool mirrorV, OrbitCamera referenceCamera) : mesh(mesh), pixelX(pixelX), pixelY(pixelY), mirrorH(mirrorH), mirrorV(mirrorV)
 {
 	workingX = 0.5f;
 	workingY = 0.5f;
@@ -55,8 +55,8 @@ bool VoxelEditor::update(bool mouseAvailable)
 	getMouseHighlight();
 
 	if (mouseInEditor && InputState::keyboardMouse->mouseButtons[left_mouse].down)
-		mesh->updateVoxel(mouseHighlight.x, mouseHighlight.y, mouseHighlight.z, selectedColor);
-	
+		mesh->updateVoxel(mouseHighlight.mirror(mirrorH, mirrorV), selectedColor);
+
 	if (InputState::functions[voxeleditor_movein].activatedThisFrame)
 	{
 		adjustWorkingPosition(0, 0, 1);
@@ -68,11 +68,13 @@ bool VoxelEditor::update(bool mouseAvailable)
 	// Update camera position after selections may be changed
 	updateCamera();
 
+	selection = { xSelect, ySelect, zSelect };
+
 	// Add or remove voxels
 	if (InputState::functions[voxeleditor_setvoxel].active)
-		mesh->updateVoxel(xSelect, ySelect, zSelect, selectedColor);
+		mesh->updateVoxel(selection.mirror(mirrorH, mirrorV), selectedColor);
 	else if (InputState::functions[voxeleditor_deletevoxel].active)
-		mesh->updateVoxel(xSelect, ySelect, zSelect, 0);
+		mesh->updateVoxel(selection.mirror(mirrorH, mirrorV), 0);
 
 	return mouseAvailable;
 }

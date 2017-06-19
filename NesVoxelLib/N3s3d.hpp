@@ -100,7 +100,7 @@ public:
 	static void updateViewport(D3D11_VIEWPORT viewport);
 	static XMVECTOR getMouseVector(Camera * camera, int mouseX, int mouseY);
 	static XMFLOAT3 getPlaneIntersection(PlaneAxis axis, int pixel, Camera * camera, int mouseX, int mouseY);
-	static Vector3F getPixelCoordsFromFloat3(XMFLOAT3 pos);
+	static Vector3D getPixelCoordsFromFloat3(XMFLOAT3 pos);
 private:
 	static void initShaders();
 	static void initShaderExtras();

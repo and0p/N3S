@@ -22,8 +22,6 @@ MouseFunction mouseFunction = no_func;
 Vector2D originMousePixelCoordinates;
 Vector2D originMousePixelCoordinatesModified;
 
-bool voxelEditing = false;
-
 int sel_top, sel_left, sel_bottom, sel_right;
 
 bool edittingIn3d = false;
@@ -135,12 +133,11 @@ Scene::Scene(shared_ptr<PpuSnapshot> snapshot)
 
 bool Scene::update(bool mouseAvailable)
 {
-	if (voxelEditing && InputState::functions[voxeleditor_exit].activatedThisFrame)
+	if (voxelEditor == nullptr && InputState::functions[voxeleditor_exit].activatedThisFrame)
 	{
-		voxelEditing = false;
 		voxelEditor = nullptr;
 	}
-	if (!voxelEditing)
+	if (voxelEditor == nullptr)
 	{
 		// Update camera position
 		if (InputState::keyboardMouse->mouseButtons[right_mouse].state > 0)
@@ -162,7 +159,7 @@ bool Scene::update(bool mouseAvailable)
 		// Calculate mouse vector and z-intersect
 		mouseVector = N3s3d::getMouseVector(&mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
 		zIntersect = N3s3d::getPlaneIntersection(z_axis, 15, &mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
-		Vector3F zIntersectPixels = N3s3d::getPixelCoordsFromFloat3(zIntersect);
+		Vector3D zIntersectPixels = N3s3d::getPixelCoordsFromFloat3(zIntersect);
 		mousePixelCoordinates.x = zIntersectPixels.x;
 		mousePixelCoordinates.y = zIntersectPixels.y;
 		// See if the modifier is being pressed to show additional guides
@@ -187,7 +184,7 @@ void Scene::render(bool renderBackground, bool renderOAM)
 	// Enable depth buffer
 	N3s3d::setDepthBufferState(true);
 	// Update camera math
-	if (voxelEditing)
+	if (voxelEditor != nullptr)
 	{
 		N3s3d::updateMatricesWithCamera(&voxelEditor->camera);
 	}
@@ -216,7 +213,7 @@ void Scene::render(bool renderBackground, bool renderOAM)
 		}
 	}
 	// Branch based on voxel editing mode
-	if (voxelEditing)
+	if (voxelEditor != nullptr)
 	{
 		voxelEditor->render();
 	}
@@ -393,8 +390,7 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 						{
 							// Switch to editing that mesh
 							N3sConsole::writeLine("SWITCHED TO EDITOR!");
-							voxelEditor = make_shared<VoxelEditor>(sprites[s].mesh, sprites[s].x, sprites[s].y, mainCamera);
-							voxelEditing = true;
+							voxelEditor = make_shared<VoxelEditor>(sprites[s].mesh, sprites[s].x, sprites[s].y, sprites[s].mirrorH, sprites[s].mirrorV, mainCamera);
 						}
 						else
 						{

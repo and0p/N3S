@@ -38,3 +38,19 @@ Vector2D Vector2D::diff(Vector2D a, Vector2D b)
 	// Return passed 
 	return{ b.x - a.x, b.y - a.y };
 }
+
+Vector3D Vector3D::mirror(bool h, bool v)
+{
+	int newX, newY;
+	if (h)
+		newX = abs(x - 8);
+	else
+		newX = x;
+	if (v)
+	{
+		newY = abs(y - 8);
+	}
+	else
+		newY = y;
+	return { newX, newY, z };
+}

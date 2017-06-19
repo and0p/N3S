@@ -246,9 +246,10 @@ bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene, share
 					else
 						palette->backgroundColorIndex = selectedColor;
 				}
-				else if (highlightedIndex = eraser)
+				else if (highlightedIndex == eraser)
 				{
-					selectionLevel = 1;
+					selectionLevel = 2;
+					selectedIndex = eraser;
 					if (editor != nullptr)
 					{
 						selectColor(-1, scene, editor);
@@ -291,18 +292,14 @@ bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene, share
 
 void PaletteSelector::selectColor(int color, shared_ptr<Scene> scene, shared_ptr<VoxelEditor> editor)
 {
-	if (color == 0)
-	{
-		editor->selectedColor = 0;
-	}
-	else
+	if (color >= 0)
 	{
 		int previouslySelectedIndex = selectedIndex;
 		selectedIndex = color;
 		int paletteHighlighted = floor(color / 3);
 		int colorWithinPalette = color % 3;
 		// See if this palette is different from the one that belongs to any selected sprites/nt
-		if (selectedPalette != paletteHighlighted)
+		if (selectedPalette != paletteHighlighted && color >= 0 && selectedIndex != bg_swatch)
 		{
 			scene->changeSelectionPalette(paletteHighlighted);
 		}
@@ -335,9 +332,9 @@ void PaletteSelector::selectColor(int color, shared_ptr<Scene> scene, shared_ptr
 					editor->selectedColor = colorWithinPalette + 1;
 				else
 				{
-					// TODO once I add background-colored voxels, 
+					// TODO once I add background-colored voxels
+					editor->selectedColor = 4;
 				}
-
 			}
 		}
 		else
@@ -350,6 +347,10 @@ void PaletteSelector::selectColor(int color, shared_ptr<Scene> scene, shared_ptr
 			else
 				selectionLevel = 1;
 		}
+	}
+	else
+	{
+		editor->selectedColor = 0;
 	}
 }
 
@@ -418,8 +419,30 @@ void PaletteSelector::render(shared_ptr<Scene> scene, shared_ptr<VoxelEditor> ed
 	}
 	else if (selectedIndex == bg_swatch)
 	{
-		Overlay::setColor(255, 255, 255, 128);
-		Overlay::drawRectangle(leftMargin + boxSize * 12, 0, boxSize, boxSize * 2);
+		if (editor != nullptr)
+		{
+			Overlay::setColor(255, 255, 255, 128);
+			Overlay::drawRectangle(leftMargin + boxSize * 12, 0, boxSize, boxSize);
+		}
+		else
+		{
+			Overlay::setColor(255, 255, 255, 128);
+			Overlay::drawRectangle(leftMargin + boxSize * 12, 0, boxSize, boxSize * 2);
+		}
+	}
+	// Render erasor, if selected and voxel editor open
+	if (editor != nullptr)
+	{
+		if (highlightedIndex == eraser)
+		{
+			Overlay::setColor(255, 255, 255, 64);
+			Overlay::drawRectangle(leftMargin + boxSize * 12, boxSize, boxSize, boxSize);
+		}
+		else if (selectedIndex == eraser)
+		{
+			Overlay::setColor(255, 255, 255, 128);
+			Overlay::drawRectangle(leftMargin + boxSize * 12, boxSize, boxSize, boxSize);
+		}
 	}
 	// Render menu buttons
 	Overlay::setColor(255, 255, 255, 128);
@@ -428,7 +451,15 @@ void PaletteSelector::render(shared_ptr<Scene> scene, shared_ptr<VoxelEditor> ed
 	Overlay::drawString(leftMargin + (boxSize * 14) + 8, 8, 2, ">");
 	Hue h = palette->getBackgroundColor();
 	Overlay::setColor(h.red, h.green, h.blue, 1.0f);
-	Overlay::drawRectangle(leftMargin + boxSize * 12 + borderSize, borderSize, swatchSize, (swatchSize * 2) + (borderSize * 2));
+	// Render bg color swatch at half-size if we're in voxel editor
+	if (editor != nullptr)
+	{
+		Overlay::drawRectangle(leftMargin + boxSize * 12 + borderSize, borderSize, swatchSize, swatchSize);
+	}
+	else
+	{
+		Overlay::drawRectangle(leftMargin + boxSize * 12 + borderSize, borderSize, swatchSize, (swatchSize * 2) + (borderSize * 2));
+	}
 	// If a swatch is selected, render the pop-out color selector
 	if (selectedIndex >= 0 && selectionLevel == 3)
 	{
@@ -541,9 +572,16 @@ bool VoxelEditorInfo::update(bool mouseAvailable, shared_ptr<VoxelEditor> editor
 		MouseState state = InputState::keyboardMouse->mouseButtons[left_mouse].state;
 		int mouseX = InputState::keyboardMouse->mouseX;
 		int mouseY = InputState::keyboardMouse->mouseY;
-		if (state == pressed && mouseInRectangle(mouseX, mouseY, 0, topMargin, 8 * width * scale, 8 * height * scale))
+		if (state == pressed)
 		{
-
+			if (mouseInRectangle(mouseX, mouseY, 0, topMargin, 8 * width * scale, 8 * height * scale))
+			{
+				// Man I forget what this even is. can't wait to be done with the GUI
+			}
+			else if (mouseInRectangle(mouseX, mouseY, 0, topMargin + 6 * (8 * scale) + 4, 8 * scale * 5 + 4, 8 * scale + 4))
+			{
+				e = nullptr;
+			}
 		}
 	}
 	return false;
@@ -576,6 +614,11 @@ void VoxelEditorInfo::render()
 			positionString = "-,-,-";
 		}
 		Overlay::drawString(0, topMargin + (8 * scale), scale, positionString);
+		// Draw back button
+		Overlay::setColor(0, 0, 0, 128);
+		Overlay::drawRectangle(0, topMargin + 6 * (8 * scale) + 4, 8 * scale * 5 + 4, 8 * scale + 4);
+		Overlay::setColor(255, 255, 255, 128);
+		Overlay::drawString(2, topMargin + 5 * (8 * scale) + 6, scale, "CLOSE");
 	}
 }
 

@@ -50,8 +50,8 @@ public:
 	unique_ptr<VoxelCollection> voxels;
 	VoxelMesh mesh;
 	VoxelMesh zMeshes[64];
-	void setVoxel(int x, int y, int z, int color);
-	void updateVoxel(int x, int y, int z, int color);
+	void setVoxel(Vector3D v, int color);
+	void updateVoxel(Vector3D v, int color);
 	bool buildMesh();
 	bool meshExists = false;
 	void render(int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop);

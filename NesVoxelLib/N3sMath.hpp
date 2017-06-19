@@ -14,6 +14,7 @@ public:
 
 struct Vector3D {
 	int x, y, z;
+	Vector3D mirror(bool h, bool v);
 };
 
 struct Vector2F {
