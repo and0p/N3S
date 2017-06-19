@@ -578,7 +578,7 @@ bool VoxelEditorInfo::update(bool mouseAvailable, shared_ptr<VoxelEditor> editor
 			{
 				// Man I forget what this even is. can't wait to be done with the GUI
 			}
-			else if (mouseInRectangle(mouseX, mouseY, 0, topMargin + 6 * (8 * scale) + 4, 8 * scale * 5 + 4, 8 * scale + 4))
+			else if (mouseInRectangle(mouseX, mouseY, 0, topMargin + 5 * (8 * scale) + 4, 8 * scale * 5 + 4, 8 * scale + 4))
 			{
 				e = nullptr;
 			}
@@ -616,7 +616,7 @@ void VoxelEditorInfo::render()
 		Overlay::drawString(0, topMargin + (8 * scale), scale, positionString);
 		// Draw back button
 		Overlay::setColor(0, 0, 0, 128);
-		Overlay::drawRectangle(0, topMargin + 6 * (8 * scale) + 4, 8 * scale * 5 + 4, 8 * scale + 4);
+		Overlay::drawRectangle(0, topMargin + 5 * (8 * scale) + 4, 8 * scale * 5 + 4, 8 * scale + 4);
 		Overlay::setColor(255, 255, 255, 128);
 		Overlay::drawString(2, topMargin + 5 * (8 * scale) + 6, scale, "CLOSE");
 	}

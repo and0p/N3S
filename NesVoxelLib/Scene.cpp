@@ -133,7 +133,7 @@ Scene::Scene(shared_ptr<PpuSnapshot> snapshot)
 
 bool Scene::update(bool mouseAvailable)
 {
-	if (voxelEditor == nullptr && InputState::functions[voxeleditor_exit].activatedThisFrame)
+	if (voxelEditor != nullptr && InputState::functions[voxeleditor_exit].activatedThisFrame)
 	{
 		voxelEditor = nullptr;
 	}
