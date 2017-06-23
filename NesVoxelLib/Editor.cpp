@@ -40,6 +40,11 @@ void Editor::update()
 	{
 		MeshInfo::clear();
 		VoxelEditorInfo::clear();
+		// See if copy buttons were pressed
+		if (InputState::functions[editor_copy].activatedThisFrame)
+			copiedSprites = scenes[selectedScene]->copySelection();
+		else if (InputState::functions[editor_paste].activatedThisFrame)
+			scenes[selectedScene]->pasteSelection(copiedSprites);
 	}
 
 	// See if close button was pressed, when voxel editing

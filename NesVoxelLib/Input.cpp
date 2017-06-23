@@ -317,7 +317,7 @@ void InputFunction::update()
 	{
 		if (b.input->active)
 			active = true;
-		if (b.input->activatedThisFrame)
+		if (b.activatedThisFrame())
 			activatedThisFrame = true;
 		if (b.input->framesActive > framesActive)
 			framesActive = b.input->framesActive;
@@ -370,10 +370,10 @@ void InputState::createBindings()
 	functions[selection_delete].bindings.push_back({ keyboardMouse->keys[VK_DELETE] });
 	functions[selection_deselect].bindings.push_back({ keyboardMouse->keys[VK_ESCAPE] });
 	functions[editor_alt].bindings.push_back({ keyboardMouse->keys[VK_MENU] });
-	functions[voxeleditor_moveleft].bindings.push_back({ keyboardMouse->keys[VK_LEFT] });
-	functions[voxeleditor_moveright].bindings.push_back({ keyboardMouse->keys[VK_RIGHT] });
-	functions[voxeleditor_moveup].bindings.push_back({ keyboardMouse->keys[VK_UP] });
-	functions[voxeleditor_movedown].bindings.push_back({ keyboardMouse->keys[VK_DOWN] });
+	functions[editor_moveleft].bindings.push_back({ keyboardMouse->keys[VK_LEFT] });
+	functions[editor_moveright].bindings.push_back({ keyboardMouse->keys[VK_RIGHT] });
+	functions[editor_moveup].bindings.push_back({ keyboardMouse->keys[VK_UP] });
+	functions[editor_movedown].bindings.push_back({ keyboardMouse->keys[VK_DOWN] });
 	functions[voxeleditor_setvoxel].bindings.push_back({ keyboardMouse->keys[0x4B] });
 	functions[voxeleditor_deletevoxel].bindings.push_back({ keyboardMouse->keys[0x4A] });
 	functions[voxeleditor_movein].bindings.push_back({ keyboardMouse->keys[0x55] });
@@ -387,5 +387,32 @@ void InputState::createBindings()
 	functions[voxeleditor_color3].bindings.push_back({ keyboardMouse->keys[0x33] });
 	functions[voxeleditor_color3].bindings.push_back({ keyboardMouse->keys[VK_NUMPAD3] });
 	functions[voxeleditor_exit].bindings.push_back({ keyboardMouse->keys[VK_ESCAPE] });
+	// Editor copy/paste
+	Binding copyBinding = { keyboardMouse->keys[0x43] };	// C
+	copyBinding.ctrl = true;
+	Binding pasteBinding = { keyboardMouse->keys[0x56] };	// V
+	pasteBinding.ctrl = true;
+	functions[editor_copy].bindings.push_back({ copyBinding });
+	functions[editor_paste].bindings.push_back({ pasteBinding });
+
 }
 
+bool Binding::activatedThisFrame()
+{
+	if (input->activatedThisFrame)
+	{
+		if (ctrl) {
+			if (InputState::keyboardMouse->keys[VK_CONTROL]->active)
+				return true;
+			else
+				return false;
+		}
+		else
+			return true;
+	}
+	else
+	{
+		return false;
+	}
+
+}

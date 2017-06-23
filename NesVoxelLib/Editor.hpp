@@ -27,5 +27,6 @@ public:
 	static interactionOptions nametableOptions;
 	static void updateTempScene(shared_ptr<PpuSnapshot> snapshot);
 private:
+	static shared_ptr<vector<SceneSprite>> copiedSprites;
 	static bool mouseAvailable;
 };

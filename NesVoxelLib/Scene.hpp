@@ -80,7 +80,11 @@ public:
 	shared_ptr<SpriteMesh> getSelectedMesh();
 	Vector2D dragStart;
 	Vector2D dragDestination;
+	shared_ptr<vector<SceneSprite>> copySelection();
+	void pasteSelection(shared_ptr<vector<SceneSprite>> copiedSprites);
 private:
+	void checkKeyInput();
+	void moveSelection(int x, int y);
 	void deleteSelection();
 	bool showGuides = false;
 	static Vector3F Scene::getCoordinatesFromZIntersection(XMFLOAT3 zIntersect);

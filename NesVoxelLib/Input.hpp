@@ -18,9 +18,10 @@ enum inputFunctions {
 	tog_game, tog_editor, editor_alt,
 	cam_left, cam_right, cam_up, cam_down, cam_pan_in, cam_pan_out,
 	selection_add, selection_remove, selection_copy, selection_delete, selection_deselect,
-	voxeleditor_moveleft, voxeleditor_moveright, voxeleditor_moveup, voxeleditor_movedown,
+	editor_moveleft, editor_moveright, editor_moveup, editor_movedown,
 	voxeleditor_movein, voxeleditor_moveout, voxeleditor_setvoxel, voxeleditor_deletevoxel,
 	voxeleditor_color0, voxeleditor_color1, voxeleditor_color2, voxeleditor_color3,	voxeleditor_exit,
+	editor_copy, editor_paste,
 	INPUTCOUNT
 };
 
@@ -123,6 +124,8 @@ class Binding
 public:
 	Binding(shared_ptr<Input> input) : input(input), ctrl(false), alt(false), shift(false) {}
 	Binding(shared_ptr<Input> input, bool ctrl, bool alt, bool shift) : input(input), ctrl(ctrl), alt(alt), shift(shift) {}
+	//bool active();
+	bool activatedThisFrame();
 	shared_ptr<Input> input;
 	bool ctrl = false;
 	bool alt = false;

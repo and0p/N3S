@@ -45,8 +45,8 @@ bool VoxelEditor::update(bool mouseAvailable)
 		adjustWorkingPositionAnalog(-xPan, -yPan, 0);
 	}
 	// Select point on editor plane using mouse or buttons
-	adjustWorkingPositionAnalog(InputState::functions[voxeleditor_moveright].value, InputState::functions[voxeleditor_movedown].value, 0);
-	adjustWorkingPositionAnalog(-InputState::functions[voxeleditor_moveleft].value, -InputState::functions[voxeleditor_moveup].value, 0);
+	adjustWorkingPositionAnalog(InputState::functions[editor_moveright].value, InputState::functions[editor_movedown].value, 0);
+	adjustWorkingPositionAnalog(-InputState::functions[editor_moveleft].value, -InputState::functions[editor_moveup].value, 0);
 
 	if (InputState::keyboardMouse->calculatedWheelDelta != 0)
 		adjustWorkingPosition(0, 0, InputState::keyboardMouse->calculatedWheelDelta);

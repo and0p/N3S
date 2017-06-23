@@ -26,6 +26,8 @@ int sel_top, sel_left, sel_bottom, sel_right;
 
 bool edittingIn3d = false;
 
+shared_ptr<vector<SceneSprite>> Editor::copiedSprites = nullptr;
+
 bool isSpriteIn2dRect(int top, int left, int bottom, int right, int x, int y)
 {
 	if ((x >= left && x < right) || (x + 8 >= left && x + 8 < right))
@@ -164,12 +166,9 @@ bool Scene::update(bool mouseAvailable)
 		mousePixelCoordinates.y = zIntersectPixels.y;
 		// See if the modifier is being pressed to show additional guides
 		showGuides = InputState::functions[editor_alt].active;
-		// If we have selection and user has hit ESC, unselect all
-		if (InputState::functions[selection_deselect].activatedThisFrame)
-			selection->selectedIndices.clear();
-		// If we have a selection and user has pressed delete, delete the selected sprites
-		if (InputState::functions[selection_delete].activatedThisFrame)
-			deleteSelection();
+		// Check for key input, such as selection movement or deletion
+		checkKeyInput();
+		// Check for mouse input, and return whether the mouse was captured
 		return updateMouseActions(mouseAvailable);
 	}
 	else
@@ -223,7 +222,7 @@ void Scene::render(bool renderBackground, bool renderOAM)
 		N3s3d::setDepthStencilState(false, false, true);
 		N3s3d::setGuiProjection();
 		Overlay::setColor(1.0f, 1.0f, 1.0f, 0.3f);
-		Overlay::drawRectangle(0, 0, 1920, 1080); // TODO: How do I get actual screen size again..?
+		Overlay::drawRectangle(0, 0, N3s3d::viewport.Width, N3s3d::viewport.Height); // TODO: How do I get actual screen size again..?
 		// Draw selection box, if currently dragging selection
 		if (draggingSelection)
 		{
@@ -251,7 +250,6 @@ void Scene::render(bool renderBackground, bool renderOAM)
 		// Render 3-axis mouse guide
 		if(showGuides)
 			Overlay::drawAxisLine(zIntersect);
-
 	}
 }
 
@@ -585,6 +583,155 @@ void Scene::moveSelection(bool copy) // TODO add copy modifier parameter
 shared_ptr<SpriteMesh> Scene::getSelectedMesh()
 {
 		return nullptr;
+}
+
+shared_ptr<vector<SceneSprite>> Scene::copySelection()
+{
+	if (selection->selectedIndices.size() > 0)
+	{
+		shared_ptr<vector<SceneSprite>> copiedSprites = make_shared<vector<SceneSprite>>();
+		// Get top-left sprite coordinates
+		Vector2D offset = getTopLeftSpriteInSelection(selection);
+		for each (int i in selection->selectedIndices)
+		{
+			SceneSprite temp = sprites[i];
+			temp.x -= offset.x;
+			temp.y -= offset.y;
+			copiedSprites->push_back(temp);
+		}
+		return copiedSprites;
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+void Scene::pasteSelection(shared_ptr<vector<SceneSprite>> copiedSprites)
+{
+	// Only move forward if we're not dragging or doing anything else that would stop pasting
+	if (voxelEditor == nullptr && mouseFunction != dragging && copiedSprites != nullptr)
+	{
+		// Get size of sprites currently in scene, so we know which to select when pasting is finished
+		int newSpriteStart = sprites.size();
+		for each(SceneSprite temp in *copiedSprites)
+		{
+			temp.x += mousePixelCoordinates.x;
+			temp.y += mousePixelCoordinates.y;
+			sprites.push_back(temp);
+		}
+		// Select new sprites
+		selection->clear();
+		for (int i = newSpriteStart; i < sprites.size(); i++)
+		{
+			selection->selectedIndices.insert(i);
+		}
+	}
+}
+
+void Scene::checkKeyInput()
+{
+	// If we have selection and user has hit ESC, unselect all
+	if (InputState::functions[selection_deselect].activatedThisFrame)
+		selection->selectedIndices.clear();
+	// If we have a selection and user has pressed delete, delete the selected sprites
+	if (InputState::functions[selection_delete].activatedThisFrame)
+		deleteSelection();
+	// If we have a selection and the user has pressed the move keys, move the sprites
+	if (selection->selectedIndices.size() > 0)
+	{
+		bool shift = InputState::functions[selection_add].active;
+		// Branch based on direction, only one direction per frame
+		if (InputState::functions[editor_moveup].activatedThisFrame)
+		{
+			moveSelection(0, -1);
+		}
+		else if (InputState::functions[editor_movedown].activatedThisFrame)
+		{
+			moveSelection(0, 1);
+		}
+		else if (InputState::functions[editor_moveleft].activatedThisFrame)
+		{
+			moveSelection(-1, 0);
+		}
+		else if (InputState::functions[editor_moveright].activatedThisFrame)
+		{
+			moveSelection(1, 0);
+		}
+	}
+
+}
+
+void Scene::moveSelection(int x, int y)
+{
+	Vector2D amount;
+	Vector2D topLeft = getTopLeftSpriteInSelection(selection);
+	bool shift = InputState::functions[selection_add].active;
+	bool alt = InputState::functions[selection_remove].active;
+	if (shift && !alt)
+	{
+		amount = { x * 8, y * 8 };
+	}
+	else if (shift && alt)
+	{
+		// Snap to absolute name table
+		Vector2D negativeSnap = { topLeft.x % 8, topLeft.y % 8 };
+		Vector2D positiveSnap = { abs(negativeSnap.x - 8), abs(negativeSnap.y - 8) };
+		// Make sure we keep moving if we're aligned with the name table already
+		if (negativeSnap.x == 0 && x < 0)
+			negativeSnap.x += 8;
+		if (negativeSnap.y == 0 && y < 0)
+			negativeSnap.y += 8;
+		Vector2D destination;
+		// Set X destination
+		if (x > 0)
+			destination.x = topLeft.x + positiveSnap.x;
+		else if (x < 0)
+			destination.x = topLeft.x - negativeSnap.x;
+		else
+		{
+			// See which is larger
+			if (negativeSnap.x < 4)
+				destination.x = topLeft.x - negativeSnap.x;
+			else
+				destination.x < topLeft.x + positiveSnap.x;
+		}
+		// Set Y destination
+		if (y > 0)
+			destination.y = topLeft.y + positiveSnap.y;
+		else if (y < 0)
+			destination.y = topLeft.y - negativeSnap.y;
+		else
+		{
+			// See which is larger
+			if (negativeSnap.y < 4)
+				destination.y = topLeft.y - negativeSnap.y;
+			else
+				destination.y < topLeft.y + positiveSnap.y;
+		}
+		// If the destination is out of bounds, put it back
+		if (destination.x < 0)
+			destination.x = 0;
+		if (destination.x > 248)
+			destination.x = 248;
+		if (destination.y < 0)
+			destination.y = 0;
+		if (destination.y > 232)
+			destination.y = 232;
+		// Calculate delta between top-left sprite and it's destination
+		amount = destination;
+		amount.sub(topLeft);
+	}
+	else
+	{
+		amount = { x, y };
+	}
+	// Move all sprites
+	for each (int i in selection->selectedIndices)
+	{
+		sprites[i].x += amount.x;
+		sprites[i].y += amount.y;
+	}
 }
 
 void Scene::deleteSelection()
