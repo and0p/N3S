@@ -23,7 +23,7 @@ public:
 	void assignD3DContext(N3sD3dContext);
 	void initDirectAudio(HWND hwnd);
 	void load(string path);
-	void loadGameData(string path);
+	void loadGameData(string path, bool init);
 	void unload();
 	void reset();
 	void update(bool runThisFrame);

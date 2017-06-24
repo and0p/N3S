@@ -340,7 +340,7 @@ void GameData::unload()
 	sharedMeshes.clear();
 }
 
-string GameData::getJSON()
+json GameData::getJSON()
 {
 	json j;
 	j["info"]["prgSize"] = romInfo.prgSize;
@@ -358,7 +358,7 @@ string GameData::getJSON()
 	{
 		j["sprites"].push_back(kvp.second->getJSON());
 	}
-	return j.dump(4);
+	return j;
 }
 
 bool SpriteMesh::buildMesh()

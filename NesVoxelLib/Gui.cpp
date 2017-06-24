@@ -21,7 +21,7 @@ bool SceneSelector::update(bool mouseAvailable)
 		int mouseY = InputState::keyboardMouse->mouseY;
 		int currentY = buttonGap;
 		// Check each button
-		for (int i = 0; i < sceneCount; i++)
+		for (int i = 0; i < sceneCount + 1; i++)
 		{
 			// See if mouse is in button bounds
 			if (mouseInRectangle(mouseX, mouseY, 0, currentY, buttonWidth, buttonHeight))
@@ -41,6 +41,27 @@ bool SceneSelector::update(bool mouseAvailable)
 			}
 			currentY += buttonHeight + buttonGap;
 		}
+		// See if temp scene is selected
+		if (mouseInRectangle(mouseX, mouseY, 0, (buttonHeight + buttonGap) * 16, buttonWidth * 2, buttonHeight))
+		{
+			anythingHighlighted = true;
+			highlightedTab = temp_scene;
+		}
+		// TEST select spritesheet
+		if (mouseInRectangle(mouseX, mouseY, 0, (buttonHeight + buttonGap) * 17, buttonWidth * 4, buttonHeight))
+		{
+			//highlightedTab = temp_scene;
+			anythingHighlighted = true;
+			if (state > 0)
+			{
+				mouseCaptured = true;
+			}
+			if (state == pressed)
+			{
+				Editor::createCHRSheet(0);
+				mouseCaptured = false;
+			}
+		}
 		if (!anythingHighlighted)
 			highlightedTab = -1;
 		if (highlightedTab == -1 && state < 1)
@@ -59,14 +80,15 @@ void SceneSelector::render()
 {
 	Overlay::setColor(0, 0, 0, 60);
 	int currentY = buttonGap;
-	// Draw buttons
+	int eHighlight = Editor::selectedScene;
+	// Draw numbered scene buttons
 	for (int i = 0; i < sceneCount; i++)
 	{
-		if (highlightedTab == i)
+		if (highlightedTab == i || eHighlight == i)
 		{
 			Overlay::setColor(150, 150, 150, 64);
 			Overlay::drawRectangle(0, currentY, buttonWidth, buttonHeight);
-			Overlay::setColor(0, 0, 0, 60);
+			Overlay::setColor(0, 0, 0, 64);
 		}
 		else
 		{
@@ -74,6 +96,20 @@ void SceneSelector::render()
 		}
 		currentY += buttonHeight + buttonGap;
 	}
+	// Draw temp scene box
+	if (highlightedTab == temp_scene || eHighlight == temp_scene)
+	{
+		Overlay::setColor(150, 150, 150, 64);
+		Overlay::drawRectangle(0, currentY, buttonWidth * 2, buttonHeight);
+		Overlay::setColor(0, 0, 0, 64);
+	}
+	else
+	{
+		Overlay::drawRectangle(0, currentY, buttonWidth * 2, buttonHeight);
+	}
+	// Draw CHR boxes
+	currentY += buttonHeight + buttonGap;
+	Overlay::drawRectangle(0, currentY, buttonWidth * 4, buttonHeight);
 	// Draw scene numbers
 	currentY = buttonGap + 3;
 	Overlay::setColor(255, 255, 255, 128);
@@ -83,6 +119,10 @@ void SceneSelector::render()
 		Overlay::drawString(2, currentY, 2, s);
 		currentY += buttonHeight + buttonGap;
 	}
+	Overlay::drawString(2, currentY, 2, "VRAM");
+	currentY += buttonHeight + buttonGap;
+	// Draw CHR control text
+	Overlay::drawString(2, currentY, 2, "CHR -0 +");
 }
 
 bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene, shared_ptr<VoxelEditor> editor)

@@ -118,7 +118,8 @@ void renderSprite(shared_ptr<VirtualSprite> vSprite, int x, int y, int palette, 
 		if (y > 232)
 			crop.bottom = 240 - y;
 		// Render
-		vSprite->renderOAM(N3sApp::snapshot, x, y, palette, flipX, flipY, crop);
+		if(vSprite != nullptr)
+			vSprite->renderOAM(N3sApp::snapshot, x, y, palette, flipX, flipY, crop);
 	}
 }
 

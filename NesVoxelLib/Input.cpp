@@ -394,7 +394,8 @@ void InputState::createBindings()
 	pasteBinding.ctrl = true;
 	functions[editor_copy].bindings.push_back({ copyBinding });
 	functions[editor_paste].bindings.push_back({ pasteBinding });
-
+	functions[palette_copy].bindings.push_back({ keyboardMouse->keys[0x4F] });
+	functions[palette_paste].bindings.push_back({ keyboardMouse->keys[0x50] });
 }
 
 bool Binding::activatedThisFrame()

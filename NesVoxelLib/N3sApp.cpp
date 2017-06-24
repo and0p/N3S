@@ -58,43 +58,43 @@ void N3sApp::load(string path)
 	if (n3sFile.good())
 	{
 		n3sPath = s;
-		json input(n3sFile);
-		// s = input.dump(4);
-		n3sFile.close();
-		gameData = make_shared<GameData>((char*)info->data, input);
+		loadGameData(n3sPath, true);
 	}
 	else
 	{
 		// TODO: Ask if user wants to find N3S file, generate data, or cancel
 		gameData = make_shared<GameData>((char*)info->data);
 		n3sPath = replaceExt(romPath, "n3s");
+		Editor::init();
 	}
 	virtualPatternTable = shared_ptr<VirtualPatternTable>(new VirtualPatternTable(gameData));
 	// gameData->grabBitmapSprites(info->data);
 	// gameData->createSpritesFromBitmaps();
 	loaded = true;
-	Editor::init();
 	unpause();
 }
 
-void N3sApp::loadGameData(string path)
+void N3sApp::loadGameData(string path, bool init)
 {
-	// Make sure game is loaded first
-	if (loaded)
+	// If not initializing rom, only go forward if game is loaded
+	if ((!init && loaded) || init)
 	{
 		ifstream n3sFile(path.c_str());
 		// Make sure file exists
 		if (n3sFile.good())
 		{
 			// Unload all old assets
-			gameData->unload();
+			if(loaded)
+				gameData->unload();
 			// Load the file into json
 			json input(n3sFile);
 			// Close file
 			n3sFile.close();
 			// Make GameData from json
-			gameData.reset(new GameData((char*)info->data, input));
+			gameData.reset(new GameData((char*)info->data, input["gamedata"]));
 			virtualPatternTable.reset(new VirtualPatternTable(gameData));	// Reset to reference new game data
+			// Load Editor data from json
+			Editor::loadJSON(input["editor"]);
 		}
 	}
 }
@@ -254,18 +254,7 @@ XMVECTORF32 N3sApp::getBackgroundColor()
 
 bool N3sApp::save()
 {
-	if (loaded)
-	{
-		// Get output JSON
-		string output = gameData->getJSON();
-		// Save to file with path specified
-		ofstream myfile;
-		myfile.open(n3sPath);
-		myfile << output;
-		myfile.close();
-		return true;
-	}
-	return false;
+	return saveAs(n3sPath);
 }
 
 bool N3sApp::saveAs(string path)
@@ -273,7 +262,10 @@ bool N3sApp::saveAs(string path)
 	if (loaded)
 	{
 		// Get output JSON
-		string output = gameData->getJSON();
+		json j;
+		j["gamedata"] = gameData->getJSON();
+		j["editor"] = Editor::getJSON();
+		string output = j.dump(4);
 		// Save to file with path specified
 		ofstream myfile;
 		myfile.open(path);

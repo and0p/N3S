@@ -6,6 +6,10 @@
 
 using namespace std;
 
+enum SceneButtons {
+	temp_scene = 17
+};
+
 enum PaletteButtons {
 	palette_start = 0,
 	palette_end = 23,
@@ -34,6 +38,7 @@ public:
 private:
 	bool mouseCaptured = false;
 	int highlightedTab = 0;
+	int selectedSheet = 0;
 	static const int buttonHeight = 20;
 	static const int buttonWidth = 36;
 	static const int buttonGap = 2;
@@ -69,7 +74,7 @@ public:
 	static bool update(bool mouseAvailable, shared_ptr<SpriteMesh> mesh);
 	static void render();
 	static void clear();
-	static const int topMargin = (20 * 18);
+	static const int topMargin = (20 * 19);
 private:
 	static shared_ptr<SpriteMesh> m;
 
@@ -86,7 +91,7 @@ public:
 	static void clear();
 	static shared_ptr<VoxelEditor> e;
 private:
-	static const int topMargin = MeshInfo::topMargin + (16 * 4);
+	static const int topMargin = MeshInfo::topMargin + (17 * 4);
 	static const int width = 8;
 	static const int height = 5;
 	static const int scale = 2;

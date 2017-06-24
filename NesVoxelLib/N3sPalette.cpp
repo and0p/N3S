@@ -75,3 +75,29 @@ N3sPalette::N3sPalette(int colors[25])
 		colorIndices[i] = colors[i+1];
 	}
 }
+
+N3sPalette::N3sPalette(json j)
+{
+	for (int i = 0; i < 24; i++)
+	{
+		colorIndices[i] = j["colors"][i];
+	}
+	backgroundColorIndex = j["background"];
+}
+
+json N3sPalette::getJSON()
+{
+	json j;
+	string s = "";
+	for (int i = 0; i < 25; i++)
+	{
+		j["colors"][i] = colorIndices[i];
+	//	string p = std::to_string(colorIndices[i]);
+	//	s += p;
+	//	if (i < 24)
+	//		s += ",";
+	}
+	//j["colors"] = s;
+	j["background"] = backgroundColorIndex;
+	return j;
+}

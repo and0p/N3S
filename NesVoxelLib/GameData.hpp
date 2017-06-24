@@ -109,7 +109,7 @@ public:
 	static VoxelMesh getSharedMesh(int zArray[32]);
 	static void releaseSharedMesh(string hash);
 	void unload();
-	string getJSON();
+	json getJSON();
 private:
 	static unordered_map<string, SharedMesh> sharedMeshes;
 };

@@ -7,6 +7,7 @@
 #include "N3sMath.hpp"
 
 using namespace std;
+using json = nlohmann::json;
 
 const int sceneWidth = 64;
 const int sceneHeight = 60;
@@ -59,6 +60,8 @@ class Scene {
 public:
 	Scene();
 	Scene(shared_ptr<PpuSnapshot> snapshot);
+	Scene(json j);
+	json getJSON();
 	bool update(bool mouseAvailable);
 	void render(bool renderBackground, bool renderOAM);
 	void renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights);

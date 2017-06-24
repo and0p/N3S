@@ -198,7 +198,7 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam, HWND hwnd)
 			// MessageBox(NULL, L"ahh", L"File Path", MB_OK);
 			string path = getFilePathWithDialog();
 			if (path != "")
-				app.loadGameData(path);
+				app.loadGameData(path, false);
 			break;
 		}
 		}

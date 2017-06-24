@@ -3,6 +3,8 @@
 #include "Scene.hpp"
 
 using namespace std;
+using json = nlohmann::json;
+
 const int sceneCount = 16;
 
 struct interactionOptions
@@ -18,6 +20,8 @@ struct interactionOptions
 class Editor {
 public:
 	static void init();
+	static void loadJSON(json j);
+	static json getJSON();
 	static void update();
 	static void parseInputForScene(bool mouseAvailable);
 	static void render();
@@ -26,7 +30,10 @@ public:
 	static interactionOptions oamOptions;
 	static interactionOptions nametableOptions;
 	static void updateTempScene(shared_ptr<PpuSnapshot> snapshot);
+	static void createCHRSheet(int pageNumber);
+	static int selectedScene;
 private:
+	static N3sPalette copiedPalette;
 	static shared_ptr<vector<SceneSprite>> copiedSprites;
 	static bool mouseAvailable;
 };

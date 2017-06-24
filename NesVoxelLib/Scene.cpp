@@ -52,11 +52,6 @@ Scene::Scene(shared_ptr<PpuSnapshot> snapshot)
 {
 	// Set camera to default position
 	mainCamera.SetPosition(0, 0, 0);
-	// Clear BG with all "blank" (-1) sprites
-	for (int i = 0; i < sceneWidth * sceneHeight; i++)
-	{
-		//bg[i] = { nullptr, 0, false, false };
-	}
 	selection = make_shared<Selection>();
 	displaySelection = make_shared<Selection>();
 	// Create scene from snapshot
@@ -131,6 +126,79 @@ Scene::Scene(shared_ptr<PpuSnapshot> snapshot)
 	// Grab palette
 	for (int i = 0; i < 8; i++)
 		palettes[i] = snapshot->palette;
+}
+
+Scene::Scene(json j)
+{
+	// Set camera to default position
+	mainCamera.SetPosition(0, 0, 0);
+	selection = make_shared<Selection>();
+	displaySelection = make_shared<Selection>();
+	// Add sprites from JSON
+	for each (json js in j["sprites"])
+	{
+		SceneSprite ss;
+		ss.x = js["x"];
+		ss.y = js["y"];
+		ss.mirrorH = js["mirrorH"];
+		ss.mirrorV = js["mirrorV"];
+		ss.palette = js["palette"];
+		// Grab mesh reference by ID, use if it exists
+		int id = js["mesh"];
+		if (N3sApp::gameData->meshes.size() > id)
+		{
+			shared_ptr<SpriteMesh> ref = N3sApp::gameData->meshes[id];
+			ss.mesh = ref;
+			sprites.push_back(ss);	// Don't even add bad mesh refs
+		}
+	}
+	// Add palettes from JSON
+	for (int i = 0; i < 8; i++)
+	{
+
+		// See if this palette is actuall specified
+		if (j["palettes"].size() > i)
+		{
+			N3sPalette p = N3sPalette(j["palettes"][i]);
+			palettes[i] = p;
+		}
+		else
+		{
+			// If not, use a default one
+			palettes[i] = N3sPalette();
+		}
+	}
+}
+
+json Scene::getJSON()
+{
+	json j;
+	// Add sprites
+	for each (SceneSprite s in sprites)
+	{
+		// Don't grab stuff that's out of bounds
+		if (s.x >= 0 && s.x < 256 && s.y >= 0 && s.y < 240)
+		{
+			// Don't grab sprites with no meshes
+			if (s.mesh != nullptr)
+			{
+			json sj;
+			sj["x"] = s.x;
+			sj["y"] = s.y;
+			sj["mirrorH"] = s.mirrorH;
+			sj["mirrorV"] = s.mirrorV;
+			sj["palette"] = s.palette;
+			sj["mesh"] = s.mesh->id;
+			j["sprites"].push_back(sj);
+			}
+		}
+	}
+	// Add palettes
+	for (int i = 0; i < 8; i++)
+	{
+		j["palettes"][i] = palettes[i].getJSON();
+	}
+	return j;
 }
 
 bool Scene::update(bool mouseAvailable)
