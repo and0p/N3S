@@ -177,7 +177,7 @@ json Scene::getJSON()
 	for each (SceneSprite s in sprites)
 	{
 		// Don't grab stuff that's out of bounds
-		if (s.x >= 0 && s.x < 256 && s.y >= 0 && s.y < 240)
+		if (s.x >= 0 && s.x < 512 && s.y >= 0 && s.y < 480)
 		{
 			// Don't grab sprites with no meshes
 			if (s.mesh != nullptr)
@@ -780,12 +780,12 @@ void Scene::moveSelection(int x, int y)
 		// If the destination is out of bounds, put it back
 		if (destination.x < 0)
 			destination.x = 0;
-		if (destination.x > 248)
-			destination.x = 248;
+		if (destination.x > 508)
+			destination.x = 508;
 		if (destination.y < 0)
 			destination.y = 0;
-		if (destination.y > 232)
-			destination.y = 232;
+		if (destination.y > 472)
+			destination.y = 472;
 		// Calculate delta between top-left sprite and it's destination
 		amount = destination;
 		amount.sub(topLeft);
