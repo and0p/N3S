@@ -249,7 +249,17 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam, HWND hwnd)
 		case WM_MOUSEWHEEL:
 			app.recieveMouseScroll(GET_WHEEL_DELTA_WPARAM(wParam));
 			break;
-		}
+	}
+	case WM_ENTERSIZEMOVE:
+	{
+		app.setMute(true);
+		break;
+	}
+	case WM_EXITSIZEMOVE:
+	{
+		app.setMute(false);
+		break;
+	}
 	}
 }
 #pragma endregion
