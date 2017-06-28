@@ -9,11 +9,19 @@ using namespace std;
 
 const int totalKeys = 256;
 
+enum virtualKeyCodes {};
+
 enum inputFunctions {
 	nes_p1_a, nes_p1_b, nes_p1_up, nes_p1_left, nes_p1_down, nes_p1_right, nes_p1_start, nes_p1_select,
 	nes_p2_a, nes_p2_b, nes_p2_up, nes_p2_left, nes_p2_down, nes_p2_right, nes_p2_start, nes_p2_select,
 	emu_pause, emu_reset, 
+	tog_game, tog_editor, editor_alt,
 	cam_left, cam_right, cam_up, cam_down, cam_pan_in, cam_pan_out,
+	selection_add, selection_remove, selection_copy, selection_delete, selection_deselect,
+	editor_moveleft, editor_moveright, editor_moveup, editor_movedown,
+	voxeleditor_movein, voxeleditor_moveout, voxeleditor_setvoxel, voxeleditor_deletevoxel,
+	voxeleditor_color0, voxeleditor_color1, voxeleditor_color2, voxeleditor_color3,	voxeleditor_exit,
+	editor_copy, editor_paste, palette_copy, palette_paste,
 	INPUTCOUNT
 };
 
@@ -87,11 +95,18 @@ public:
 	KeyboardMouseDevice();
 	float mouseX;
 	float mouseY;
+	float previousMouseX;
+	float previousMouseY;
+	float mouseDeltaX;
+	float mouseDeltaY;
 	shared_ptr<DigitalInput> keys[totalKeys];
 	MouseButton mouseButtons[MouseButtons::MOUSEBUTTONCOUNT];
+	int wheelDelta = 0;
+	float calculatedWheelDelta = 0;
 	void setDown(int key);
 	void setUp(int key);
 	void update();
+	bool hasMouseMoved();
 };
 
 class GamepadDevice : InputDevice
@@ -109,6 +124,8 @@ class Binding
 public:
 	Binding(shared_ptr<Input> input) : input(input), ctrl(false), alt(false), shift(false) {}
 	Binding(shared_ptr<Input> input, bool ctrl, bool alt, bool shift) : input(input), ctrl(ctrl), alt(alt), shift(shift) {}
+	//bool active();
+	bool activatedThisFrame();
 	shared_ptr<Input> input;
 	bool ctrl = false;
 	bool alt = false;

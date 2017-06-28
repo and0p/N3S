@@ -1,4 +1,8 @@
 #pragma once
+#include "json.hpp"
+
+using namespace std;
+using json = nlohmann::json;
 
 struct Hue
 {
@@ -19,11 +23,21 @@ struct PPUHueStandard
 
 enum PPUType { v2C02, v2C03, v2C05 };
 
-class PPUHueStandardCollection
+class N3sPalette
 {
 public:
-	PPUHueStandardCollection();
-	Hue getHue(PPUType type, int hueSet, int number);
+	N3sPalette();
+	N3sPalette(int colors[25]);
+	N3sPalette(json j);
+	json getJSON();
+	int colorIndices[24];		// All palette colors that are not the background
+	int backgroundColorIndex;	// Background color
+	void updateShaderPalette();
+	Hue getBackgroundColor();
+	static Hue getHue(int color);
+	static void setPPUType(PPUType type);
+	static void init();
 private:
-	PPUHueStandard ppuHueStandards[3];
+	static PPUType currentPPUType;
+	static PPUHueStandard standards[3];
 };

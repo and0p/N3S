@@ -4,6 +4,7 @@
 #include "N3sConsole.hpp"
 #include "Overlay.hpp"
 #include "Editor.hpp"
+#include "N3sPalette.hpp"
 
 extern SoundDriver *newDirectSound();
 
@@ -19,10 +20,9 @@ N3sApp::N3sApp()
 	emulationPaused = false;
 	loaded = false;
 	muted = false;
-	camera.SetPosition(0, 0, -2);
-	camera.SetRotation(0, 0, 0);
 	inputState = make_shared<InputState>();
 	SoundDriver * drv = 0;
+	N3sPalette::init();
 	N3sConsole::init();
 }
 
@@ -58,43 +58,43 @@ void N3sApp::load(string path)
 	if (n3sFile.good())
 	{
 		n3sPath = s;
-		json input(n3sFile);
-		// s = input.dump(4);
-		n3sFile.close();
-		gameData = make_shared<GameData>((char*)info->data, input);
+		loadGameData(n3sPath, true);
 	}
 	else
 	{
 		// TODO: Ask if user wants to find N3S file, generate data, or cancel
 		gameData = make_shared<GameData>((char*)info->data);
 		n3sPath = replaceExt(romPath, "n3s");
+		Editor::init();
 	}
 	virtualPatternTable = shared_ptr<VirtualPatternTable>(new VirtualPatternTable(gameData));
 	// gameData->grabBitmapSprites(info->data);
 	// gameData->createSpritesFromBitmaps();
 	loaded = true;
-	Editor::init();
 	unpause();
 }
 
-void N3sApp::loadGameData(string path)
+void N3sApp::loadGameData(string path, bool init)
 {
-	// Make sure game is loaded first
-	if (loaded)
+	// If not initializing rom, only go forward if game is loaded
+	if ((!init && loaded) || init)
 	{
 		ifstream n3sFile(path.c_str());
 		// Make sure file exists
 		if (n3sFile.good())
 		{
 			// Unload all old assets
-			gameData->unload();
+			if(loaded)
+				gameData->unload();
 			// Load the file into json
 			json input(n3sFile);
 			// Close file
 			n3sFile.close();
 			// Make GameData from json
-			gameData.reset(new GameData((char*)info->data, input));
+			gameData.reset(new GameData((char*)info->data, input["gamedata"]));
 			virtualPatternTable.reset(new VirtualPatternTable(gameData));	// Reset to reference new game data
+			// Load Editor data from json
+			Editor::loadJSON(input["editor"]);
 		}
 	}
 }
@@ -107,8 +107,6 @@ void N3sApp::unload()
 		gameData->unload();
 		gameData.reset();
 		virtualPatternTable.reset();
-		camera.SetPosition(0, 0, -2);
-		camera.SetRotation(0, 0, 0);
 		loaded = false;
 	}
 }
@@ -125,10 +123,14 @@ void N3sApp::update(bool runThisNesFrame)
 	// Update console
 	N3sConsole::update();
 	// See if we're switching modes due to user input
-	//if (N3sApp::inputState->keyboardState.keyStates[VK_OEM_COMMA])
-	//	mode = gameMode;
-	//if (N3sApp::inputState->keyboardState.keyStates[VK_OEM_PERIOD])
-	//	mode = editorMode;
+	if (N3sApp::inputState->functions[tog_game].activatedThisFrame)
+		mode = gameMode;
+	else if (N3sApp::inputState->functions[tog_editor].activatedThisFrame)
+	{
+		if(mode != editorMode)
+			Editor::updateTempScene(snapshot);
+		mode = editorMode;
+	}
 	// See if a game is loaded
 	if (loaded)
 	{
@@ -167,37 +169,11 @@ void N3sApp::render()
 			break;
 		}
 	}
-	/*
-	// Overlay shader testing
-	N3s3d::setDepthBufferState(false);
-	N3s3d::setShader(overlay);
-	N3s3d::updateMatricesWithCamera(&camera);
-	// Overlay::drawVoxelPreview(0, 0, 0);
-	// Overlay::drawVoxelPreview(5, 5, 0);
-	// Overlay::drawVoxelPreview(-128, -120, 0);
-	Overlay::drawVoxelGrid(0, 0, 0, xAxis);
-	Overlay::drawVoxelGrid(0, 0, 4, yAxis);
-	Overlay::drawVoxelGrid(0, 0, 4, zAxis);
-	Overlay::drawVoxelGrid(16, 15, 0, xAxis);
-	Overlay::drawVoxelGrid(16, 15, 4, yAxis);
-	Overlay::drawVoxelGrid(16, 15, 4, zAxis);
-	Overlay::drawNametableGrid();
-	N3s3d::setGuiProjection();
-	*/
 	N3s3d::setDepthBufferState(false);
 	N3s3d::setShader(overlay);
 	N3s3d::setOverlayColor(255, 255, 255, 255);
 	N3s3d::setGuiProjection();
-	string s = "";
-	s.append(to_string(InputState::keyboardMouse->mouseX));
-	s.append(", ");
-	s.append(to_string(InputState::keyboardMouse->mouseY));
-	Overlay::drawString(0, 0, 2, s);
-	s = "";
-	s.append(to_string(InputState::keyboardMouse->mouseButtons[0].state));
-	s.append(to_string(InputState::keyboardMouse->mouseButtons[1].state));
-	s.append(to_string(InputState::keyboardMouse->mouseButtons[2].state));
-	Overlay::drawString(0, 18, 2, s);
+	
 	N3sConsole::render();
 }
 
@@ -251,11 +227,26 @@ void N3sApp::recieveMouseMovement(int x, int y)
 	InputState::keyboardMouse->mouseY = y;
 }
 
+void N3sApp::recieveMouseScroll(int delta)
+{
+	InputState::keyboardMouse->wheelDelta = delta;
+}
+
 XMVECTORF32 N3sApp::getBackgroundColor()
 {
 	Hue hue;
 	if (loaded)
-		hue = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, snapshot->backgroundColor);
+	{
+		switch (mode)
+		{
+		case (gameMode):
+			hue = snapshot->palette.getBackgroundColor();
+			break;
+		case (editorMode):
+			hue = Editor::getBackgroundColor();
+			break;
+		}
+	}
 	else
 		hue = { 0.0f, 0.0f, 0.0f };
 	return{ hue.red, hue.green, hue.blue, 1.0f };
@@ -263,18 +254,7 @@ XMVECTORF32 N3sApp::getBackgroundColor()
 
 bool N3sApp::save()
 {
-	if (loaded)
-	{
-		// Get output JSON
-		string output = gameData->getJSON();
-		// Save to file with path specified
-		ofstream myfile;
-		myfile.open(n3sPath);
-		myfile << output;
-		myfile.close();
-		return true;
-	}
-	return false;
+	return saveAs(n3sPath);
 }
 
 bool N3sApp::saveAs(string path)
@@ -282,7 +262,10 @@ bool N3sApp::saveAs(string path)
 	if (loaded)
 	{
 		// Get output JSON
-		string output = gameData->getJSON();
+		json j;
+		j["gamedata"] = gameData->getJSON();
+		j["editor"] = Editor::getJSON();
+		string output = j.dump(4);
 		// Save to file with path specified
 		ofstream myfile;
 		myfile.open(path);

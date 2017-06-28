@@ -4,7 +4,6 @@
 #include "GameData.hpp"
 #include "PpuSnapshot.hpp"
 #include "NesEmulator.hpp"
-#include "Camera.hpp"
 #include "libretro.h"
 #include "Input.hpp"
 #include "N3sPatternTable.hpp"
@@ -24,7 +23,7 @@ public:
 	void assignD3DContext(N3sD3dContext);
 	void initDirectAudio(HWND hwnd);
 	void load(string path);
-	void loadGameData(string path);
+	void loadGameData(string path, bool init);
 	void unload();
 	void reset();
 	void update(bool runThisFrame);
@@ -37,9 +36,9 @@ public:
 	void recieveKeyInput(int key, bool down);
 	void recieveMouseInput(MouseButtons button, bool down);
 	void recieveMouseMovement(int x, int y);
+	void recieveMouseScroll(int delta);
 	XMVECTORF32 getBackgroundColor();
 	retro_game_info *info;
-	Camera camera;
 	static shared_ptr<GameData> gameData;
 	static shared_ptr<PpuSnapshot> snapshot;
 	static shared_ptr<InputState> inputState;
@@ -54,7 +53,5 @@ private:
 	SoundDriver *audioEngine;
 	HWND hwnd;
 	bool emulationPaused;
-	//bool pausedThisPress;
-	//bool frameAdvanced;
 	bool muted;
 };

@@ -10,15 +10,18 @@
 #include <DirectXColors.h>
 #include <wrl/client.h>
 #include "N3sD3DContext.h"
+#include "N3sMath.hpp"
 
 static float pixelSizeW = (2.0f / 256.0f);
-static float pixelSizeH = (2.0f / 240.0f);
+static float pixelSizeH = (2.0f / 240.0f); // normally 240
 
 using namespace DirectX;
 using namespace std;
 
 enum ShaderType { color = 0, overlay = 1 };
 const int shaderCount = 2;	// UPDATE THIS WHEN ADDING SHADERS
+
+enum PlaneAxis { x_axis, y_axis, z_axis };
 
 struct ColorVertex {
 	XMFLOAT4 Pos;
@@ -79,20 +82,25 @@ public:
 	static void updateViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 perspective);
 	static void updateWorldMatrix(float xPos, float yPos, float zPos);
 	static void updateWorldMatrix(float xPos, float yPos, float zPos, float xRot, float yRot, float zRot, float scale);
+	static void updateWorldMatrix(float xPos, float yPos, float zPos, float xRot, float yRot, float zRot, float xScale, float yScale, float zScale);
 	static void updateMirroring(bool horizontal, bool vertical);
 	static void updatePalette(float palette[72]);
 	static void selectPalette(int palette);
+	static void setOverlayColor(float r, float g, float b, float a);
 	static void setOverlayColor(int r, int g, int b, int a);
 	static XMMATRIX getProjectionMatrix(const float near_plane, const float far_plane, const float fov_horiz, const float fov_vert);
 	static void setShader(ShaderType type);
 	static void renderMesh(VoxelMesh *voxelMesh);
-	static PPUHueStandardCollection ppuHueStandardCollection;
 	static void setIndexBuffer();
 	static void setDepthBufferState(bool active);
+	static void setDepthStencilState(bool depthTest, bool stencilWrite, bool stencilTest);
 	static void setRasterFillState(bool fill);
 	static void setGuiProjection();
 	static D3D11_VIEWPORT viewport;
 	static void updateViewport(D3D11_VIEWPORT viewport);
+	static XMVECTOR getMouseVector(Camera * camera, int mouseX, int mouseY);
+	static XMFLOAT3 getPlaneIntersection(PlaneAxis axis, int pixel, Camera * camera, int mouseX, int mouseY);
+	static Vector3D getPixelCoordsFromFloat3(XMFLOAT3 pos);
 private:
 	static void initShaders();
 	static void initShaderExtras();

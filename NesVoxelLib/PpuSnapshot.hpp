@@ -2,6 +2,7 @@
 
 #include <vector>
 #include "N3sRawPpu.h"
+#include "N3sPalette.hpp"
 
 struct Ctrl {
 	bool spriteNameTable;
@@ -38,14 +39,6 @@ struct NameTableTile {
 
 struct NameTableQuadrant {
 	NameTableTile tiles[960];
-};
-
-struct IndividualPalette {
-	int colors[3];
-};
-
-struct FullPalette {
-	IndividualPalette palettes[8];
 };
 
 static enum MirrorType { vertical, horizontal, single, full, diagonal };
@@ -96,7 +89,7 @@ public:
 	std::vector<OamSprite> sprites;
 	int backgroundColor;
 	Background background;
-	FullPalette palette;
+	N3sPalette palette;
 	Ctrl ctrl;
 	Mask mask;
 	char *patternTable;
@@ -104,6 +97,8 @@ public:
 	std::map<int, bool> oamPatternSelect;
 	int ppuScroll = 0;
 	bool getOAMSelectAtScanline(int scanline);
+	int getTrueOamTile(int s);
+	int getTrueNTTile(int i);
 private:
 	OamSprite buildSprite(unsigned char *ptr);
 	static int getTileAddress(unsigned char byte);

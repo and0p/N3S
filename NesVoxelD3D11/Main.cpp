@@ -213,6 +213,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_SYSKEYDOWN:
+		// See if we care about this system key, if not pass it to game
 		if (wParam == VK_RETURN && (lParam & 0x60000000) == 0x20000000)
 		{
 			// Implements the classic ALT+ENTER fullscreen toggle
@@ -247,20 +248,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			s_fullscreen = !s_fullscreen;
 		}
-		else if ((lParam & 0x60000000) == 0x20000000 && s_fullscreen)
+		else
 		{
-			if (menuShown)
-			{
-				SetMenu(hWnd, NULL);
-				menuShown = false;
-			}
-			else
-			{
-				SetMenu(hWnd, menu);
-				menuShown = true;
-			}
-
+			g_game->getAppMessage(message, wParam, lParam, hWnd);
 		}
+		//else if ((lParam & 0x60000000) == 0x20000000 && s_fullscreen)
+		//{
+		//	if (menuShown)
+		//	{
+		//		SetMenu(hWnd, NULL);
+		//		menuShown = false;
+		//	}
+		//	else
+		//	{
+		//		SetMenu(hWnd, menu);
+		//		menuShown = true;
+		//	}
+
+		//}
 		break;
 
 	case WM_KEYDOWN:
@@ -268,6 +273,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_KEYUP:
+		g_game->getAppMessage(message, wParam, lParam, hWnd);
+		break;
+
+	case WM_SYSKEYUP:
 		g_game->getAppMessage(message, wParam, lParam, hWnd);
 		break;
 
@@ -290,6 +299,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		g_game->getAppMessage(message, wParam, lParam, hWnd);
 		break;
 	case WM_MOUSEMOVE:
+		g_game->getAppMessage(message, wParam, lParam, hWnd);
+		break;
+
+	case WM_MOUSEWHEEL:
 		g_game->getAppMessage(message, wParam, lParam, hWnd);
 		break;
 

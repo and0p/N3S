@@ -66,8 +66,10 @@ float AnalogInput::getValue()
 	return value;
 }
 
-void MouseButton::update(int x, int y)
+void MouseButton::update(int newX, int newY)
 {
+	x = newX;
+	y = newY;
 	if (down)
 	{
 		if (framesActive == 0)
@@ -84,8 +86,8 @@ void MouseButton::update(int x, int y)
 				// Get distance between possible action start and this X/Y
 				int xDelta = abs(actionXStart - x);
 				int yDelta = abs(actionYStart - y);
-				// See if X or Y are further than 5 pixels away
-				if (xDelta > 5 || yDelta > 5)
+				// See if X or Y are further than 0 pixels away
+				if (xDelta > 1 || yDelta > 1)
 				{
 					state = dragging;
 				}
@@ -98,12 +100,12 @@ void MouseButton::update(int x, int y)
 	else
 	{
 		// If we're releasing near the click start it counts as "pressed" for buttons
-		if (framesActive > 0 && framesActive < 1000)
+		if (framesActive > 0 && framesActive < 200)
 		{
 			// Get distance between possible action start and this X/Y
 			int xDelta = abs(actionXStart - x);
 			int yDelta = abs(actionYStart - y);
-			if (xDelta < 5 || yDelta < 5)
+			if (xDelta < 1 && yDelta < 1)
 				state = pressed;
 		}
 		else
@@ -137,6 +139,11 @@ void KeyboardMouseDevice::setUp(int key)
 
 void KeyboardMouseDevice::update()
 {
+	// Get deltas and reset previous positions
+	mouseDeltaX = mouseX - previousMouseX;
+	mouseDeltaY = mouseY - previousMouseY;
+	previousMouseX = mouseX;
+	previousMouseY = mouseY;
 	for (int i = 0; i < totalKeys; i++)
 	{
 		keys[i]->update();
@@ -145,6 +152,16 @@ void KeyboardMouseDevice::update()
 	{
 		mouseButtons[i].update(mouseX, mouseY);
 	}
+	calculatedWheelDelta = wheelDelta / 120;
+	wheelDelta = 0;
+}
+
+bool KeyboardMouseDevice::hasMouseMoved()
+{
+	if (mouseDeltaX != 0 || mouseDeltaY != 0)
+		return true;
+	else
+		return false;
 }
 
 GamepadDevice::GamepadDevice()
@@ -261,6 +278,11 @@ void InputState::refreshInput()
 		functions[i].update();
 	}
 	sendNesInput();
+	// DEBUG: Check VK_MENU
+	if (keyboardMouse->keys[VK_MENU]->active)
+		int test = 0;
+	if (functions[selection_remove].active)
+		int testtt = 0;
 }
 
 void InputState::sendNesInput()
@@ -295,7 +317,7 @@ void InputFunction::update()
 	{
 		if (b.input->active)
 			active = true;
-		if (b.input->activatedThisFrame)
+		if (b.activatedThisFrame())
 			activatedThisFrame = true;
 		if (b.input->framesActive > framesActive)
 			framesActive = b.input->framesActive;
@@ -323,6 +345,7 @@ void InputState::createBindings()
 	functions[nes_p1_down].bindings.push_back({ gamepads[0]->analogInputs[leftYNeg] });
 	functions[nes_p1_left].bindings.push_back({ gamepads[0]->analogInputs[leftXNeg] });
 	functions[nes_p1_right].bindings.push_back({ gamepads[0]->analogInputs[leftXPos] });
+
 	// Camera controls
 	functions[cam_up].bindings.push_back({ keyboardMouse->keys[VK_UP] });
 	functions[cam_down].bindings.push_back({ keyboardMouse->keys[VK_DOWN] });
@@ -335,5 +358,62 @@ void InputState::createBindings()
 	functions[cam_right].bindings.push_back({ gamepads[0]->analogInputs[rightXPos] });
 	functions[cam_up].bindings.push_back({ gamepads[0]->analogInputs[rightYPos] });
 	functions[cam_down].bindings.push_back({ gamepads[0]->analogInputs[rightYNeg] });
+
+	// Switching between editor and game
+	functions[tog_game].bindings.push_back({ keyboardMouse->keys[VK_OEM_1] });		// semicolon
+	functions[tog_editor].bindings.push_back({ keyboardMouse->keys[VK_OEM_7] });	// single quote
+
+	// Editor controls
+	functions[selection_add].bindings.push_back({ keyboardMouse->keys[VK_SHIFT] });
+	functions[selection_remove].bindings.push_back({ keyboardMouse->keys[VK_MENU] });
+	functions[selection_copy].bindings.push_back({ keyboardMouse->keys[VK_CONTROL] });
+	functions[selection_delete].bindings.push_back({ keyboardMouse->keys[VK_DELETE] });
+	functions[selection_deselect].bindings.push_back({ keyboardMouse->keys[VK_ESCAPE] });
+	functions[editor_alt].bindings.push_back({ keyboardMouse->keys[VK_MENU] });
+	functions[editor_moveleft].bindings.push_back({ keyboardMouse->keys[VK_LEFT] });
+	functions[editor_moveright].bindings.push_back({ keyboardMouse->keys[VK_RIGHT] });
+	functions[editor_moveup].bindings.push_back({ keyboardMouse->keys[VK_UP] });
+	functions[editor_movedown].bindings.push_back({ keyboardMouse->keys[VK_DOWN] });
+	functions[voxeleditor_setvoxel].bindings.push_back({ keyboardMouse->keys[0x4B] });
+	functions[voxeleditor_deletevoxel].bindings.push_back({ keyboardMouse->keys[0x4A] });
+	functions[voxeleditor_movein].bindings.push_back({ keyboardMouse->keys[0x55] });
+	functions[voxeleditor_moveout].bindings.push_back({ keyboardMouse->keys[0x49] });
+	functions[voxeleditor_color0].bindings.push_back({ keyboardMouse->keys[0x30] });
+	functions[voxeleditor_color0].bindings.push_back({ keyboardMouse->keys[VK_NUMPAD0] });
+	functions[voxeleditor_color1].bindings.push_back({ keyboardMouse->keys[0x31] });
+	functions[voxeleditor_color1].bindings.push_back({ keyboardMouse->keys[VK_NUMPAD1] });
+	functions[voxeleditor_color2].bindings.push_back({ keyboardMouse->keys[0x32] });
+	functions[voxeleditor_color2].bindings.push_back({ keyboardMouse->keys[VK_NUMPAD2] });
+	functions[voxeleditor_color3].bindings.push_back({ keyboardMouse->keys[0x33] });
+	functions[voxeleditor_color3].bindings.push_back({ keyboardMouse->keys[VK_NUMPAD3] });
+	functions[voxeleditor_exit].bindings.push_back({ keyboardMouse->keys[VK_ESCAPE] });
+	// Editor copy/paste
+	Binding copyBinding = { keyboardMouse->keys[0x43] };	// C
+	copyBinding.ctrl = true;
+	Binding pasteBinding = { keyboardMouse->keys[0x56] };	// V
+	pasteBinding.ctrl = true;
+	functions[editor_copy].bindings.push_back({ copyBinding });
+	functions[editor_paste].bindings.push_back({ pasteBinding });
+	functions[palette_copy].bindings.push_back({ keyboardMouse->keys[0x4F] });
+	functions[palette_paste].bindings.push_back({ keyboardMouse->keys[0x50] });
 }
 
+bool Binding::activatedThisFrame()
+{
+	if (input->activatedThisFrame)
+	{
+		if (ctrl) {
+			if (InputState::keyboardMouse->keys[VK_CONTROL]->active)
+				return true;
+			else
+				return false;
+		}
+		else
+			return true;
+	}
+	else
+	{
+		return false;
+	}
+
+}

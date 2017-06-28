@@ -2,7 +2,7 @@
 #include "GameView.hpp"
 #include "N3sConsole.hpp"
 
-Camera gameCamera = Camera();
+FreeCamera gameCamera = FreeCamera();
 
 void GameView::update()
 {
@@ -45,6 +45,11 @@ void GameView::render()
 	renderSprites();
 	if (N3sApp::snapshot->mask.renderBackground)
 	renderNameTables();
+}
+
+FreeCamera * GameView::getCamera()
+{
+	return &gameCamera;
 }
 
 void GameView::parseInput()
@@ -113,25 +118,15 @@ void renderSprite(shared_ptr<VirtualSprite> vSprite, int x, int y, int palette, 
 		if (y > 232)
 			crop.bottom = 240 - y;
 		// Render
-		vSprite->renderOAM(N3sApp::snapshot, x, y, palette, flipX, flipY, crop);
+		if(vSprite != nullptr)
+			vSprite->renderOAM(N3sApp::snapshot, x, y, palette, flipX, flipY, crop);
 	}
 }
 
 
 void updatePalette()
 {
-	float palette[72];
-	for (int p = 0; p < 8; p++)
-	{
-		for (int h = 0; h < 3; h++)
-		{
-			palette[(p * 9) + (h * 3)] = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, N3sApp::snapshot->palette.palettes[p].colors[h]).red;
-			palette[(p * 9) + (h * 3) + 1] = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, N3sApp::snapshot->palette.palettes[p].colors[h]).green;
-			palette[(p * 9) + (h * 3) + 2] = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, N3sApp::snapshot->palette.palettes[p].colors[h]).blue;
-		}
-	}
-	Hue hue = N3s3d::ppuHueStandardCollection.getHue(v2C02, 0, N3sApp::snapshot->palette.palettes[0].colors[2]);
-	N3s3d::updatePalette(palette);
+	N3sApp::snapshot->palette.updateShaderPalette();
 }
 
 void renderNameTables()

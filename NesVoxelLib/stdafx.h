@@ -22,6 +22,7 @@
 
 #include <wrl/client.h>
 
+// TODO: Move these to more specific headers? N3s3d should be only code calling raw DX
 #include <d3d11_1.h>
 #include <DirectXMath.h>
 #include <DirectXColors.h>
@@ -47,10 +48,10 @@ namespace DX
 
 // Simple utility functions
 
-bool toggleBool(bool b)
+inline bool toggleBool(bool b)
 {
 	if (b == false)
 		return true;
 	else
-		return false;;
-};
+		return false;
+}

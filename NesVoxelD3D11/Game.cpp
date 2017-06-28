@@ -198,7 +198,7 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam, HWND hwnd)
 			// MessageBox(NULL, L"ahh", L"File Path", MB_OK);
 			string path = getFilePathWithDialog();
 			if (path != "")
-				app.loadGameData(path);
+				app.loadGameData(path, false);
 			break;
 		}
 		}
@@ -210,6 +210,18 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam, HWND hwnd)
 			break;
 		}
 		case WM_KEYUP:
+			app.recieveKeyInput(wParam, false);
+			break;
+		case WM_SYSKEYDOWN:
+		{
+			if (wParam == VK_MENU)
+				int test = 0;
+			bool previouslyDown = (int)lParam >> 30 & 1;
+			if (!previouslyDown)
+				app.recieveKeyInput(wParam, true);
+			break;
+		}
+		case WM_SYSKEYUP:
 			app.recieveKeyInput(wParam, false);
 			break;
 		case WM_LBUTTONDOWN:
@@ -231,10 +243,12 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam, HWND hwnd)
 			app.recieveMouseInput(right_mouse, false);
 			break;
 		case WM_MOUSEMOVE:
-			int x = LOWORD(lParam);
-			int y = HIWORD(lParam);
-			app.recieveMouseMovement(x, y);
-		break;
+			// Send X & Y
+			app.recieveMouseMovement(LOWORD(lParam), HIWORD(lParam));
+			break;
+		case WM_MOUSEWHEEL:
+			app.recieveMouseScroll(GET_WHEEL_DELTA_WPARAM(wParam));
+			break;
 		}
 	}
 }
