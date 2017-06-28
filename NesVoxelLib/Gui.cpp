@@ -47,19 +47,59 @@ bool SceneSelector::update(bool mouseAvailable)
 			anythingHighlighted = true;
 			highlightedTab = temp_scene;
 		}
-		// TEST select spritesheet
+		// Spritesheet selection
 		if (mouseInRectangle(mouseX, mouseY, 0, (buttonHeight + buttonGap) * 17, buttonWidth * 4, buttonHeight))
 		{
 			//highlightedTab = temp_scene;
+			int charSize = 8 * 2;
 			anythingHighlighted = true;
 			if (state > 0)
 			{
 				mouseCaptured = true;
 			}
-			if (state == pressed)
+			// Check for individual buttons
+			if (mouseInRectangle(mouseX, mouseY, 0, (buttonHeight + buttonGap) * 17 + 1, charSize * 3, buttonHeight))
 			{
-				Editor::createCHRSheet(0);
-				mouseCaptured = false;
+				// Select sheet itself
+				highlightedTab = chr_scene;
+				if (state == pressed)
+				{
+					Editor::createCHRSheet(selectedSheet);
+					mouseCaptured = false;
+				}
+			}
+			else if (mouseInRectangle(mouseX, mouseY, charSize * 4 + 1, (buttonHeight + buttonGap) * 17, charSize * 1, buttonHeight))
+			{
+				// Page backwards
+				// See if we can go back any farther
+				highlightedTab = chr_backward;
+				if (state == pressed)
+				{
+					if (selectedSheet > 0)
+						selectedSheet--;
+					Editor::createCHRSheet(selectedSheet);
+					mouseCaptured = false;
+				}
+			}
+			else if (mouseInRectangle(mouseX, mouseY, charSize * 7 + 1, (buttonHeight + buttonGap) * 17, charSize * 1, buttonHeight))
+			{
+				// Page forwards
+				highlightedTab = chr_forward;
+				if (state == pressed)
+				{
+					selectedSheet++;
+					Editor::createCHRSheet(selectedSheet);
+					//mouseCaptured = false;
+				}
+			}
+			else 
+			{
+				if (state == pressed)
+				{
+					highlightedTab = chr_scene;
+					Editor::createCHRSheet(selectedSheet);
+					//mouseCaptured = false;
+				}
 			}
 		}
 		if (!anythingHighlighted)
@@ -110,6 +150,24 @@ void SceneSelector::render()
 	// Draw CHR boxes
 	currentY += buttonHeight + buttonGap;
 	Overlay::drawRectangle(0, currentY, buttonWidth * 4, buttonHeight);
+	// Draw CHR highlights
+	int charSize = 8 * 2;
+	if (highlightedTab == chr_scene)
+	{
+		Overlay::setColor(150, 150, 150, 64);
+		Overlay::drawRectangle(0, (buttonHeight + buttonGap) * 17 + 1, charSize * 3, buttonHeight);
+	}
+	else if (highlightedTab == chr_backward)
+	{
+		Overlay::setColor(150, 150, 150, 64);
+		Overlay::drawRectangle(charSize * 4, (buttonHeight + buttonGap) * 17 + 1, charSize * 1, buttonHeight);
+
+	}
+	else if (highlightedTab == chr_forward)
+	{
+		Overlay::setColor(150, 150, 150, 64);
+		Overlay::drawRectangle(charSize * 6, (buttonHeight + buttonGap) * 17 + 1, charSize * 1, buttonHeight);
+	}
 	// Draw scene numbers
 	currentY = buttonGap + 3;
 	Overlay::setColor(255, 255, 255, 128);
@@ -122,7 +180,12 @@ void SceneSelector::render()
 	Overlay::drawString(2, currentY, 2, "VRAM");
 	currentY += buttonHeight + buttonGap;
 	// Draw CHR control text
-	Overlay::drawString(2, currentY, 2, "CHR -0 +");
+	string chrString;
+	if(selectedSheet < 10)
+		chrString = "CHR -" + to_string(selectedSheet) + " +";
+	else
+		chrString = "CHR -" + to_string(selectedSheet) + "+";
+	Overlay::drawString(2, currentY, 2, chrString);
 }
 
 bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene, shared_ptr<VoxelEditor> editor)

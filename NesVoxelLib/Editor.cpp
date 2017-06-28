@@ -146,9 +146,39 @@ void Editor::createCHRSheet(int pageNumber)
 	{
 		sheetScene.reset(new Scene());
 		// Generate helpful palettes for typical sprites
+		N3sPalette p;
+		p.backgroundColorIndex = 0; // dark grey
+		p.colorIndices[0] = 1;
+		p.colorIndices[1] = 17;
+		p.colorIndices[2] = 49;
+		p.colorIndices[3] = 2;
+		p.colorIndices[4] = 18;
+		p.colorIndices[5] = 50;
+		p.colorIndices[6] = 3;
+		p.colorIndices[7] = 19;
+		p.colorIndices[8] = 51;
+		p.colorIndices[9] = 4;
+		p.colorIndices[10] = 20;
+		p.colorIndices[11] = 52;
+		p.colorIndices[12] = 5;
+		p.colorIndices[13] = 21;
+		p.colorIndices[14] = 53;
+		p.colorIndices[15] = 6;
+		p.colorIndices[16] = 22;
+		p.colorIndices[17] = 54;
+		p.colorIndices[18] = 7;
+		p.colorIndices[19] = 23;
+		p.colorIndices[20] = 55;
+		p.colorIndices[21] = 10;
+		p.colorIndices[22] = 26;
+		p.colorIndices[23] = 56;
+		sheetScene->palettes[0] = p;
 	}
 	sheetScene->sprites.clear();
+	sheetScene->selection->clear();
 	// Add 256 sprites to scene
+	int startingSprite = pageNumber * 256;
+	selectedScene = -1;
 	for (int x = 0; x < 16; x++)
 	{
 		for (int y = 0; y < 16; y++)
@@ -158,7 +188,7 @@ void Editor::createCHRSheet(int pageNumber)
 			s.y = y * 16;
 			s.palette = 0;
 			// Make sure mesh exists
-			int index = getArrayIndexFromXY(x, y, 8);
+			int index = startingSprite + getArrayIndexFromXY(x, y, 8);
 			if (N3sApp::gameData->meshes.size() > index)
 			{
 				shared_ptr<SpriteMesh> ref = N3sApp::gameData->meshes[index];

@@ -7,7 +7,10 @@
 using namespace std;
 
 enum SceneButtons {
-	temp_scene = 17
+	temp_scene = 17,
+	chr_scene = 18,
+	chr_forward = 19,
+	chr_backward = 20
 };
 
 enum PaletteButtons {
