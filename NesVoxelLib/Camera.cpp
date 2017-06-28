@@ -111,6 +111,7 @@ OrbitCamera::OrbitCamera()
 	targetZ = pixelSizeW * 16;
 	rotationX = 0.0f;
 	rotationY = 0.0f;
+	SetPosition(0, 0, 0);
 }
 
 void OrbitCamera::SetPosition(float x, float y, float z)

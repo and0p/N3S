@@ -271,18 +271,9 @@ void InputState::refreshInput()
 	// Update bindings and send input to NES
 	for (int i = 0; i < INPUTCOUNT; i++)
 	{
-		if (i == 18)
-		{
-			int boop = 0;
-		}
 		functions[i].update();
 	}
 	sendNesInput();
-	// DEBUG: Check VK_MENU
-	if (keyboardMouse->keys[VK_MENU]->active)
-		int test = 0;
-	if (functions[selection_remove].active)
-		int testtt = 0;
 }
 
 void InputState::sendNesInput()
@@ -340,7 +331,15 @@ void InputState::createBindings()
 	functions[nes_p1_down].bindings.push_back({ InputState::keyboardMouse->keys[0x53] });
 	functions[nes_p1_left].bindings.push_back({ InputState::keyboardMouse->keys[0x41] });
 	functions[nes_p1_right].bindings.push_back({ InputState::keyboardMouse->keys[0x44] });
-
+	// Gamepad
+	functions[nes_p1_a].bindings.push_back({ gamepads[0]->buttons[bb] });
+	functions[nes_p1_b].bindings.push_back({ gamepads[0]->buttons[ba] });
+	functions[nes_p1_select].bindings.push_back({ gamepads[0]->buttons[bselect] });
+	functions[nes_p1_start].bindings.push_back({ gamepads[0]->buttons[bstart] });
+	functions[nes_p1_up].bindings.push_back({ gamepads[0]->buttons[bdUp] });
+	functions[nes_p1_down].bindings.push_back({ gamepads[0]->buttons[bdDown] });
+	functions[nes_p1_left].bindings.push_back({ gamepads[0]->buttons[bdLeft] });
+	functions[nes_p1_right].bindings.push_back({ gamepads[0]->buttons[bdRight] });
 	functions[nes_p1_up].bindings.push_back({ gamepads[0]->analogInputs[leftYPos] });
 	functions[nes_p1_down].bindings.push_back({ gamepads[0]->analogInputs[leftYNeg] });
 	functions[nes_p1_left].bindings.push_back({ gamepads[0]->analogInputs[leftXNeg] });
@@ -358,6 +357,14 @@ void InputState::createBindings()
 	functions[cam_right].bindings.push_back({ gamepads[0]->analogInputs[rightXPos] });
 	functions[cam_up].bindings.push_back({ gamepads[0]->analogInputs[rightYPos] });
 	functions[cam_down].bindings.push_back({ gamepads[0]->analogInputs[rightYNeg] });
+
+	functions[cam_move_left].bindings.push_back({ gamepads[0]->analogInputs[leftXNeg] });
+	functions[cam_move_right].bindings.push_back({ gamepads[0]->analogInputs[leftXPos] });
+	functions[cam_move_up].bindings.push_back({ gamepads[0]->analogInputs[leftYPos] });
+	functions[cam_move_down].bindings.push_back({ gamepads[0]->analogInputs[leftYNeg] });
+
+	functions[cam_pan_in].bindings.push_back({ gamepads[0]->analogInputs[rTrigger] });
+	functions[cam_pan_out].bindings.push_back({ gamepads[0]->analogInputs[lTrigger] });
 
 	// Switching between editor and game
 	functions[tog_game].bindings.push_back({ keyboardMouse->keys[VK_OEM_1] });		// semicolon

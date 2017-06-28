@@ -2,26 +2,38 @@
 #include "GameView.hpp"
 #include "N3sConsole.hpp"
 
-FreeCamera gameCamera = FreeCamera();
+OrbitCamera gameCamera;
 
 void GameView::update()
 {
-	gameCamera.SetPosition(0, 0, -2);
-	float camXRotation = (InputState::functions[cam_left].value * -1) + InputState::functions[cam_right].value;
+	float camXRotation = InputState::functions[cam_left].value + InputState::functions[cam_right].value * -1;
 	float camYRotation = InputState::functions[cam_up].value - InputState::functions[cam_down].value;
-	float camZoom = InputState::functions[cam_pan_in].value - InputState::functions[cam_pan_out].value;
-	gameCamera.AdjustRotation(camXRotation, 0.0f, camYRotation);
-	//float zoomAmount = inputState->gamePads[0].triggerStates[lTrigger] - inputState->gamePads[0].triggerStates[rTrigger];
-	//gameCamera.AdjustPosition(inputState->gamePads[0].analogStickStates[lStick].x * 0.05f, inputState->gamePads[0].analogStickStates[lStick].y * 0.05f, zoomAmount * 0.05f);
-	//gameCamera.AdjustRotation(inputState->gamePads[0].analogStickStates[rStick].x, 0, inputState->gamePads[0].analogStickStates[rStick].y * -1);
-	// Looking with keyboard arrows
+	float camXMove = (InputState::functions[cam_move_left].value * -0.03f) + (InputState::functions[cam_move_right].value * 0.03f);
+	float camYMove = InputState::functions[cam_move_up].value * 0.03f - InputState::functions[cam_move_down].value * 0.03f;
+	float camZoom = InputState::functions[cam_pan_in].value * 0.05f - InputState::functions[cam_pan_out].value * 0.05f;
+	gameCamera.AdjustPosition(camXMove, camYMove, 0.0f);
+	gameCamera.AdjustRotation(camXRotation, camYRotation, 0.0f);
+	gameCamera.adjustZoom(camZoom);
 
-	//if (inputState->keyboardState.keyStates[40])
-	//	N3sConsole::writeLine("TEST!");
+	// Update camera position
+	if (InputState::keyboardMouse->mouseButtons[right_mouse].state > 0)
+	{
+		float xRot = InputState::keyboardMouse->mouseDeltaX / 5;
+		float yRot = InputState::keyboardMouse->mouseDeltaY / 5;
+		gameCamera.AdjustRotation(xRot, yRot, 0.0f);
+	}
+	if (InputState::keyboardMouse->mouseButtons[middle_mouse].state > 0)
+	{
+		float xPos = InputState::keyboardMouse->mouseDeltaX / 400;
+		float yPos = InputState::keyboardMouse->mouseDeltaY / 400;
+		gameCamera.AdjustPosition(-xPos, yPos, 0.0f);
+	}
+	// Update camera zoom
+	gameCamera.adjustZoom((float)InputState::keyboardMouse->calculatedWheelDelta / 10);
 
 	//if (inputState->gamePads[0].buttonStates[brb])
 	//{
-	//	//gameCamera.SetPosition(0, 0, -2);
+	//	//gameCamera.SetPosition(0, 0, 0);
 	//	//gameCamera.SetRotation(0, 0, 0);
 	//}
 
@@ -47,7 +59,7 @@ void GameView::render()
 	renderNameTables();
 }
 
-FreeCamera * GameView::getCamera()
+OrbitCamera * GameView::getCamera()
 {
 	return &gameCamera;
 }
