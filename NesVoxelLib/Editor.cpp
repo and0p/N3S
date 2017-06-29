@@ -137,7 +137,17 @@ Hue Editor::getBackgroundColor()
 
 void Editor::updateTempScene(shared_ptr<PpuSnapshot> snapshot)
 {
-	tempScene.reset(new Scene(snapshot));
+	// Update VRAM scene
+	if (activeScene == tempScene)
+	{
+		// Also make active scene reference new one, if it was being viewed last time editor was open
+		tempScene.reset(new Scene(snapshot));
+		activeScene = tempScene;
+	}
+	else
+	{
+		tempScene.reset(new Scene(snapshot));
+	}
 }
 
 void Editor::createCHRSheet(int pageNumber)
