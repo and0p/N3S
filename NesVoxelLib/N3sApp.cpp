@@ -124,12 +124,16 @@ void N3sApp::update(bool runThisNesFrame)
 	N3sConsole::update();
 	// See if we're switching modes due to user input
 	if (N3sApp::inputState->functions[tog_game].activatedThisFrame)
+	{
 		mode = gameMode;
+		audioEngine->resume();
+	}
 	else if (N3sApp::inputState->functions[tog_editor].activatedThisFrame)
 	{
 		if(mode != editorMode)
 			Editor::updateTempScene(snapshot);
 		mode = editorMode;
+		audioEngine->pause();
 	}
 	// See if a game is loaded
 	if (loaded)

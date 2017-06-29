@@ -152,11 +152,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_ENTERSIZEMOVE:
+		game->getAppMessage(message, wParam, lParam, hWnd);
 		s_in_sizemove = true;
 		break;
 
 	case WM_EXITSIZEMOVE:
 		s_in_sizemove = false;
+		game->getAppMessage(message, wParam, lParam, hWnd);
 		if (game)
 		{
 			RECT rc;
