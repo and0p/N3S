@@ -50,31 +50,37 @@ public:
 	unique_ptr<VoxelCollection> voxels;
 	VoxelMesh mesh;
 	VoxelMesh zMeshes[64];
-	void setVoxel(int x, int y, int z, int color);
+	void setVoxel(Vector3D v, int color);
+	void updateVoxel(Vector3D v, int color);
 	bool buildMesh();
 	bool meshExists = false;
 	void render(int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop);
+	void moveLayer(int x, int y, int z, int newX, int newY, int newZ, bool copy);
 	json getJSON();
+	void setOutline(int o);
+	int outlineColor = -1;
 private:
 	void buildZMeshes();
-	// void rebuildZMesh(int x, int y);
+	void rebuildZMesh(int x, int y);
 };
 
 class VirtualSprite
 {
 public:
-	VirtualSprite();
+	VirtualSprite() {}
 	VirtualSprite(string chrData, shared_ptr<SpriteMesh> mesh);
 	VirtualSprite(json j, map<int, shared_ptr<SpriteMesh>> meshes);
+	void render(int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop);
 	void renderOAM(shared_ptr<PpuSnapshot> snapshot, int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop);
 	void renderNametable(shared_ptr<PpuSnapshot> snapshot, int x, int y, int palette, int nametableX, int nametableY, Crop crop);
 	json getJSON();
 	int id;
 	vector<int> appearancesInRomChr;	// Where does this sprite appear in CHR data? For reference.
 	string chrData;
+	shared_ptr<SpriteMesh> defaultMesh;
+	VoxelMesh previewMeshFront;
 private:
 	string description = "";
-	shared_ptr<SpriteMesh> defaultMesh;
 	string serializeChrDataAsText();
 	void getChrStringFromText(string s);
 };
@@ -103,7 +109,7 @@ public:
 	static VoxelMesh getSharedMesh(int zArray[32]);
 	static void releaseSharedMesh(string hash);
 	void unload();
-	string getJSON();
+	json getJSON();
 private:
 	static unordered_map<string, SharedMesh> sharedMeshes;
 };

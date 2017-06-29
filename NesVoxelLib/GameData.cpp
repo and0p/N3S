@@ -34,32 +34,43 @@ SpriteMesh::SpriteMesh(json j)
 	// voxels.release();
 }
 
-void SpriteMesh::setVoxel(int x, int y, int z, int color)
+void SpriteMesh::setVoxel(Vector3D v, int color)
 {
 	// Calculate which slot in 'flattened' array this pertains to
-	int voxelSlot = x + (y * spriteWidth) + (z * (spriteHeight * spriteWidth));
+	int voxelSlot = v.x + (v.y * spriteWidth) + (v.z * (spriteHeight * spriteWidth));
 	if (voxelSlot >= 0 && voxelSlot < spriteSize) 
 	{
 		voxels->voxels[voxelSlot].color = color;
 	}
 }
 
+void SpriteMesh::updateVoxel(Vector3D v, int color)
+{
+	setVoxel(v, color);
+	buildMesh();
+	rebuildZMesh(v.x, v.y);
+}
+
 void SpriteMesh::buildZMeshes()
 {
-	int i = 0;
 	for (int y = 0; y < 8; y++)
 	{
 		for (int x = 0; x < 8; x++)
 		{
-			int zArray[32];
-			for (int z = 0; z < 32; z++)
-			{
-				zArray[z] = voxels->getVoxel(x, y, z).color;
-			}
-			zMeshes[i] = GameData::getSharedMesh(zArray);
-			i++;
+			rebuildZMesh(x, y);
 		}
 	}
+}
+
+void SpriteMesh::rebuildZMesh(int x, int y)
+{
+	int i = getArrayIndexFromXY(x, y, 8);
+	int zArray[32];
+	for (int z = 0; z < 32; z++)
+	{
+		zArray[z] = voxels->getVoxel(x, y, z).color;
+	}
+	zMeshes[i] = GameData::getSharedMesh(zArray);
 }
 
 VoxelMesh buildZMesh(int zArray[32])
@@ -95,14 +106,14 @@ VoxelMesh buildZMesh(int zArray[32])
 	}
 	mesh.size = sideCount * 6;
 	mesh.type = color;
-	mesh.buffer = N3s3d::createBufferFromColorVerticesV(&vertices, mesh.size);
+	mesh.buffer = N3s3d::createBufferFromColorVertices(&vertices, mesh.size);
 	return mesh;
 }
 
 void buildSide(vector<ColorVertex> * vertices, int x, int y, int z, int color, VoxelSide side) {
 	// Translate voxel-space xyz into model-space based on pixel size in 3d space, phew
 	float xf = x * pixelSizeW;
-	float yf = y * -pixelSizeH;
+	float yf = y * -pixelSizeW;
 	float zf = z * pixelSizeW;
 	// Init 4 vertices
 	ColorVertex v1, v2, v3, v4;
@@ -134,14 +145,14 @@ void buildSide(vector<ColorVertex> * vertices, int x, int y, int z, int color, V
 	case VoxelSide::left:
 		v1.Pos = XMFLOAT4(xf, yf, zf + pixelSizeW, 1.0f);
 		v2.Pos = XMFLOAT4(xf, yf, zf, 1.0f);
-		v3.Pos = XMFLOAT4(xf, yf - pixelSizeH, zf, 1.0f);
-		v4.Pos = XMFLOAT4(xf, yf - pixelSizeH, zf + pixelSizeW, 1.0f);
+		v3.Pos = XMFLOAT4(xf, yf - pixelSizeW, zf, 1.0f);
+		v4.Pos = XMFLOAT4(xf, yf - pixelSizeW, zf + pixelSizeW, 1.0f);
 		break;
 	case VoxelSide::right:
 		v1.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf, 1.0f);
 		v2.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf + pixelSizeW, 1.0f);
-		v3.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeH, zf + pixelSizeW, 1.0f);
-		v4.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeH, zf, 1.0f);
+		v3.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeW, zf + pixelSizeW, 1.0f);
+		v4.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeW, zf, 1.0f);
 		break;
 	case VoxelSide::top:
 		v1.Pos = XMFLOAT4(xf, yf, zf + pixelSizeW, 1.0f);
@@ -150,22 +161,22 @@ void buildSide(vector<ColorVertex> * vertices, int x, int y, int z, int color, V
 		v4.Pos = XMFLOAT4(xf, yf, zf, 1.0f);
 		break;
 	case VoxelSide::bottom:
-		v1.Pos = XMFLOAT4(xf, yf - pixelSizeH, zf, 1.0f);
-		v2.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeH, zf, 1.0f);
-		v3.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeH, zf + pixelSizeW, 1.0f);
-		v4.Pos = XMFLOAT4(xf, yf - pixelSizeH, zf + pixelSizeW, 1.0f);
+		v1.Pos = XMFLOAT4(xf, yf - pixelSizeW, zf, 1.0f);
+		v2.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeW, zf, 1.0f);
+		v3.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeW, zf + pixelSizeW, 1.0f);
+		v4.Pos = XMFLOAT4(xf, yf - pixelSizeW, zf + pixelSizeW, 1.0f);
 		break;
 	case VoxelSide::front:
 		v1.Pos = XMFLOAT4(xf, yf, zf, 1.0f);
 		v2.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf, 1.0f);
-		v3.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeH, zf, 1.0f);
-		v4.Pos = XMFLOAT4(xf, yf - pixelSizeH, zf, 1.0f);
+		v3.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeW, zf, 1.0f);
+		v4.Pos = XMFLOAT4(xf, yf - pixelSizeW, zf, 1.0f);
 		break;
 	case VoxelSide::back:
 		v1.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf + pixelSizeW, 1.0f);
 		v2.Pos = XMFLOAT4(xf, yf, zf + pixelSizeW, 1.0f);
-		v3.Pos = XMFLOAT4(xf, yf - pixelSizeH, zf + pixelSizeW, 1.0f);
-		v4.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeH, zf + pixelSizeW, 1.0f);
+		v3.Pos = XMFLOAT4(xf, yf - pixelSizeW, zf + pixelSizeW, 1.0f);
+		v4.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeW, zf + pixelSizeW, 1.0f);
 		break;
 	}
 	vertices->push_back(v1);
@@ -329,7 +340,7 @@ void GameData::unload()
 	sharedMeshes.clear();
 }
 
-string GameData::getJSON()
+json GameData::getJSON()
 {
 	json j;
 	j["info"]["prgSize"] = romInfo.prgSize;
@@ -347,11 +358,14 @@ string GameData::getJSON()
 	{
 		j["sprites"].push_back(kvp.second->getJSON());
 	}
-	return j.dump(4);
+	return j;
 }
 
 bool SpriteMesh::buildMesh()
 {
+	// Release old buffer, if this mesh is being changed
+	if (meshExists)
+		mesh.buffer->Release();
 	vector<ColorVertex> vertices;
 	int sideCount = 0;
 	for (int z = 0; z < spriteDepth; z++)
@@ -382,7 +396,7 @@ bool SpriteMesh::buildMesh()
 						buildSide(&vertices, x, y, z, color, VoxelSide::bottom);
 						sideCount++;
 					}
-					if (z == 0 || voxels->getVoxel(x - 1, y, z - 1).color == 0) {
+					if (z == 0 || voxels->getVoxel(x, y, z - 1).color == 0) {
 						buildSide(&vertices, x, y, z, color, VoxelSide::front);
 						sideCount++;
 					}
@@ -399,8 +413,9 @@ bool SpriteMesh::buildMesh()
 	// Return true if there is an actual mesh to render
 	if (vertices.size() > 0)
 	{
-		mesh.buffer = N3s3d::createBufferFromColorVerticesV(&vertices, mesh.size);
-		buildZMeshes();
+		mesh.buffer = N3s3d::createBufferFromColorVertices(&vertices, mesh.size);
+		if(!meshExists)
+			buildZMeshes();
 		return true;
 	}
 	else
@@ -556,6 +571,11 @@ VirtualSprite::VirtualSprite(json j, map<int, shared_ptr<SpriteMesh>> meshes)
 	description = j["description"].get<string>();
 }
 
+void VirtualSprite::render(int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop)
+{
+	defaultMesh->render(x, y, palette, mirrorH, mirrorV, crop);
+}
+
 void VirtualSprite::renderOAM(shared_ptr<PpuSnapshot> snapshot, int x, int y, int palette, bool mirrorH, bool mirrorV, Crop crop)
 {
 	// TODO: Check dynamic stuff
@@ -616,12 +636,12 @@ void SpriteMesh::render(int x, int y, int palette, bool mirrorH, bool mirrorV, C
 			N3s3d::selectPalette(palette);
 			float posX, posY;
 			posX = -1.0f + (pixelSizeW * x);
-			posY = 1.0f - (pixelSizeH * y);
+			posY = 1.0f - (pixelSizeW * y);
 			N3s3d::updateMirroring(mirrorH, mirrorV);
 			if (mirrorH)
 				posX += (pixelSizeW * 8);
 			if (mirrorV)
-				posY -= (pixelSizeH * 8);
+				posY -= (pixelSizeW * 8);
 			N3s3d::updateWorldMatrix(posX, posY, 0);
 			N3s3d::renderMesh(&mesh);
 		}
@@ -647,7 +667,7 @@ void SpriteMesh::render(int x, int y, int palette, bool mirrorH, bool mirrorV, C
 						meshY = posY + crop.top;
 					if (zMeshes[(meshY * 8) + meshX].buffer != nullptr)
 					{
-						N3s3d::updateWorldMatrix(-1.0f + ((x + posX) * pixelSizeW), 1.0f - ((y + posY) * pixelSizeH), 0);
+						N3s3d::updateWorldMatrix(-1.0f + ((x + posX) * pixelSizeW), 1.0f - ((y + posY) * pixelSizeW), 0);
 						N3s3d::renderMesh(&zMeshes[(meshY * 8) + meshX]);
 					}
 				}
@@ -657,10 +677,85 @@ void SpriteMesh::render(int x, int y, int palette, bool mirrorH, bool mirrorV, C
 	}
 }
 
+void SpriteMesh::moveLayer(int oldX, int oldY, int oldZ, int newX, int newY, int newZ, bool copy)
+{
+	if (oldZ != newZ)
+	{
+		if (oldZ > 0 && oldZ < 32 && newZ > 0 && newZ < 32)
+		{
+			// Move layer on Z axis
+			for (int x = 0; x < 8; x++)
+				for (int y = 0; y < 8; y++)
+					setVoxel({ x, y, newZ }, voxels->getVoxel(x, y, oldZ).color);
+			if (!copy)
+			{
+				for (int x = 0; x < 8; x++)
+					for (int y = 0; y < 8; y++)
+						setVoxel({ x, y, oldZ }, 0);
+			}
+		}
+		// Rebuild the mesh
+		buildMesh();
+	}
+	else if (oldX != newX)
+	{
+		if (oldX > 0 && oldX < 8 && newZ > 0 && newX < 8)
+		{
+			// Move layer on X axis
+			for (int z = 0; z < 32; z++)
+				for (int y = 0; y < 8; y++)
+					setVoxel({ newX, y, z }, voxels->getVoxel(oldX, y, z).color);
+			if (!copy)
+			{
+				for (int z = 0; z < 32; z++)
+					for (int y = 0; y < 8; y++)
+						setVoxel({ oldX, y, z }, 0);
+			}
+		}
+		// Rebuild the mesh
+		buildMesh();
+	}
+	else if (oldY != newY)
+	{
+		if (oldX > 0 && oldX < 8 && newZ > 0 && newX < 8)
+		{
+			// Move layer on X axis
+			for (int z = 0; z < 32; z++)
+				for (int y = 0; y < 8; y++)
+					setVoxel({ newX, y, z }, voxels->getVoxel(oldX, y, z).color);
+			if (!copy)
+			{
+				for (int z = 0; z < 32; z++)
+					for (int y = 0; y < 8; y++)
+						setVoxel({ oldX, y, z }, 0);
+			}
+		}
+		// Rebuild the mesh
+		buildMesh();
+	}
+	if (newZ != oldZ)
+	{
+		// Rebuild all
+		buildZMeshes();
+	}
+	else
+	{
+		// If on a X or Y axis, only rebuild needed Z meshes
+		//TODO actually check which are necessary
+		buildZMeshes();
+	}
+}
+
 json SpriteMesh::getJSON()
 {
 	json j;
 	j["id"] = getPaddedStringFromInt(id, 5);
 	j["voxels"] = voxels->getJSON();
 	return j;
+}
+
+void SpriteMesh::setOutline(int o)
+{
+	if (o >= -1 && o <= 3)
+		outlineColor = o;
 }

@@ -152,11 +152,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_ENTERSIZEMOVE:
+		game->getAppMessage(message, wParam, lParam, hWnd);
 		s_in_sizemove = true;
 		break;
 
 	case WM_EXITSIZEMOVE:
 		s_in_sizemove = false;
+		game->getAppMessage(message, wParam, lParam, hWnd);
 		if (game)
 		{
 			RECT rc;
@@ -213,6 +215,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_SYSKEYDOWN:
+		// See if we care about this system key, if not pass it to game
 		if (wParam == VK_RETURN && (lParam & 0x60000000) == 0x20000000)
 		{
 			// Implements the classic ALT+ENTER fullscreen toggle
@@ -247,28 +250,62 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			s_fullscreen = !s_fullscreen;
 		}
-		else if ((lParam & 0x60000000) == 0x20000000 && s_fullscreen)
+		else
 		{
-			if (menuShown)
-			{
-				SetMenu(hWnd, NULL);
-				menuShown = false;
-			}
-			else
-			{
-				SetMenu(hWnd, menu);
-				menuShown = true;
-			}
-
+			g_game->getAppMessage(message, wParam, lParam, hWnd);
 		}
+		//else if ((lParam & 0x60000000) == 0x20000000 && s_fullscreen)
+		//{
+		//	if (menuShown)
+		//	{
+		//		SetMenu(hWnd, NULL);
+		//		menuShown = false;
+		//	}
+		//	else
+		//	{
+		//		SetMenu(hWnd, menu);
+		//		menuShown = true;
+		//	}
+
+		//}
 		break;
 
 	case WM_KEYDOWN:
-		g_game->getAppMessage(message, wParam, lParam);
+		g_game->getAppMessage(message, wParam, lParam, hWnd);
 		break;
 
 	case WM_KEYUP:
-		g_game->getAppMessage(message, wParam, lParam);
+		g_game->getAppMessage(message, wParam, lParam, hWnd);
+		break;
+
+	case WM_SYSKEYUP:
+		g_game->getAppMessage(message, wParam, lParam, hWnd);
+		break;
+
+	case WM_LBUTTONDOWN:
+		g_game->getAppMessage(message, wParam, lParam, hWnd);
+		break;
+	case WM_LBUTTONUP:
+		g_game->getAppMessage(message, wParam, lParam, hWnd);
+		break;
+	case WM_MBUTTONDOWN:
+		g_game->getAppMessage(message, wParam, lParam, hWnd);
+		break;
+	case WM_MBUTTONUP:
+		g_game->getAppMessage(message, wParam, lParam, hWnd);
+		break;
+	case WM_RBUTTONDOWN:
+		g_game->getAppMessage(message, wParam, lParam, hWnd);
+		break;
+	case WM_RBUTTONUP:
+		g_game->getAppMessage(message, wParam, lParam, hWnd);
+		break;
+	case WM_MOUSEMOVE:
+		g_game->getAppMessage(message, wParam, lParam, hWnd);
+		break;
+
+	case WM_MOUSEWHEEL:
+		g_game->getAppMessage(message, wParam, lParam, hWnd);
 		break;
 
 	case WM_COMMAND:
@@ -279,7 +316,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			readyToExit = true;
 			break;
 		default:
-			g_game->getAppMessage(message, wParam, lParam);
+			g_game->getAppMessage(message, wParam, lParam, hWnd);
 			break;
 		}
 	}

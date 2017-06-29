@@ -13,43 +13,87 @@ Microsoft::WRL::ComPtr<ID3D11Device1>           device1;
 Microsoft::WRL::ComPtr<ID3D11DeviceContext>     context;
 Microsoft::WRL::ComPtr<ID3D11DeviceContext1>    context1;
 
-ShaderSet shaderSets[2];
-ID3D11InputLayout *inputLayouts[2];
-ID3D11Buffer *worldMatrixBuffer;
-ID3D11Buffer *viewMatrixBuffer;
-ID3D11Buffer *projectionMatrixBuffer;
+
+Shader shaders[shaderCount];
+//ID3D11InputLayout *inputLayouts[2];
+//ID3D11Buffer *worldMatrixBuffer;
+//ID3D11Buffer *viewMatrixBuffer;
+//ID3D11Buffer *projectionMatrixBuffer;
 ID3D11Buffer *mirrorBuffer;
 ID3D11Buffer *paletteBuffer;
 ID3D11Buffer *paletteSelectionBuffer;
 ID3D11Buffer *indexBuffer;
-MatrixBuffer *worldMatrixPtr;
-MatrixBuffer *viewMatrixPtr;
-MatrixBuffer *projectionMatrixPtr;
+ID3D11Buffer *overlayColorBuffer;
+//MatrixBuffer *worldMatrixPtr;
+//MatrixBuffer *viewMatrixPtr;
+//MatrixBuffer *projectionMatrixPtr;
 ID3D11SamplerState* sampleState;
 ID3D11Texture2D* texture2d;
 ID3D11ShaderResourceView* textureView;
 ShaderType activeShader;
 D3D11_SUBRESOURCE_DATA subData;
 MirrorState mirrorState;
-D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
+D3D11_DEPTH_STENCIL_DESC depthStencilNoWriteDesc;
+D3D11_DEPTH_STENCIL_DESC depthStencilWriteDesc;
 D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc;
+D3D11_DEPTH_STENCIL_DESC depthDisabledStencilOnlyDesc;
+ID3D11DepthStencilState* m_depthStencilNoWriteState;
+ID3D11DepthStencilState* m_depthStencilWriteState;
 ID3D11DepthStencilState* m_depthDisabledStencilState;
-ID3D11DepthStencilState* m_depthStencilState;
+ID3D11DepthStencilState* m_depthDisabledStencilOnlyState;
 ID3D11DepthStencilView* m_depthStencilView;
+ID3D11RasterizerState* fillRasterState;
+ID3D11RasterizerState* wireframeRasterState;
 int selectedPalette;
 int mirrorBufferNumber;
 int paletteBufferNumber;
 int paletteSelectionBufferNumber;
 
-PPUHueStandardCollection N3s3d::ppuHueStandardCollection;
+D3D11_VIEWPORT N3s3d::viewport;
 
 void N3s3d::initPipeline(N3sD3dContext c)
 {
+	// Get device/context handles
 	device = c.device;
 	context = c.context;
 	device1 = c.device1;
 	context1 = c.context1;
-	// Create view buffer desc
+
+	// Init D3D pipeline
+	initShaders();
+	initShaderExtras();
+	setShader(color);
+	initDepthStencils();
+	setDepthBufferState(true);
+	initSampleState();
+	initRasterDesc();
+
+	// select which primtive type we are using
+	context->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	// Set mirroring constant buffer to be false
+	mirrorState = { 0, 0 };
+	updateMirroring(false, false);
+
+	// Fill palette with null data TODO: is this necessary still?
+	selectPalette(0);
+	float paletteArray[72] =
+	{
+		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f
+	};
+	updatePalette(paletteArray);
+	setOverlayColor(100, 100, 100, 64);
+}
+
+void N3s3d::initShaders() {
+	// Create view buffer descriptions and give to each shader
 	D3D11_BUFFER_DESC matrixBufferDesc;
 	matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 	matrixBufferDesc.ByteWidth = sizeof(XMMATRIX);
@@ -58,10 +102,76 @@ void N3s3d::initPipeline(N3sD3dContext c)
 	matrixBufferDesc.MiscFlags = 0;
 	matrixBufferDesc.StructureByteStride = 0;
 
-	device1->CreateBuffer(&matrixBufferDesc, NULL, &worldMatrixBuffer);
-	device1->CreateBuffer(&matrixBufferDesc, NULL, &viewMatrixBuffer);
-	device1->CreateBuffer(&matrixBufferDesc, NULL, &projectionMatrixBuffer);
+	for (int i = 0; i < shaderCount; i++)
+	{
+		device1->CreateBuffer(&matrixBufferDesc, NULL, &shaders[i].matrices.worldMatrixBuffer);
+		device1->CreateBuffer(&matrixBufferDesc, NULL, &shaders[i].matrices.viewMatrixBuffer);
+		device1->CreateBuffer(&matrixBufferDesc, NULL, &shaders[i].matrices.projectionMatrixBuffer);
+	}
+	ifstream s_stream;
+	size_t s_size;
+	char* s_data;
 
+	// Init palette shaders
+	s_stream.open(L"color_vertex.cso", ifstream::in | ifstream::binary);
+	s_stream.seekg(0, ios::end);
+	s_size = size_t(s_stream.tellg());
+	s_data = new char[s_size];
+	s_stream.seekg(0, ios::beg);
+	s_stream.read(&s_data[0], s_size);
+	s_stream.close();
+
+	device1->CreateVertexShader(s_data, s_size, 0, &shaders[0].vertexShader);
+
+	D3D11_INPUT_ELEMENT_DESC colorLayout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
+	device1->CreateInputLayout(colorLayout, 2, &s_data[color], s_size, &shaders[color].inputLayout);
+
+	s_stream.open(L"color_pixel.cso", ifstream::in | ifstream::binary);
+	s_stream.seekg(0, ios::end);
+	s_size = size_t(s_stream.tellg());
+	s_data = new char[s_size];
+	s_stream.seekg(0, ios::beg);
+	s_stream.read(&s_data[0], s_size);
+	s_stream.close();
+
+	device1->CreatePixelShader(s_data, s_size, 0, &shaders[color].pixelShader);
+
+	// Init overlay shaders
+	s_stream.open(L"overlay_vertex.cso", ifstream::in | ifstream::binary);
+	s_stream.seekg(0, ios::end);
+	s_size = size_t(s_stream.tellg());
+	s_data = new char[s_size];
+	s_stream.seekg(0, ios::beg);
+	s_stream.read(&s_data[0], s_size);
+	s_stream.close();
+
+	device1->CreateVertexShader(s_data, s_size, 0, &shaders[overlay].vertexShader);
+
+	D3D11_INPUT_ELEMENT_DESC overlayLayout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
+
+	device1->CreateInputLayout(overlayLayout, 1, &s_data[0], s_size, &shaders[overlay].inputLayout);
+
+	s_stream.open(L"overlay_pixel.cso", ifstream::in | ifstream::binary);
+	s_stream.seekg(0, ios::end);
+	s_size = size_t(s_stream.tellg());
+	s_data = new char[s_size];
+	s_stream.seekg(0, ios::beg);
+	s_stream.read(&s_data[0], s_size);
+	s_stream.close();
+
+	device1->CreatePixelShader(s_data, s_size, 0, &shaders[overlay].pixelShader);
+}
+
+void N3s3d::initShaderExtras()
+{
 	// Create mirror buffer desc
 	D3D11_BUFFER_DESC mirrorBufferDesc;
 	mirrorBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
@@ -95,156 +205,33 @@ void N3s3d::initPipeline(N3sD3dContext c)
 
 	device1->CreateBuffer(&paletteSelectionBufferDesc, NULL, &paletteSelectionBuffer);
 
-	initDepthStencils();
-	enabledDepthBuffer();
+	// Create overlay color selection buffer desc
+	D3D11_BUFFER_DESC overlayColorBufferDesc;
+	overlayColorBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	overlayColorBufferDesc.ByteWidth = sizeof(float) * 4;
+	overlayColorBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	overlayColorBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	overlayColorBufferDesc.MiscFlags = 0;
+	overlayColorBufferDesc.StructureByteStride = 0;
 
-#ifndef HOLOLENS
-	initShaders();
-	setShader(color);
-	initSampleState();
+	device1->CreateBuffer(&overlayColorBufferDesc, NULL, &overlayColorBuffer);
 
-	// select which primtive type we are using
-	context->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	// Create texture description
-	D3D11_TEXTURE2D_DESC desc;
-	desc.Width = 256;
-	desc.Height = 240;
-	desc.MipLevels = desc.ArraySize = 1;
-	desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	desc.SampleDesc.Count = 1;
-	desc.Usage = D3D11_USAGE_DYNAMIC;
-	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	desc.MiscFlags = 0;
-	desc.SampleDesc.Quality = 0;
-
-	subData.SysMemPitch = (UINT)(1024);
-
-	device->CreateTexture2D(&desc, NULL, &texture2d);
-	device->CreateShaderResourceView(texture2d, NULL, &textureView);
-#endif
-
-#ifdef HOLOLENS
-	createIndexBuffer();
-#endif
-
-	D3D11_RASTERIZER_DESC rasterDesc;
-	rasterDesc.AntialiasedLineEnable = false;
-	rasterDesc.CullMode = D3D11_CULL_NONE;
-	rasterDesc.DepthBias = 0;
-	rasterDesc.DepthBiasClamp = 0.0f;
-	rasterDesc.DepthClipEnable = true;
-	rasterDesc.FillMode = D3D11_FILL_SOLID;
-	rasterDesc.FrontCounterClockwise = true;
-	rasterDesc.MultisampleEnable = false;
-	rasterDesc.ScissorEnable = false;
-	rasterDesc.SlopeScaledDepthBias = 0.0f;
-
-	ID3D11RasterizerState * m_rasterState;
-	device->CreateRasterizerState(&rasterDesc, &m_rasterState);
-	context->RSSetState(m_rasterState);
-
-	mirrorState = { 0, 0 };
-	updateMirroring(false, false);
-
-	selectPalette(0);
-	float paletteArray[72] =
-	{
-		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f
-	};
-	updatePalette(paletteArray);
-
-	// Set buffer slots based on whether we're compiling for Hololens or not
-#ifdef HOLOLENS
-	mirrorBufferNumber = 2;
-	paletteBufferNumber = 3;
-	paletteSelectionBufferNumber = 4;
-#else
+	// Set buffer slots
 	mirrorBufferNumber = 3;
 	paletteBufferNumber = 4;
 	paletteSelectionBufferNumber = 5;
-#endif
-}
-
-void N3s3d::initShaders() {
-	ifstream s_stream;
-	size_t s_size;
-	char* s_data;
-	s_stream.open(L"color_vertex.cso", ifstream::in | ifstream::binary);
-	s_stream.seekg(0, ios::end);
-	s_size = size_t(s_stream.tellg());
-	s_data = new char[s_size];
-	s_stream.seekg(0, ios::beg);
-	s_stream.read(&s_data[0], s_size);
-	s_stream.close();
-
-	device1->CreateVertexShader(s_data, s_size, 0, &shaderSets[0].vertexShader);
-
-	D3D11_INPUT_ELEMENT_DESC colorLayout[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	};
-
-	device1->CreateInputLayout(colorLayout, 2, &s_data[0], s_size, &inputLayouts[0]);
-
-	s_stream.open(L"color_pixel.cso", ifstream::in | ifstream::binary);
-	s_stream.seekg(0, ios::end);
-	s_size = size_t(s_stream.tellg());
-	s_data = new char[s_size];
-	s_stream.seekg(0, ios::beg);
-	s_stream.read(&s_data[0], s_size);
-	s_stream.close();
-
-	device1->CreatePixelShader(s_data, s_size, 0, &shaderSets[0].pixelShader);
-
-	updateMirroring(true, true); // TODO: Make mirror cbuffer init cleaner
 }
 
 void N3s3d::setShader(ShaderType type) {
-	switch (type)
-	{
-	case color:
-		context->IASetInputLayout(inputLayouts[0]);
-		context->GSSetShader(NULL, 0, 0);
-		context->VSSetShader(shaderSets[0].vertexShader, 0, 0);
-		context->PSSetShader(shaderSets[0].pixelShader, 0, 0);
-		activeShader = color;
-		break;
-	}
+	// Type is enum 0,1,2...
+	context->IASetInputLayout(shaders[type].inputLayout);
+	context->GSSetShader(NULL, 0, 0);
+	context->VSSetShader(shaders[type].vertexShader, 0, 0);
+	context->PSSetShader(shaders[type].pixelShader, 0, 0);
+	activeShader = type;
 }
 
-ID3D11Buffer* N3s3d::createBufferFromColorVertices(ColorVertex vertices[], int arraySize)
-{
-	// create the vertex buffer
-	D3D11_BUFFER_DESC bd;
-	ZeroMemory(&bd, sizeof(bd));
-
-	bd.Usage = D3D11_USAGE_DYNAMIC;						// write access access by CPU and GPU
-	bd.ByteWidth = sizeof(ColorVertex) * arraySize;     // size is the VERTEX struct * 3in
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;			// use as a vertex buffer
-	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;			// allow CPU to write in buffer
-
-	ID3D11Buffer *pVBuffer;								// the vertex buffer
-	device1->CreateBuffer(&bd, NULL, &pVBuffer);		// create the buffer
-
-	// copy the vertices into the buffer
-	D3D11_MAPPED_SUBRESOURCE ms;
-	HRESULT result = context1->Map(pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);    // map the buffer
-	memcpy(ms.pData, vertices, arraySize);							// copy the data
-	context1->Unmap(pVBuffer, NULL);                                         // unmap the buffer
-	return pVBuffer;
-}
-
-ID3D11Buffer* N3s3d::createBufferFromColorVerticesV(std::vector<ColorVertex>  * vertices, int arraySize)
+ID3D11Buffer* N3s3d::createBufferFromColorVertices(std::vector<ColorVertex> * vertices, int arraySize)
 {
 	if (vertices->size() == 0) {
 		return nullptr;
@@ -265,23 +252,95 @@ ID3D11Buffer* N3s3d::createBufferFromColorVerticesV(std::vector<ColorVertex>  * 
 	return pVBuffer;
 }
 
-void N3s3d::updateWorldMatrix(float x, float y, float z) {
+ID3D11Buffer * N3s3d::createBufferFromOverlayVertices(std::vector<OverlayVertex>* vertices, int arraySize)
+{
+	if (vertices->size() == 0) {
+		return nullptr;
+	}
+	// create the vertex buffer
+	D3D11_BUFFER_DESC bd;
+	ZeroMemory(&bd, sizeof(bd));
+
+	bd.Usage = D3D11_USAGE_DEFAULT;						// write access access by CPU and GPU
+	bd.ByteWidth = sizeof(OverlayVertex) * arraySize;	// size is the VERTEX struct * 3in
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;			// use as a vertex buffer
+	bd.CPUAccessFlags = 0;								// disallow CPU to write in buffer
+
+	ID3D11Buffer *pVBuffer;								// the vertex buffer
+	D3D11_SUBRESOURCE_DATA vData;
+	vData.pSysMem = &(vertices->data()[0]);
+	device1->CreateBuffer(&bd, &vData, &pVBuffer);		// create the buffer
+	return pVBuffer;
+}
+
+void N3s3d::updateWorldMatrix(float xPos, float yPos, float zPos) {
 	XMMATRIX worldMatrix = XMMatrixIdentity();
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	MatrixBuffer* dataPtr;
-	XMVECTOR translation = { x, y, z, 0.0f };
+	XMVECTOR translation = { xPos, yPos, zPos, 0.0f };
 	worldMatrix = XMMatrixTranslationFromVector(translation);
 	worldMatrix = XMMatrixTranspose(worldMatrix);
 	// Lock the constant buffer so it can be written to.
-	context1->Map(worldMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	context1->Map(shaders[activeShader].matrices.worldMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	// Get a pointer to the data in the constant buffer.
 	dataPtr = (MatrixBuffer*)mappedResource.pData;
 	// Copy the matrices into the constant buffer.
 	dataPtr->matrix = worldMatrix;
 	// Unlock the constant buffer.
-	context1->Unmap(worldMatrixBuffer, 0);
+	context1->Unmap(shaders[activeShader].matrices.worldMatrixBuffer, 0);
 	// Finally set the constant buffer in the vertex shader with the updated values.
-	context1->VSSetConstantBuffers(0, 1, &worldMatrixBuffer);
+	context1->VSSetConstantBuffers(0, 1, &shaders[activeShader].matrices.worldMatrixBuffer);
+}
+
+void N3s3d::updateWorldMatrix(float xPos, float yPos, float zPos, float xRot, float yRot, float zRot, float scale) {
+	XMMATRIX worldMatrix;
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	MatrixBuffer* dataPtr;
+	XMVECTOR translation = { xPos, yPos, zPos, 0.0f };
+	XMVECTOR rotation = { XMConvertToRadians(xRot),	XMConvertToRadians(yRot), XMConvertToRadians(zRot), 0.0f };
+	XMVECTOR scaling = { scale, scale, scale, 0.0f };
+	XMMATRIX translationMatrix = XMMatrixTranslationFromVector(translation);
+	XMMATRIX rotationMatrix = XMMatrixRotationRollPitchYawFromVector(rotation);
+	XMMATRIX scaleMatrix = XMMatrixScalingFromVector(scaling);
+	XMMATRIX temp = DirectX::XMMatrixMultiply(scaleMatrix, rotationMatrix);
+	temp = DirectX::XMMatrixMultiply(temp, translationMatrix);
+	worldMatrix = XMMatrixTranspose(temp);
+	// Lock the constant buffer so it can be written to.
+	context1->Map(shaders[activeShader].matrices.worldMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	// Get a pointer to the data in the constant buffer.
+	dataPtr = (MatrixBuffer*)mappedResource.pData;
+	// Copy the matrices into the constant buffer.
+	dataPtr->matrix = worldMatrix;
+	// Unlock the constant buffer.
+	context1->Unmap(shaders[activeShader].matrices.worldMatrixBuffer, 0);
+	// Finally set the constant buffer in the vertex shader with the updated values.
+	context1->VSSetConstantBuffers(0, 1, &shaders[activeShader].matrices.worldMatrixBuffer);
+}
+
+void N3s3d::updateWorldMatrix(float xPos, float yPos, float zPos, float xRot, float yRot, float zRot, float xScale, float yScale, float zScale)
+{
+	XMMATRIX worldMatrix;
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	MatrixBuffer* dataPtr;
+	XMVECTOR translation = { xPos, yPos, zPos, 0.0f };
+	XMVECTOR rotation = { XMConvertToRadians(xRot),	XMConvertToRadians(yRot), XMConvertToRadians(zRot), 0.0f };
+	XMVECTOR scaling = { xScale, yScale, zScale, 0.0f };
+	XMMATRIX translationMatrix = XMMatrixTranslationFromVector(translation);
+	XMMATRIX rotationMatrix = XMMatrixRotationRollPitchYawFromVector(rotation);
+	XMMATRIX scaleMatrix = XMMatrixScalingFromVector(scaling);
+	XMMATRIX temp = DirectX::XMMatrixMultiply(scaleMatrix, rotationMatrix);
+	temp = DirectX::XMMatrixMultiply(temp, translationMatrix);
+	worldMatrix = XMMatrixTranspose(temp);
+	// Lock the constant buffer so it can be written to.
+	context1->Map(shaders[activeShader].matrices.worldMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	// Get a pointer to the data in the constant buffer.
+	dataPtr = (MatrixBuffer*)mappedResource.pData;
+	// Copy the matrices into the constant buffer.
+	dataPtr->matrix = worldMatrix;
+	// Unlock the constant buffer.
+	context1->Unmap(shaders[activeShader].matrices.worldMatrixBuffer, 0);
+	// Finally set the constant buffer in the vertex shader with the updated values.
+	context1->VSSetConstantBuffers(0, 1, &shaders[activeShader].matrices.worldMatrixBuffer);
 }
 
 void N3s3d::updateMirroring(bool horizontal, bool vertical) {
@@ -361,14 +420,44 @@ void N3s3d::selectPalette(int palette)
 	}
 }
 
+void N3s3d::setOverlayColor(float r, float g, float b, float a)
+{
+	// Make sure the overlay shader is active
+	if (activeShader != overlay)
+		setShader(overlay);
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	float* dataPtr;
+	// Lock the constant buffer so it can be written to.
+	context1->Map(overlayColorBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	// Get a pointer to the data in the constant buffer.
+	dataPtr = (float*)mappedResource.pData;
+	// Copy the values into the constant buffer.
+	*dataPtr = r;
+	dataPtr++;
+	*dataPtr = g;
+	dataPtr++;
+	*dataPtr = b;
+	dataPtr++;
+	*dataPtr = a;
+	// Unlock the constant buffer.
+	context1->Unmap(overlayColorBuffer, 0);
+	// Finally set the constant buffer in the vertex shader with the updated value.
+	context1->PSSetConstantBuffers(0, 1, &overlayColorBuffer);
+}
+
+void N3s3d::setOverlayColor(int r, int g, int b, int a)
+{
+	setOverlayColor((float)r / 255, (float)g / 255, (float)b / 255, (float)a / 255);
+}
+
 void N3s3d::updateMatricesWithCamera(Camera * camera) {
 
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	MatrixBuffer* dataPtr;
 
-	worldMatrix = XMMatrixIdentity();
-	projectionMatrix = getProjectionMatrix(0.1f, 1000.0f, 1, 1);
+	//worldMatrix = XMMatrixIdentity();
+	projectionMatrix = getProjectionMatrix(0.1f, 30.0f, 1, 1); // TODO use screen resolution
 	viewMatrix = camera->GetViewMatrix();
 
 	// Transpose the matrices to prepare them for the shader.
@@ -376,38 +465,38 @@ void N3s3d::updateMatricesWithCamera(Camera * camera) {
 	viewMatrix = XMMatrixTranspose(viewMatrix);
 	projectionMatrix = XMMatrixTranspose(projectionMatrix);
 
-	// Lock the constant buffer so it can be written to.
-	context1->Map(worldMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	// Get a pointer to the data in the constant buffer.
-	dataPtr = (MatrixBuffer*)mappedResource.pData;
-	// Copy the matrices into the constant buffer.
-	dataPtr->matrix = worldMatrix;
-	// Unlock the constant buffer.
-	context1->Unmap(worldMatrixBuffer, 0);
-	// Finally set the constant buffer in the vertex shader with the updated values.
-	context1->VSSetConstantBuffers(0, 1, &worldMatrixBuffer);
+	//// Lock the constant buffer so it can be written to.
+	//context1->Map(shaders[activeShader].matrices.worldMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	//// Get a pointer to the data in the constant buffer.
+	//dataPtr = (MatrixBuffer*)mappedResource.pData;
+	//// Copy the matrices into the constant buffer.
+	//dataPtr->matrix = worldMatrix;
+	//// Unlock the constant buffer.
+	//context1->Unmap(shaders[activeShader].matrices.worldMatrixBuffer, 0);
+	//// Finally set the constant buffer in the vertex shader with the updated values.
+	//context1->VSSetConstantBuffers(0, 1, &shaders[activeShader].matrices.worldMatrixBuffer);
 
 	// Lock the constant buffer so it can be written to.
-	context1->Map(viewMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	context1->Map(shaders[activeShader].matrices.viewMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	// Get a pointer to the data in the constant buffer.
 	dataPtr = (MatrixBuffer*)mappedResource.pData;
 	// Copy the matrices into the constant buffer.
 	dataPtr->matrix = viewMatrix;
 	// Unlock the constant buffer.
-	context1->Unmap(viewMatrixBuffer, 0);
+	context1->Unmap(shaders[activeShader].matrices.viewMatrixBuffer, 0);
 	// Finally set the constant buffer in the vertex shader with the updated values.
-	context1->VSSetConstantBuffers(1, 1, &viewMatrixBuffer);
+	context1->VSSetConstantBuffers(1, 1, &shaders[activeShader].matrices.viewMatrixBuffer);
 
 	// Lock the constant buffer so it can be written to.
-	context1->Map(projectionMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	context1->Map(shaders[activeShader].matrices.projectionMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	// Get a pointer to the data in the constant buffer.
 	dataPtr = (MatrixBuffer*)mappedResource.pData;
 	// Copy the matrices into the constant buffer.
 	dataPtr->matrix = projectionMatrix;
 	// Unlock the constant buffer.
-	context1->Unmap(projectionMatrixBuffer, 0);
+	context1->Unmap(shaders[activeShader].matrices.projectionMatrixBuffer, 0);
 	// Finally set the constant buffer in the vertex shader with the updated values.
-	context1->VSSetConstantBuffers(2, 1, &projectionMatrixBuffer);
+	context1->VSSetConstantBuffers(2, 1, &shaders[activeShader].matrices.projectionMatrixBuffer);
 }
 
 void N3s3d::updateViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
@@ -420,26 +509,26 @@ void N3s3d::updateViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
 	projectionMatrix = XMLoadFloat4x4(&projection);
 
 	// Lock the constant buffer so it can be written to.
-	context1->Map(viewMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	context1->Map(shaders[activeShader].matrices.viewMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	// Get a pointer to the data in the constant buffer.
 	dataPtr = (MatrixBuffer*)mappedResource.pData;
 	// Copy the matrices into the constant buffer.
 	dataPtr->matrix = viewMatrix;
 	// Unlock the constant buffer.
-	context1->Unmap(viewMatrixBuffer, 0);
+	context1->Unmap(shaders[activeShader].matrices.viewMatrixBuffer, 0);
 	// Finally set the constant buffer in the vertex shader with the updated values.
-	context1->VSSetConstantBuffers(1, 1, &viewMatrixBuffer);
+	context1->VSSetConstantBuffers(1, 1, &shaders[activeShader].matrices.viewMatrixBuffer);
 
 	// Lock the constant buffer so it can be written to.
-	context1->Map(projectionMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	context1->Map(shaders[activeShader].matrices.projectionMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	// Get a pointer to the data in the constant buffer.
 	dataPtr = (MatrixBuffer*)mappedResource.pData;
 	// Copy the matrices into the constant buffer.
 	dataPtr->matrix = projectionMatrix;
 	// Unlock the constant buffer.
-	context1->Unmap(projectionMatrixBuffer, 0);
+	context1->Unmap(shaders[activeShader].matrices.projectionMatrixBuffer, 0);
 	// Finally set the constant buffer in the vertex shader with the updated values.
-	context1->VSSetConstantBuffers(2, 1, &projectionMatrixBuffer);
+	context1->VSSetConstantBuffers(2, 1, &shaders[activeShader].matrices.projectionMatrixBuffer);
 }
 
 XMMATRIX N3s3d::getProjectionMatrix(const float near_plane, const float far_plane, const float fov_horiz, const float fov_vert)
@@ -473,31 +562,181 @@ void N3s3d::setIndexBuffer()
 	);
 }
 
-void N3s3d::enabledDepthBuffer()
+void N3s3d::setDepthBufferState(bool active)
 {
-	context->OMSetDepthStencilState(m_depthStencilState, 1);
+	if(active)
+		context->OMSetDepthStencilState(m_depthStencilNoWriteState, 1);
+	else
+		context->OMSetDepthStencilState(m_depthDisabledStencilState, 1);
 }
 
-void N3s3d::disableDepthBuffer()
+void N3s3d::setDepthStencilState(bool depthTest, bool stencilWrite, bool stencilTest)
 {
-	context->OMSetDepthStencilState(m_depthDisabledStencilState, 1);
+	if (depthTest)
+	{
+		if(stencilWrite)
+			context->OMSetDepthStencilState(m_depthStencilWriteState, 1);
+		else
+			context->OMSetDepthStencilState(m_depthStencilNoWriteState, 1);
+	}
+	else
+	{
+		if(stencilTest)
+			context->OMSetDepthStencilState(m_depthDisabledStencilOnlyState, 1);
+		else
+			context->OMSetDepthStencilState(m_depthDisabledStencilState, 1);
+	}
+}
+
+void N3s3d::setRasterFillState(bool fill)
+{
+	if(fill)
+		context->RSSetState(fillRasterState);
+	else
+		context->RSSetState(wireframeRasterState);
+}
+
+void N3s3d::setGuiProjection()
+{
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	MatrixBuffer* dataPtr;
+
+	// Create projection matrix based on screen size
+	XMMATRIX projectionMatrix = XMMatrixOrthographicLH(viewport.Width, viewport.Height, 0, 1000);
+
+	// Create view matrix looking at origin
+	XMMATRIX viewMatrix = XMMatrixLookAtLH({ 0, 0, -2, 0 }, { 0, 0, 0, 0 }, { 0, 5, 0, 0 });
+
+	// Lock the constant buffer so it can be written to.
+	context1->Map(shaders[activeShader].matrices.viewMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	// Get a pointer to the data in the constant buffer.
+	dataPtr = (MatrixBuffer*)mappedResource.pData;
+	// Copy the matrices into the constant buffer.
+	dataPtr->matrix = viewMatrix;
+	// Unlock the constant buffer.
+	context1->Unmap(shaders[activeShader].matrices.viewMatrixBuffer, 0);
+	// Finally set the constant buffer in the vertex shader with the updated values.
+	context1->VSSetConstantBuffers(1, 1, &shaders[activeShader].matrices.viewMatrixBuffer);
+	
+	// Lock the constant buffer so it can be written to.
+	context1->Map(shaders[activeShader].matrices.projectionMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	// Get a pointer to the data in the constant buffer.
+	dataPtr = (MatrixBuffer*)mappedResource.pData;
+	// Copy the matrices into the constant buffer.
+	dataPtr->matrix = projectionMatrix;
+	// Unlock the constant buffer.
+	context1->Unmap(shaders[activeShader].matrices.projectionMatrixBuffer, 0);
+	// Finally set the constant buffer in the vertex shader with the updated values.
+	context1->VSSetConstantBuffers(2, 1, &shaders[activeShader].matrices.projectionMatrixBuffer);
+}
+
+void N3s3d::updateViewport(D3D11_VIEWPORT v)
+{
+	viewport = v;
+}
+
+XMVECTOR N3s3d::getMouseVector(Camera * camera, int mouseX, int mouseY)
+{
+	// Get XMVector for mouse coordinates
+	XMFLOAT3 x3 = { (float)mouseX, (float)mouseY, 0.0f };
+	XMVECTOR v = XMLoadFloat3(&x3);
+	// Get view and projection matrices from camera
+	XMMATRIX projectionMatrix = getProjectionMatrix(0.1f, 30.0f, 1, 1); // TODO use screen resolution
+	XMMATRIX viewMatrix = camera->GetViewMatrix();
+	// Get world matrix from camera origin
+	XMMATRIX worldMatrix = XMMatrixIdentity();
+	XMFLOAT3 pos = camera->GetPosition();
+	XMVECTOR translation = { pos.x, pos.y, pos.z, 0.0f };
+	worldMatrix = XMMatrixTranslationFromVector(translation);
+	//worldMatrix = XMMatrixTranspose(worldMatrix);
+	return XMVector3Unproject(v, 0, 0, viewport.Width, viewport.Height, 0.0f, 1.0f, projectionMatrix, viewMatrix, worldMatrix);
+}
+
+XMFLOAT3 N3s3d::getPlaneIntersection(PlaneAxis axis, int pixel, Camera * camera, int mouseX, int mouseY)
+{
+	// Get mouse vector and store as XMFLOAT3
+	XMFLOAT3 mF;
+	XMStoreFloat3(&mF, getMouseVector(camera, mouseX, mouseY));
+	// Get start and end points from this, using camera origin and distant point along vector
+	XMVECTOR origin, distant;
+	XMFLOAT3 pos = camera->GetPosition();
+	origin = { pos.x, pos.y, pos.z, 0.0f };
+	distant = { pos.x + (mF.x * 10), pos.y + (mF.y * 10), pos.z + (mF.z * 10) };
+	// Create a plane on the specified axis with 3 vectors
+	XMVECTOR c1, c2, c3;
+	XMFLOAT3 source;
+	float x, y, z;
+	switch (axis)
+	{
+	case x_axis:
+		x = -1.0f + (pixelSizeW * pixel) + (pixelSizeW * 0.5f);
+		source = { x, 0.0f, 0.0f };
+		c1 = XMLoadFloat3(&source);
+		source = { x, 0.0f, 1.0f };
+		c2 = XMLoadFloat3(&source);
+		source = { x, 1.0f, 0.0f };
+		c3 = XMLoadFloat3(&source);
+		break;
+	case y_axis:
+		y = 1.0f - (pixelSizeW * pixel) - (pixelSizeW * 0.5f);
+		source = { 0.0f, y, 0.0f };
+		c1 = XMLoadFloat3(&source);
+		source = { 0.0f, y, 1.0f };
+		c2 = XMLoadFloat3(&source);
+		source = { 1.0f, y, 0.0f };
+		c3 = XMLoadFloat3(&source);
+		break;
+	case z_axis:
+		z = 0.0f + (pixelSizeW * pixel) + (pixelSizeW * 0.5f);
+		source = { 0.0f, 0.0f, z };
+		c1 = XMLoadFloat3(&source);
+		source = { 0.0f, 1.0f, z };
+		c2 = XMLoadFloat3(&source);
+		source = { 1.0f, 0.0f, z };
+		c3 = XMLoadFloat3(&source);
+		break;
+	}
+	XMVECTOR plane = XMPlaneFromPoints(c1, c2, c3);
+	// Return float3 of where line from mouse/camera intersects the z-axis at 0
+	XMFLOAT3 r;
+	XMStoreFloat3(&r, XMPlaneIntersectLine(plane, origin, distant));
+	return r;
+}
+
+Vector3D N3s3d::getPixelCoordsFromFloat3(XMFLOAT3 pos)
+{
+	Vector3D v = {
+		roundDownPosOrNeg((pos.x + 1.0f) / pixelSizeW),
+		-1 * roundDownPosOrNeg((pos.y - 1.0f) / pixelSizeW),
+		roundDownPosOrNeg((pos.z / pixelSizeW))
+	};
+	return v;
 }
 
 void N3s3d::renderMesh(VoxelMesh *voxelMesh) {
 	ShaderType type = voxelMesh->type;
-	UINT stride = sizeof(ColorVertex); // TODO optimize
+	if (type != activeShader)
+	{
+		setShader(type);
+		activeShader = type;
+	}
+	UINT stride;
+	if(activeShader == color)
+		stride = sizeof(ColorVertex); // TODO optimize?
+	if (activeShader == overlay)
+		stride = sizeof(OverlayVertex);
 	UINT offset = 0;
 	context->IASetVertexBuffers(0, 1, &voxelMesh->buffer, &stride, &offset);
 	//context->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	// draw the vertex buffer to the back buffer
 #ifdef HOLOLENS
-		context->DrawIndexedInstanced(
-			voxelMesh->size,   // Index count per instance.
-		    2,              // Instance count.
-		    0,              // Start index location.
-		    0,              // Base vertex location.
-		    0               // Start instance location.
-		    );
+	context->DrawIndexedInstanced(
+		voxelMesh->size,   // Index count per instance.
+		2,              // Instance count.
+		0,              // Start index location.
+		0,              // Base vertex location.
+		0               // Start instance location.
+		);
 #else
 	context->Draw(voxelMesh->size, 0);
 #endif
@@ -519,6 +758,37 @@ void N3s3d::initSampleState() {
 	samplerDesc.MinLOD = 0;
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	device->CreateSamplerState(&samplerDesc, &sampleState);
+}
+
+void N3s3d::initRasterDesc()
+{
+	D3D11_RASTERIZER_DESC rasterDesc;
+	rasterDesc.AntialiasedLineEnable = false;
+	rasterDesc.CullMode = D3D11_CULL_NONE;
+	rasterDesc.DepthBias = 0;
+	rasterDesc.DepthBiasClamp = 0.0f;
+	rasterDesc.DepthClipEnable = true;
+	rasterDesc.FillMode = D3D11_FILL_SOLID;
+	rasterDesc.FrontCounterClockwise = true;
+	rasterDesc.MultisampleEnable = false;
+	rasterDesc.ScissorEnable = false;
+	rasterDesc.SlopeScaledDepthBias = 0.0f;
+
+	D3D11_RASTERIZER_DESC wireRasterDesc;
+	wireRasterDesc.AntialiasedLineEnable = false;
+	wireRasterDesc.CullMode = D3D11_CULL_NONE;
+	wireRasterDesc.DepthBias = 0;
+	wireRasterDesc.DepthBiasClamp = 0.0f;
+	wireRasterDesc.DepthClipEnable = true;
+	wireRasterDesc.FillMode = D3D11_FILL_WIREFRAME;
+	wireRasterDesc.FrontCounterClockwise = true;
+	wireRasterDesc.MultisampleEnable = false;
+	wireRasterDesc.ScissorEnable = false;
+	wireRasterDesc.SlopeScaledDepthBias = 0.0f;
+
+	device->CreateRasterizerState(&rasterDesc, &fillRasterState);
+	device->CreateRasterizerState(&wireRasterDesc, &wireframeRasterState);
+	context->RSSetState(fillRasterState);
 }
 
 void N3s3d::createIndexBuffer()
@@ -544,37 +814,64 @@ bool N3s3d::initDepthStencils()
 {
 	// Thanks http://www.rastertek.com/dx11tut11.html
 	HRESULT result = false;
-	
+
+#pragma region Standard depth stencil, dont write stencil
+
 	// Initialize the description of the stencil state.
-	ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
+	ZeroMemory(&depthStencilNoWriteDesc, sizeof(depthStencilNoWriteDesc));
 
 	// Set up the description of the stencil state.
-	depthStencilDesc.DepthEnable = true;
-	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	depthStencilNoWriteDesc.DepthEnable = true;
+	depthStencilNoWriteDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthStencilNoWriteDesc.DepthFunc = D3D11_COMPARISON_LESS;
 
-	depthStencilDesc.StencilEnable = true;
-	depthStencilDesc.StencilReadMask = 0xFF;
-	depthStencilDesc.StencilWriteMask = 0xFF;
-
-	// Stencil operations if pixel is front-facing.
-	depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
-	depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-
-	// Stencil operations if pixel is back-facing.
-	depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
-	depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	depthStencilNoWriteDesc.StencilEnable = false;
 
 	// Create the depth stencil state.
-	result = device->CreateDepthStencilState(&depthStencilDesc, &m_depthStencilState);
+	result = device->CreateDepthStencilState(&depthStencilNoWriteDesc, &m_depthStencilNoWriteState);
 	if (FAILED(result))
 	{
 		return false;
 	}
+
+#pragma endregion
+
+#pragma region Standard depth, write stencil
+
+	// Initialize the description of the stencil state.
+	ZeroMemory(&depthStencilNoWriteDesc, sizeof(depthStencilNoWriteDesc));
+
+	// Set up the description of the stencil state.
+	depthStencilWriteDesc.DepthEnable = true;
+	depthStencilWriteDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthStencilWriteDesc.DepthFunc = D3D11_COMPARISON_LESS;
+
+	depthStencilWriteDesc.StencilEnable = true;
+	depthStencilWriteDesc.StencilReadMask = 0xFF;
+	depthStencilWriteDesc.StencilWriteMask = 0xFF;
+
+	// Stencil operations if pixel is front-facing.
+	depthStencilWriteDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilWriteDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilWriteDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+	depthStencilWriteDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+	// Stencil operations if pixel is back-facing.
+	depthStencilWriteDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilWriteDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilWriteDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+	depthStencilWriteDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+	// Create the depth stencil state.
+	result = device->CreateDepthStencilState(&depthStencilWriteDesc, &m_depthStencilWriteState);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+#pragma endregion
+	
+#pragma region No z-buffer depth stencil
 
 	// Clear the second depth stencil state before setting the parameters.
 	ZeroMemory(&depthDisabledStencilDesc, sizeof(depthDisabledStencilDesc));
@@ -584,17 +881,8 @@ bool N3s3d::initDepthStencils()
 	depthDisabledStencilDesc.DepthEnable = false;
 	depthDisabledStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 	depthDisabledStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
-	depthDisabledStencilDesc.StencilEnable = true;
-	depthDisabledStencilDesc.StencilReadMask = 0xFF;
-	depthDisabledStencilDesc.StencilWriteMask = 0xFF;
-	depthDisabledStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	depthDisabledStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
-	depthDisabledStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	depthDisabledStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-	depthDisabledStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	depthDisabledStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
-	depthDisabledStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	depthDisabledStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+	depthDisabledStencilDesc.StencilEnable = false;
 
 	// Create the state using the device.
 	result = device->CreateDepthStencilState(&depthDisabledStencilDesc, &m_depthDisabledStencilState);
@@ -603,8 +891,71 @@ bool N3s3d::initDepthStencils()
 		return false;
 	}
 
+#pragma endregion
+
+	// D3D11_DEPTH_STENCIL_DESC depthStencilNoWriteDesc;
+	// D3D11_DEPTH_STENCIL_DESC depthStencilWriteDesc;
+	// D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc;
+	// D3D11_DEPTH_STENCIL_DESC depthDisabledStencilOnlyDesc;
+
+#pragma region No z-buffer stencil only
+
+	// Clear the second depth stencil state before setting the parameters.
+	ZeroMemory(&depthDisabledStencilOnlyDesc, sizeof(depthDisabledStencilOnlyDesc));
+
+	// Set up the description of the stencil state.
+	depthDisabledStencilOnlyDesc.DepthEnable = false;
+
+	depthDisabledStencilOnlyDesc.StencilEnable = true;
+	depthDisabledStencilOnlyDesc.StencilReadMask = 0xFF;
+	depthDisabledStencilOnlyDesc.StencilWriteMask = 0xFF;
+
+	// Stencil operations if pixel is front-facing.
+	depthDisabledStencilOnlyDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledStencilOnlyDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledStencilOnlyDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledStencilOnlyDesc.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
+
+	// Stencil operations if pixel is back-facing.
+	depthDisabledStencilOnlyDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledStencilOnlyDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledStencilOnlyDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledStencilOnlyDesc.BackFace.StencilFunc = D3D11_COMPARISON_EQUAL;
+
+	// Create the state using the device.
+	result = device->CreateDepthStencilState(&depthDisabledStencilOnlyDesc, &m_depthDisabledStencilOnlyState);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+#pragma endregion
+
+
 	// Set the z-buffer enabled depth stencil state
-	context->OMSetDepthStencilState(m_depthStencilState, 1);
+	context->OMSetDepthStencilState(m_depthStencilNoWriteState, 1);
+
+	// Enable alpha blending in output merger
+	ID3D11BlendState1* g_pBlendStateNoBlend = NULL;
+
+	D3D11_BLEND_DESC1 BlendState;
+	ZeroMemory(&BlendState, sizeof(D3D11_BLEND_DESC1));
+	//BlendState.AlphaToCoverageEnable = false;
+	BlendState.IndependentBlendEnable = true;
+	BlendState.RenderTarget[0].BlendEnable = true;
+	BlendState.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	BlendState.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	BlendState.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	BlendState.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	BlendState.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	BlendState.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	BlendState.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	device1->CreateBlendState1(&BlendState, &g_pBlendStateNoBlend);
+
+	float blendFactor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	UINT sampleMask = 0xffffffff;
+
+	context->OMSetBlendState(g_pBlendStateNoBlend, blendFactor, sampleMask);
 	
 	// If it all succeeded, return true
 	return true;

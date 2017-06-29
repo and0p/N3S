@@ -84,8 +84,7 @@ void Game::Render()
     auto context = m_deviceResources->GetD3DDeviceContext();
 
 	// Let the app render
-	if(app.loaded)
-		app.render();
+	app.render();
 
 	context;
 
@@ -116,6 +115,7 @@ void Game::Clear()
     // Set the viewport.
     auto viewport = m_deviceResources->GetScreenViewport();
     context->RSSetViewports(1, &viewport);
+	N3s3d::updateViewport(viewport);
 
     m_deviceResources->PIXEndEvent();
 }
@@ -162,7 +162,7 @@ void Game::GetDefaultSize(int& width, int& height) const
     width = 1024;
     height = 768;
 }
-void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam)
+void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam, HWND hwnd)
 {
 	switch (message)
 	{
@@ -202,19 +202,66 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam)
 			// MessageBox(NULL, L"ahh", L"File Path", MB_OK);
 			string path = getFilePathWithDialog();
 			if (path != "")
-				app.loadGameData(path);
+				app.loadGameData(path, false);
 			break;
 		}
 		}
-	case WM_KEYDOWN:
+		case WM_KEYDOWN:
+		{
+			bool previouslyDown = (int)lParam >> 30 & 1;
+			if (!previouslyDown)
+				app.recieveKeyInput(wParam, true);
+			break;
+		}
+		case WM_KEYUP:
+			app.recieveKeyInput(wParam, false);
+			break;
+		case WM_SYSKEYDOWN:
+		{
+			if (wParam == VK_MENU)
+				int test = 0;
+			bool previouslyDown = (int)lParam >> 30 & 1;
+			if (!previouslyDown)
+				app.recieveKeyInput(wParam, true);
+			break;
+		}
+		case WM_SYSKEYUP:
+			app.recieveKeyInput(wParam, false);
+			break;
+		case WM_LBUTTONDOWN:
+			app.recieveMouseInput(left_mouse, true);
+			break;
+		case WM_LBUTTONUP:
+			app.recieveMouseInput(left_mouse, false);
+			break;
+		case WM_MBUTTONDOWN:
+			app.recieveMouseInput(middle_mouse, true);
+			break;
+		case WM_MBUTTONUP:
+			app.recieveMouseInput(middle_mouse, false);
+			break;
+		case WM_RBUTTONDOWN:
+			app.recieveMouseInput(right_mouse, true);
+			break;
+		case WM_RBUTTONUP:
+			app.recieveMouseInput(right_mouse, false);
+			break;
+		case WM_MOUSEMOVE:
+			// Send X & Y
+			app.recieveMouseMovement(LOWORD(lParam), HIWORD(lParam));
+			break;
+		case WM_MOUSEWHEEL:
+			app.recieveMouseScroll(GET_WHEEL_DELTA_WPARAM(wParam));
+			break;
+	}
+	case WM_ENTERSIZEMOVE:
 	{
-		bool previouslyDown = (int)lParam >> 30 & 1;
-		if (!previouslyDown)
-			app.recieveKeyInput(wParam, true);
+		app.setMute(true);
 		break;
 	}
-	case WM_KEYUP:
-		app.recieveKeyInput(wParam, false);
+	case WM_EXITSIZEMOVE:
+	{
+		app.setMute(false);
 		break;
 	}
 	}

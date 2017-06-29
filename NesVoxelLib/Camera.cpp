@@ -1,9 +1,10 @@
 // Also shamelessly stolen from http://www.rastertek.com/dx11tut04.html
 
 #include "stdafx.h"
+#include "N3s3d.hpp"
 #include "Camera.hpp"
 
-Camera::Camera()
+FreeCamera::FreeCamera()
 {
 	m_viewMatrix = (XMMATRIX*)_aligned_malloc(sizeof(XMMATRIX), alignof(XMMATRIX));
 	*m_viewMatrix = XMMatrixIdentity();
@@ -16,16 +17,7 @@ Camera::Camera()
 	m_rotationZ = 0.0f;
 }
 
-Camera::Camera(const Camera& other)
-{
-}
-
-
-Camera::~Camera()
-{
-}
-
-void Camera::SetPosition(float x, float y, float z)
+void FreeCamera::SetPosition(float x, float y, float z)
 {
 	m_positionX = x;
 	m_positionY = y;
@@ -33,7 +25,7 @@ void Camera::SetPosition(float x, float y, float z)
 	return;
 }
 
-void Camera::SetRotation(float x, float y, float z)
+void FreeCamera::SetRotation(float x, float y, float z)
 {
 	m_rotationX = x;
 	m_rotationY = y;
@@ -41,14 +33,14 @@ void Camera::SetRotation(float x, float y, float z)
 	return;
 }
 
-void Camera::AdjustPosition(float x, float y, float z)
+void FreeCamera::AdjustPosition(float x, float y, float z)
 {
 	m_positionX += x;
 	m_positionY += y;
 	m_positionZ += z;
 }
 
-void Camera::AdjustRotation(float x, float y, float z)
+void FreeCamera::AdjustRotation(float x, float y, float z)
 {
 	m_rotationX += x;
 	m_rotationY += y;
@@ -59,23 +51,22 @@ void Camera::AdjustRotation(float x, float y, float z)
 		m_rotationX += 360.0f;
 }
 
-XMFLOAT3 Camera::GetPosition()
+XMFLOAT3 FreeCamera::GetPosition()
 {
 	return XMFLOAT3(m_positionX, m_positionY, m_positionZ);
 }
 
 
-XMFLOAT3 Camera::GetRotation()
+XMFLOAT3 FreeCamera::GetRotation()
 {
 	return XMFLOAT3(m_rotationX, m_rotationY, m_rotationZ);
 }
 
-void Camera::Render()
+void FreeCamera::Render()
 {
 	XMVECTOR up, position, lookAt;
 	float yaw, pitch, roll;
 	XMMATRIX rotationMatrix;
-
 
 	// Setup the vector that points upwards.
 	up = { 0.0f, 1.0f, 0.0f };
@@ -90,7 +81,6 @@ void Camera::Render()
 	pitch = m_rotationX * 0.0174532925f;
 	yaw = m_rotationY * 0.0174532925f;
 	roll = m_rotationZ * 0.0174532925f;
-
 
 	// Create the rotation matrix from the yaw, pitch, and roll values.
 	XMMATRIX mtxRotation = XMMatrixRotationRollPitchYaw(roll, pitch, yaw);;
@@ -107,7 +97,127 @@ void Camera::Render()
 	*m_viewMatrix = XMMatrixLookAtLH(position, lookAt, up);
 }
 
-XMMATRIX Camera::GetViewMatrix()
+XMMATRIX FreeCamera::GetViewMatrix()
 {
 	return *m_viewMatrix;
+}
+
+OrbitCamera::OrbitCamera()
+{
+	m_viewMatrix = (XMMATRIX*)_aligned_malloc(sizeof(XMMATRIX), alignof(XMMATRIX));
+	*m_viewMatrix = XMMatrixIdentity();
+	targetX = 0.0f;
+	targetY = 0.0f;
+	targetZ = pixelSizeW * 16;
+	rotationX = 0.0f;
+	rotationY = 0.0f;
+	SetPosition(0, 0, 0);
+}
+
+void OrbitCamera::SetPosition(float x, float y, float z)
+{
+	targetX = x;
+	targetY = y;
+	targetZ = z;
+	return;
+}
+
+void OrbitCamera::SetRotation(float x, float y, float z)
+{
+	rotationX = x;
+	rotationY = y;
+	return;
+}
+
+void OrbitCamera::AdjustPosition(float x, float y, float z)
+{
+	targetX += x;
+	targetY += y;
+	targetZ += z;
+}
+
+void OrbitCamera::AdjustRotation(float x, float y, float z)
+{
+	rotationX += x;
+	rotationY += y;
+	if (rotationX > 360)
+		rotationX -= 360.0f;
+	if (rotationX < 0)
+		rotationX += 360.0f;
+}
+
+XMFLOAT3 OrbitCamera::GetPosition()
+{
+	return cameraPosition;
+}
+
+
+XMFLOAT3 OrbitCamera::GetRotation()
+{
+	return XMFLOAT3(rotationX, rotationY, 0.0f);
+}
+
+void OrbitCamera::Render()
+{
+	XMVECTOR cameraPos, targetPos, up;
+	XMMATRIX yaw = XMMatrixRotationX(XMConvertToRadians(rotationY));
+	XMMATRIX pitch = XMMatrixRotationY(XMConvertToRadians(rotationX));
+	XMVECTOR v = { 0, 0, -zoom };
+	v = XMVector3Transform(v, yaw);
+	v = XMVector3Transform(v, pitch);
+
+	up = { 0.0f, 1.0f, 0.0f };
+	targetPos = { targetX, targetY, targetZ };
+	XMStoreFloat3(&cameraPosition, targetPos + v); // Store for picking later
+	*m_viewMatrix = XMMatrixLookAtLH(targetPos + v, targetPos, up);
+}
+
+XMMATRIX OrbitCamera::GetViewMatrix()
+{
+	return *m_viewMatrix;
+}
+
+void OrbitCamera::setOverhead(bool value) {
+	overhead = value;
+	// TODO change pitch/yaw if needed?
+}
+
+void OrbitCamera::setZoom(float z)
+{
+	zoom = z;
+}
+
+ViewingAngle OrbitCamera::getViewingAngle()
+{
+	ViewSide x;
+	ViewSide y;
+
+	// Get Y viewing angle
+	if (rotationY >= 45)
+		y = v_top;
+	else if (rotationY <= -45)
+		y =  v_bottom;
+	else
+		y = v_facing;
+
+	// Get X viewing angle
+	if ((rotationX > 315 && rotationX < 360) || (rotationX >= 0 && rotationX <= 45))
+		x = v_front;
+	else if (rotationX > 45 && rotationX <= 135)
+		x = v_left;
+	else if (rotationX > 135 && rotationX <= 225)
+		x = v_back;
+	else
+		x = v_right;
+
+	return{ x, y };
+}
+
+void OrbitCamera::adjustZoom(float amount)
+{
+	zoom -= amount;
+	if (zoom < 0.2f)
+		zoom = 0.2f;
+	else if (zoom > 20.0f)
+		zoom = 20.0f;
 }
