@@ -42,13 +42,20 @@ cbuffer PaletteSelectionBuffer
 	int selectedPalette;
 };
 
+cbuffer CameraPosition
+{
+	float4 cameraPos;
+};
+
 struct VOut
 {
 	float4 position : SV_POSITION;
+	float2 uv : TEXCOORD;
 	float4 color : COLOR;
+	float dist : FOG;
 };
 
-VOut main(float4 position : POSITION, float4 color : COLOR)
+VOut main(float4 position : POSITION, float2 uv : TEXCOORD, int color : COLOR)
 {
 	VOut output;
 	position.x *= mirrorState.x;
@@ -57,9 +64,9 @@ VOut main(float4 position : POSITION, float4 color : COLOR)
 	output.position = mul(output.position, viewMatrix);
 	output.position = mul(output.position, projectionMatrix);
 	float4 hue = float4(0, 0, 0, 1);
-	hue.rgb += mul(palettes.palettes[selectedPalette].hues[0].rgb, color.r);
-	hue.rgb += mul(palettes.palettes[selectedPalette].hues[1].rgb, color.g);
-	hue.rgb += mul(palettes.palettes[selectedPalette].hues[2].rgb, color.b);
+	hue.rgb = palettes.palettes[selectedPalette].hues[color];
 	output.color = hue;
+	output.uv = uv;
+	output.dist = distance(position, cameraPos);
 	return output;
 }

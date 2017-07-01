@@ -25,7 +25,8 @@ enum PlaneAxis { x_axis, y_axis, z_axis };
 
 struct ColorVertex {
 	XMFLOAT4 Pos;
-	XMFLOAT4 Col;
+	XMFLOAT2 Uv;
+	UINT32 Color;
 };
 
 struct OverlayVertex {
@@ -86,6 +87,7 @@ public:
 	static void updateMirroring(bool horizontal, bool vertical);
 	static void updatePalette(float palette[72]);
 	static void selectPalette(int palette);
+	static void setCameraPos(float x, float y, float z);
 	static void setOverlayColor(float r, float g, float b, float a);
 	static void setOverlayColor(int r, int g, int b, int a);
 	static XMMATRIX getProjectionMatrix(const float near_plane, const float far_plane, const float fov_horiz, const float fov_vert);
