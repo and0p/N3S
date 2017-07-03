@@ -90,7 +90,7 @@ void N3s3d::initPipeline(N3sD3dContext c)
 		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
 		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f
 	};
-	updatePalette(paletteArray);
+	updatePalette(paletteArray, { 0.0f, 0.0f, 0.0f });
 	setOverlayColor(100, 100, 100, 64);
 }
 
@@ -189,7 +189,7 @@ void N3s3d::initShaderExtras()
 	// Create palette buffer desc
 	D3D11_BUFFER_DESC paletteBufferDesc;
 	paletteBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	paletteBufferDesc.ByteWidth = sizeof(float) * 96;
+	paletteBufferDesc.ByteWidth = sizeof(float) * 128;
 	paletteBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	paletteBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	paletteBufferDesc.MiscFlags = 0;
@@ -389,7 +389,7 @@ void N3s3d::updateMirroring(bool horizontal, bool vertical) {
 	}
 }
 
-void N3s3d::updatePalette(float palette[72])
+void N3s3d::updatePalette(float palette[72], Hue bg)
 {
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	float* dataPtr;
@@ -398,17 +398,25 @@ void N3s3d::updatePalette(float palette[72])
 	// Get a pointer to the data in the constant buffer.
 	dataPtr = (float*)mappedResource.pData;
 	// Copy the values into the constant buffer.
-	int count = 0;
-	for (int i = 0; i < 96; i++)
+	for (int p = 0; p < 8; p++) // Each set of 3 colors
 	{
-		if ((i + 1) % 4 != 0)
+		for (int c = 0; c < 3; c++)	// Each individual color
 		{
-			*dataPtr = palette[count];
-			count++;
+			float* colorPtr = dataPtr + (p * 16 + c * 4);
+			int colorIndex = (p * 9 + c * 3);
+			for (int rgb = 0; rgb < 3; rgb++) // Each individual RGB float
+			{
+				*(colorPtr + rgb) = palette[colorIndex + rgb];
+			}
+			// Add alpha channel, always 1.0f
+			*(colorPtr + 4) = 1.0f;
 		}
-		else
-			*dataPtr = 0.0f;
-		dataPtr++;
+		// Also add the background color as a "fourth" for every subpalette
+		float* bgPtr = dataPtr + (p * 16) + 12;
+		*(bgPtr) = bg.red;
+		*(bgPtr + 1) = bg.green;
+		*(bgPtr + 2) = bg.blue;
+		*(bgPtr + 3) = 1.0f;
 	}
 	// Unlock the constant buffer.
 	context1->Unmap(paletteBuffer, 0);
@@ -448,7 +456,7 @@ void N3s3d::setCameraPos(float x, float y, float z)
 	*dataPtr = x;
 	*(dataPtr + 1) = y;
 	*(dataPtr + 2) = z;
-	*(dataPtr + 3) = 1.0f;
+	*(dataPtr + 3) = 0.0f;
 	// Unlock the constant buffer.
 	context1->Unmap(cameraPosBuffer, 0);
 	// Finally set the constant buffer in the pixel shader with the updated values.

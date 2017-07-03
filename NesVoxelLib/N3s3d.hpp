@@ -85,7 +85,7 @@ public:
 	static void updateWorldMatrix(float xPos, float yPos, float zPos, float xRot, float yRot, float zRot, float scale);
 	static void updateWorldMatrix(float xPos, float yPos, float zPos, float xRot, float yRot, float zRot, float xScale, float yScale, float zScale);
 	static void updateMirroring(bool horizontal, bool vertical);
-	static void updatePalette(float palette[72]);
+	static void updatePalette(float palette[72], Hue bg);
 	static void selectPalette(int palette);
 	static void setCameraPos(float x, float y, float z);
 	static void setOverlayColor(float r, float g, float b, float a);

@@ -39,7 +39,7 @@ void N3sPalette::updateShaderPalette()
 		colors[pos + 1] = standards[currentPPUType].hueSets[0].hues[colorIndices[i]].green;
 		colors[pos + 2] = standards[currentPPUType].hueSets[0].hues[colorIndices[i]].blue;
 	}
-	N3s3d::updatePalette(&colors[0]);
+	N3s3d::updatePalette(&colors[0], standards[0].hueSets[0].hues[backgroundColorIndex]);
 }
 
 Hue N3sPalette::getHue(int color)
