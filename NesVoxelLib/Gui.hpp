@@ -77,7 +77,7 @@ public:
 	static bool update(bool mouseAvailable, shared_ptr<SpriteMesh> mesh);
 	static void render();
 	static void clear();
-	static const int topMargin = (20 * 19);
+	static const int topMargin = (22 * 19);
 private:
 	static shared_ptr<SpriteMesh> m;
 

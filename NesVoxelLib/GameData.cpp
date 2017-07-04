@@ -117,28 +117,17 @@ void buildSide(vector<ColorVertex> * vertices, int x, int y, int z, int color, V
 	float zf = z * pixelSizeW;
 	// Init 4 vertices
 	ColorVertex v1, v2, v3, v4;
-	// Set all colors to greyscale
-	if (color == 1)
-	{
-		v4.Col = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-		v1.Col = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-		v2.Col = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-		v3.Col = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-	}
-	else if (color == 2)
-	{
-		v1.Col = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-		v2.Col = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-		v3.Col = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-		v4.Col = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-	}
-	else if (color == 3)
-	{
-		v1.Col = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-		v2.Col = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-		v3.Col = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-		v4.Col = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-	}
+	// Set all colors, subtract one to align with shader array
+	v1.Color = color - 1;
+	v2.Color = color - 1;
+	v3.Color = color - 1;
+	v4.Color = color - 1;
+
+	// Add UV coordinates
+	v1.Uv = { 0.0f, 1.0f };
+	v2.Uv = { 1.0f, 1.0f };
+	v3.Uv = { 1.0f, 0.0f };
+	v4.Uv = { 0.0f, 0.0f };
 
 	// Switch based on side
 	switch (side) {

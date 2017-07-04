@@ -250,6 +250,7 @@ void Scene::render(bool renderBackground, bool renderOAM)
 {
 	// Enable depth buffer
 	N3s3d::setDepthBufferState(true);
+	N3s3d::setShader(color);	// Set this for camera rendering later
 	// Update camera math
 	if (voxelEditor != nullptr)
 	{
