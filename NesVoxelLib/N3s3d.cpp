@@ -24,6 +24,7 @@ ID3D11Buffer *paletteBuffer;
 ID3D11Buffer *paletteSelectionBuffer;
 ID3D11Buffer *indexBuffer;
 ID3D11Buffer *overlayColorBuffer;
+ID3D11Buffer *cameraPosBuffer;
 //MatrixBuffer *worldMatrixPtr;
 //MatrixBuffer *viewMatrixPtr;
 //MatrixBuffer *projectionMatrixPtr;
@@ -48,6 +49,7 @@ int selectedPalette;
 int mirrorBufferNumber;
 int paletteBufferNumber;
 int paletteSelectionBufferNumber;
+int cameraPosBufferNumber;
 
 D3D11_VIEWPORT N3s3d::viewport;
 
@@ -88,7 +90,7 @@ void N3s3d::initPipeline(N3sD3dContext c)
 		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
 		1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f
 	};
-	updatePalette(paletteArray);
+	updatePalette(paletteArray, { 0.0f, 0.0f, 0.0f });
 	setOverlayColor(100, 100, 100, 64);
 }
 
@@ -126,10 +128,11 @@ void N3s3d::initShaders() {
 	D3D11_INPUT_ELEMENT_DESC colorLayout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD",    0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR",    0, DXGI_FORMAT_R32_UINT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
-	device1->CreateInputLayout(colorLayout, 2, &s_data[color], s_size, &shaders[color].inputLayout);
+	device1->CreateInputLayout(colorLayout, 3, &s_data[color], s_size, &shaders[color].inputLayout);
 
 	s_stream.open(L"color_pixel.cso", ifstream::in | ifstream::binary);
 	s_stream.seekg(0, ios::end);
@@ -186,7 +189,7 @@ void N3s3d::initShaderExtras()
 	// Create palette buffer desc
 	D3D11_BUFFER_DESC paletteBufferDesc;
 	paletteBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	paletteBufferDesc.ByteWidth = sizeof(float) * 96;
+	paletteBufferDesc.ByteWidth = sizeof(float) * 128;
 	paletteBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	paletteBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	paletteBufferDesc.MiscFlags = 0;
@@ -216,10 +219,23 @@ void N3s3d::initShaderExtras()
 
 	device1->CreateBuffer(&overlayColorBufferDesc, NULL, &overlayColorBuffer);
 
+	// Create camera position buffer
+	D3D11_BUFFER_DESC cameraPosBufferDesc;
+	cameraPosBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	cameraPosBufferDesc.ByteWidth = sizeof(float) * 4;
+	cameraPosBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	cameraPosBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	cameraPosBufferDesc.MiscFlags = 0;
+	cameraPosBufferDesc.StructureByteStride = 0;
+
+	device1->CreateBuffer(&cameraPosBufferDesc, NULL, &cameraPosBuffer);
+
 	// Set buffer slots
 	mirrorBufferNumber = 3;
 	paletteBufferNumber = 4;
 	paletteSelectionBufferNumber = 5;
+	cameraPosBufferNumber = 6;
+
 }
 
 void N3s3d::setShader(ShaderType type) {
@@ -373,7 +389,7 @@ void N3s3d::updateMirroring(bool horizontal, bool vertical) {
 	}
 }
 
-void N3s3d::updatePalette(float palette[72])
+void N3s3d::updatePalette(float palette[72], Hue bg)
 {
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	float* dataPtr;
@@ -382,17 +398,25 @@ void N3s3d::updatePalette(float palette[72])
 	// Get a pointer to the data in the constant buffer.
 	dataPtr = (float*)mappedResource.pData;
 	// Copy the values into the constant buffer.
-	int count = 0;
-	for (int i = 0; i < 96; i++)
+	for (int p = 0; p < 8; p++) // Each set of 3 colors
 	{
-		if ((i + 1) % 4 != 0)
+		for (int c = 0; c < 3; c++)	// Each individual color
 		{
-			*dataPtr = palette[count];
-			count++;
+			float* colorPtr = dataPtr + (p * 16 + c * 4);
+			int colorIndex = (p * 9 + c * 3);
+			for (int rgb = 0; rgb < 3; rgb++) // Each individual RGB float
+			{
+				*(colorPtr + rgb) = palette[colorIndex + rgb];
+			}
+			// Add alpha channel, always 1.0f
+			*(colorPtr + 4) = 1.0f;
 		}
-		else
-			*dataPtr = 0.0f;
-		dataPtr++;
+		// Also add the background color as a "fourth" for every subpalette
+		float* bgPtr = dataPtr + (p * 16) + 12;
+		*(bgPtr) = bg.red;
+		*(bgPtr + 1) = bg.green;
+		*(bgPtr + 2) = bg.blue;
+		*(bgPtr + 3) = 1.0f;
 	}
 	// Unlock the constant buffer.
 	context1->Unmap(paletteBuffer, 0);
@@ -418,6 +442,25 @@ void N3s3d::selectPalette(int palette)
 		// Finally set the constant buffer in the pixel shader with the updated values.
 		context1->VSSetConstantBuffers(paletteSelectionBufferNumber, 1, &paletteSelectionBuffer);
 	}
+}
+
+void N3s3d::setCameraPos(float x, float y, float z)
+{
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	float* dataPtr;
+	// Lock the constant buffer so it can be written to.
+	context1->Map(cameraPosBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	// Get a pointer to the data in the constant buffer.
+	dataPtr = (float*)mappedResource.pData;
+	// Copy the values into the constant buffer.
+	*dataPtr = x;
+	*(dataPtr + 1) = y;
+	*(dataPtr + 2) = z;
+	*(dataPtr + 3) = 0.0f;
+	// Unlock the constant buffer.
+	context1->Unmap(cameraPosBuffer, 0);
+	// Finally set the constant buffer in the pixel shader with the updated values.
+	context1->VSSetConstantBuffers(cameraPosBufferNumber, 1, &cameraPosBuffer);
 }
 
 void N3s3d::setOverlayColor(float r, float g, float b, float a)
@@ -465,18 +508,7 @@ void N3s3d::updateMatricesWithCamera(Camera * camera) {
 	viewMatrix = XMMatrixTranspose(viewMatrix);
 	projectionMatrix = XMMatrixTranspose(projectionMatrix);
 
-	//// Lock the constant buffer so it can be written to.
-	//context1->Map(shaders[activeShader].matrices.worldMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	//// Get a pointer to the data in the constant buffer.
-	//dataPtr = (MatrixBuffer*)mappedResource.pData;
-	//// Copy the matrices into the constant buffer.
-	//dataPtr->matrix = worldMatrix;
-	//// Unlock the constant buffer.
-	//context1->Unmap(shaders[activeShader].matrices.worldMatrixBuffer, 0);
-	//// Finally set the constant buffer in the vertex shader with the updated values.
-	//context1->VSSetConstantBuffers(0, 1, &shaders[activeShader].matrices.worldMatrixBuffer);
-
-	// Lock the constant buffer so it can be written to.
+		// Lock the constant buffer so it can be written to.
 	context1->Map(shaders[activeShader].matrices.viewMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	// Get a pointer to the data in the constant buffer.
 	dataPtr = (MatrixBuffer*)mappedResource.pData;
@@ -497,6 +529,10 @@ void N3s3d::updateMatricesWithCamera(Camera * camera) {
 	context1->Unmap(shaders[activeShader].matrices.projectionMatrixBuffer, 0);
 	// Finally set the constant buffer in the vertex shader with the updated values.
 	context1->VSSetConstantBuffers(2, 1, &shaders[activeShader].matrices.projectionMatrixBuffer);
+
+	// If we're in the standard palette shader, update camera position constant buffer
+	if (activeShader == color)
+		setCameraPos(camera->GetPosition().x, camera->GetPosition().y, camera->GetPosition().z);
 }
 
 void N3s3d::updateViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
