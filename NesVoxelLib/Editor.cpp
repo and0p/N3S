@@ -198,7 +198,7 @@ void Editor::createCHRSheet(int pageNumber)
 			s.y = y * 16;
 			s.palette = 0;
 			// Make sure mesh exists
-			int index = startingSprite + getArrayIndexFromXY(x, y, 8);
+			int index = startingSprite + getArrayIndexFromXY(x, y, 16);
 			if (N3sApp::gameData->meshes.size() > index)
 			{
 				shared_ptr<SpriteMesh> ref = N3sApp::gameData->meshes[index];

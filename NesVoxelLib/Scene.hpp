@@ -23,15 +23,6 @@ const int bgSize = sceneWidth * sceneHeight;
 enum MouseModifier { no_mod, mod_add, mod_remove, mod_intersect, mod_copy };
 enum MouseFunction { no_func, move_func, select_new, select_add, select_sub, select_intersect };
 
-struct SceneSprite {
-	shared_ptr<SpriteMesh> mesh;
-	int palette;
-	int x;
-	int y;
-	bool mirrorH;
-	bool mirrorV;
-};
-
 class SceneBackground {
 public:
 	SceneSprite sprites[sceneWidth * sceneHeight];
@@ -90,6 +81,7 @@ private:
 	void moveSelection(int x, int y);
 	void deleteSelection();
 	bool showGuides = false;
+	int spriteBeingEdited = -1;
 	static Vector3F Scene::getCoordinatesFromZIntersection(XMFLOAT3 zIntersect);
 	Vector2D getTopLeftSpriteInSelection(shared_ptr<Selection> s);
 };

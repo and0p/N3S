@@ -23,6 +23,7 @@ enum inputFunctions {
 	voxeleditor_movein, voxeleditor_moveout, voxeleditor_setvoxel, voxeleditor_deletevoxel,
 	voxeleditor_color0, voxeleditor_color1, voxeleditor_color2, voxeleditor_color3,	voxeleditor_exit,
 	editor_copy, editor_paste, palette_copy, palette_paste,
+	voxeleditor_mirror,
 	INPUTCOUNT
 };
 

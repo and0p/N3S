@@ -1,5 +1,8 @@
 #pragma once
 
+enum MirrorStyle { no_mirroring, mirror_single, mirror_offset };
+enum MirrorDirection { mirror_x, mirror_y, mirror_z };
+
 class Vector2D {
 public:
 	Vector2D();
@@ -14,7 +17,11 @@ public:
 
 struct Vector3D {
 	int x, y, z;
+	bool equals(Vector3D v);
 	Vector3D mirror(bool h, bool v);
+	Vector3D mirrorMesh(Vector3D mirrorPoint,
+		MirrorDirection mirrorDirection,
+		MirrorStyle mirrorType);
 };
 
 struct Vector2F {
@@ -22,10 +29,20 @@ struct Vector2F {
 	float y;
 };
 
+class Color4F {
+public:
+	float r;
+	float g;
+	float b;
+	float a;
+};
+
 class Vector3F {
 public:
 	float x, y, z;
 };
+
+
 
 inline int getArrayIndexFromXY(int x, int y, int arrayWidth)
 {

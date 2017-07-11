@@ -267,16 +267,20 @@ void Scene::render(bool renderBackground, bool renderOAM)
 		// See if sprite has any mesh
 		if (s.mesh != nullptr)
 		{
-			// See if sprite is highlighted and write to stencil buffer if so
-			if (displaySelection->selectedIndices.count(i) > 0 || highlight.highlightedIndices.count(i) > 0)
+			// Don't render the sprite that is being edited
+			if (voxelEditor == nullptr || spriteBeingEdited != i)
 			{
-				N3s3d::setDepthStencilState(true, true, false);
-				s.mesh->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
-				N3s3d::setDepthStencilState(true, false, false);
-			}
-			else
-			{
-				s.mesh->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
+				// See if sprite is highlighted and write to stencil buffer if so
+				if (displaySelection->selectedIndices.count(i) > 0 || highlight.highlightedIndices.count(i) > 0)
+				{
+					N3s3d::setDepthStencilState(true, true, false);
+					s.mesh->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
+					N3s3d::setDepthStencilState(true, false, false);
+				}
+				else // Otherwise render normally
+				{
+					s.mesh->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
+				}
 			}
 		}
 	}
@@ -457,7 +461,8 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 						{
 							// Switch to editing that mesh
 							N3sConsole::writeLine("SWITCHED TO EDITOR!");
-							voxelEditor = make_shared<VoxelEditor>(sprites[s].mesh, sprites[s].x, sprites[s].y, sprites[s].mirrorH, sprites[s].mirrorV, mainCamera);
+							spriteBeingEdited = s;
+							voxelEditor = make_shared<VoxelEditor>(sprites[s].mesh, &sprites[s], mainCamera);
 						}
 						else
 						{
