@@ -58,7 +58,11 @@ bool VoxelEditor::update(bool mouseAvailable)
 	getMouseHighlight();
 
 	if (mouseInEditor && InputState::keyboardMouse->mouseButtons[left_mouse].down)
+	{
 		mesh->updateVoxel(mouseHighlight.mirror(ss->mirrorH, ss->mirrorV), selectedColor);
+		if (mirrorStyle > no_mirroring)
+			mesh->updateVoxel(mirroredMouseHighlight.mirror(ss->mirrorH, ss->mirrorV), selectedColor);
+	}
 
 	if (InputState::functions[voxeleditor_movein].activatedThisFrame)
 	{
@@ -72,6 +76,14 @@ bool VoxelEditor::update(bool mouseAvailable)
 	updateCamera();
 
 	selection = { xSelect, ySelect, zSelect };
+	
+	// Check for mirroring change
+	if (InputState::functions[voxeleditor_mirror].activatedThisFrame)
+		setMirroring();
+
+	// If mirroring is active, update mirrored mouse highlight and selection
+	mirroredSelection = selection.mirrorMesh(mirrorPoint, mirrorDirection, mirrorStyle);
+	mirroredMouseHighlight = mouseHighlight.mirrorMesh(mirrorPoint, mirrorDirection, mirrorStyle);
 
 	// See if we're holding alt, and update sprite cropping if so
 	if (InputState::functions[selection_remove].active)
@@ -81,9 +93,17 @@ bool VoxelEditor::update(bool mouseAvailable)
 
 	// Add or remove voxels
 	if (InputState::functions[voxeleditor_setvoxel].active)
+	{
 		mesh->updateVoxel(selection.mirror(ss->mirrorH, ss->mirrorV), selectedColor);
+		if(mirrorStyle > no_mirroring)
+			mesh->updateVoxel(mirroredSelection.mirror(ss->mirrorH, ss->mirrorV), selectedColor);
+	}
 	else if (InputState::functions[voxeleditor_deletevoxel].active)
+	{
 		mesh->updateVoxel(selection.mirror(ss->mirrorH, ss->mirrorV), 0);
+		if (mirrorStyle > no_mirroring)
+			mesh->updateVoxel(mirroredSelection.mirror(ss->mirrorH, ss->mirrorV), 0);
+	}
 
 	return mouseAvailable;
 }
@@ -114,49 +134,95 @@ void VoxelEditor::render()
 		Overlay::setColor(0.5f, 0.5f, 0.5f, 1.0f);
 		Overlay::drawVoxelPreview(mouseHighlight.x + ss->x, mouseHighlight.y + ss->y, mouseHighlight.z);
 	}
-	renderGrid(viewingAngle, { 0.8f, 0.8f, 0.8f, 0.6f }, true);
-	renderGrid(viewingAngle, { 0.8f, 0.8f, 0.8f, 0.2f }, false);
+	renderGrid(selection, viewingAngle, { 0.8f, 0.8f, 0.8f, 0.4f }, true);
+	renderGrid(selection, viewingAngle, { 0.8f, 0.8f, 0.8f, 0.4f }, false);
+	ViewingAngle mirrorViewingAngle;
+	if (mirrorStyle > no_mirroring)
+	{
+		// Render single mirror guide
+		if (mirrorDirection == mirror_x)
+		{
+			mirrorViewingAngle.x = v_left;
+			mirrorViewingAngle.y = v_facing;
+		}
+		else if (mirrorDirection == mirror_y)
+		{
+			mirrorViewingAngle.x = v_facing;
+			mirrorViewingAngle.y = v_top;
+		}
+		else if (mirrorDirection == mirror_z)
+		{
+			mirrorViewingAngle.x = v_front;
+			mirrorViewingAngle.y = v_facing;
+		}
+		renderGrid(mirrorPoint, mirrorViewingAngle, { 1.0f, 0.0f, 0.0f, 0.4f }, false);
+		if (mirrorStyle == mirror_offset)
+		{
+			// Render additional, offset mirror guide
+			Vector3D mirrorOffset = mirrorPoint;
+			if (mirrorDirection == mirror_x)
+			{
+				mirrorOffset.x++;
+			}
+			else if (mirrorDirection == mirror_y)
+			{
+				mirrorOffset.y++;
+			}
+			else if (mirrorDirection == mirror_z)
+			{
+				mirrorOffset.z++;
+			}
+			renderGrid(mirrorOffset, mirrorViewingAngle, { 1.0f, 0.0f, 0.0f, 0.4f }, false);
+		}
+		// Draw mirrored position
+		Overlay::setColor(1.0f, 0.0f, 0.0f, 0.2f);
+		Overlay::drawVoxelPreview(mirroredSelection.x + ss->x, mirroredSelection.y + ss->y, mirroredSelection.z);
+		if (mouseInEditor)
+		{
+			Overlay::drawVoxelPreview(mirroredMouseHighlight.x + ss->x, mirroredMouseHighlight.y + ss->y, mirroredMouseHighlight.z);
+		}
+	}
 }
 
-void VoxelEditor::renderGrid(ViewingAngle vA, Color4F color, bool depthEnabled)
+void VoxelEditor::renderGrid(Vector3D v, ViewingAngle vA, Color4F color, bool depthEnabled)
 {
-	if (viewingAngle.y == v_top)
+	if (vA.y == v_top)
 	{
 		N3s3d::setDepthBufferState(depthEnabled);
 		Overlay::setColor(color.r, color.g, color.b, color.a);
-		Overlay::drawVoxelGrid(ss->x, ss->y, ySelect + 1, yAxis);
+		Overlay::drawVoxelGrid(ss->x, ss->y, v.y + 1, yAxis);
 	}
-	else if (viewingAngle.y == v_bottom)
+	else if (vA.y == v_bottom)
 	{
 		N3s3d::setDepthBufferState(depthEnabled);
 		Overlay::setColor(color.r, color.g, color.b, color.a);
-		Overlay::drawVoxelGrid(ss->x, ss->y, ySelect, yAxis);
+		Overlay::drawVoxelGrid(ss->x, ss->y, v.y, yAxis);
 	}
 	else
 	{
-		if (viewingAngle.x == v_front)
+		if (vA.x == v_front)
 		{
 			N3s3d::setDepthBufferState(depthEnabled);
 			Overlay::setColor(color.r, color.g, color.b, color.a);
-			Overlay::drawVoxelGrid(ss->x, ss->y, zSelect + 1, xAxis);
+			Overlay::drawVoxelGrid(ss->x, ss->y, v.z + 1, xAxis);
 		}
-		else if (viewingAngle.x == v_back)
+		else if (vA.x == v_back)
 		{
 			N3s3d::setDepthBufferState(depthEnabled);
 			Overlay::setColor(color.r, color.g, color.b, color.a);
-			Overlay::drawVoxelGrid(ss->x, ss->y, zSelect, xAxis);
+			Overlay::drawVoxelGrid(ss->x, ss->y, v.z, xAxis);
 		}
-		else if (viewingAngle.x == v_left)
+		else if (vA.x == v_left)
 		{
 			N3s3d::setDepthBufferState(depthEnabled);
 			Overlay::setColor(color.r, color.g, color.b, color.a);
-			Overlay::drawVoxelGrid(ss->x, ss->y, xSelect + 1, zAxis);
+			Overlay::drawVoxelGrid(ss->x, ss->y, v.x + 1, zAxis);
 		}
 		else
 		{
 			N3s3d::setDepthBufferState(depthEnabled);
 			Overlay::setColor(color.r, color.g, color.b, color.a);
-			Overlay::drawVoxelGrid(ss->x, ss->y, xSelect, zAxis);
+			Overlay::drawVoxelGrid(ss->x, ss->y, v.x, zAxis);
 		}
 	}
 }
@@ -259,9 +325,13 @@ void VoxelEditor::adjustWorkingPosition(int x, int y, int z)
 
 	// See if we should copy/move the old layer as well
 	if (InputState::functions[selection_copy].active)
+	{
 		mesh->moveLayer(oldX, oldY, oldZ, workingX, workingY, workingZ, true);
+	}
 	else if (InputState::functions[selection_add].active)
+	{
 		mesh->moveLayer(oldX, oldY, oldZ, workingX, workingY, workingZ, false);
+	}
 }
 
 void VoxelEditor::adjustWorkingPositionAnalog(float x, float y, float z)
@@ -434,12 +504,12 @@ void VoxelEditor::setMirroring()
 	}
 	else
 	{
-		// See if mirror spot /direction is the same
+		// See if mirror spot / direction is the same
 		MirrorDirection mD = camera.getMirrorDirection();
 		if (mirrorPoint.equals(selection) && mirrorDirection == mD)
 		{
 			// Cycle (or remove) mirroring
-			if (mirrorStyle == single)
+			if (mirrorStyle == mirror_single)
 				mirrorStyle = mirror_offset;
 			else
 				mirrorStyle = no_mirroring;
@@ -447,7 +517,7 @@ void VoxelEditor::setMirroring()
 		else
 		{
 			// Update mirroring as single from new selection point
-			mirrorStyle == mirror_single;
+			mirrorStyle = mirror_single;
 			mirrorDirection = mD;
 			mirrorPoint = selection;
 		}

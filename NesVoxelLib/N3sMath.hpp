@@ -20,8 +20,8 @@ struct Vector3D {
 	bool equals(Vector3D v);
 	Vector3D mirror(bool h, bool v);
 	Vector3D mirrorMesh(Vector3D mirrorPoint,
-		MirrorDirection mirrorDirection,
-		MirrorStyle mirrorType);
+						MirrorDirection mirrorDirection,
+						MirrorStyle mirrorType);
 };
 
 struct Vector2F {

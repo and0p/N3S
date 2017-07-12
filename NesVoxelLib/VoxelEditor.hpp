@@ -10,7 +10,7 @@ public:
 	VoxelEditor(shared_ptr<SpriteMesh> mesh, SceneSprite *ss, OrbitCamera referenceCamera);
 	bool update(bool mouseAvailable);
 	void render();
-	void renderGrid(ViewingAngle vA, Color4F color, bool depthEnabled);
+	void renderGrid(Vector3D v, ViewingAngle vA, Color4F color, bool depthEnabled);
 	void adjustWorkingPosition(int x, int y, int z);
 	void adjustWorkingPositionAnalog(float x, float y, float z);
 	void changeLayers(int amount);
@@ -28,8 +28,10 @@ private:
 	void setMirroring();
 	SceneSprite *ss;
 	Vector3D selection;
+	Vector3D mirroredSelection;
 	Vector3D position;
 	Vector3D mirrorPoint;
+	Vector3D mirroredMouseHighlight;
 	MirrorDirection mirrorDirection;
 	MirrorStyle mirrorStyle;
 	int xSelect, ySelect, zSelect;

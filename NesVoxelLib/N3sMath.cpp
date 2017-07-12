@@ -67,15 +67,15 @@ Vector3D Vector3D::mirrorMesh(Vector3D mirrorPoint, MirrorDirection mirrorDirect
 {
 	if (mirrorDirection == mirror_x)
 	{
-		return{ ((x - mirrorPoint.x) * -1) + mirrorPoint.x, y, z };
+		return{ ((x - mirrorPoint.x) * -1) + mirrorPoint.x + 1, y, z };
 	}
-	else if (mirrorDirection == mirror_x)
+	else if (mirrorDirection == mirror_y)
 	{
-		return{ x, ((y - mirrorPoint.y) * -1) + mirrorPoint.y, z };
+		return{ x, ((y - mirrorPoint.y) * -1) + mirrorPoint.y + 1, z };
 	}
-	else if (mirrorDirection == mirror_x)
+	else if (mirrorDirection == mirror_z)
 	{
-		return{ x, y, ((z - mirrorPoint.z) * -1) + mirrorPoint.z };
+		return{ x, y, ((z - mirrorPoint.z) * -1) + mirrorPoint.z + 1 };
 	}
 	else
 	{
