@@ -213,6 +213,17 @@ ViewingAngle OrbitCamera::getViewingAngle()
 	return{ x, y };
 }
 
+MirrorDirection OrbitCamera::getMirrorDirection()
+{
+	ViewingAngle vA = getViewingAngle();
+	if (vA.y == v_top || vA.y == v_bottom)
+		return mirror_y;
+	else if (vA.x == v_front || vA.x == v_back)
+		return mirror_z;
+	else
+		return mirror_x;
+}
+
 void OrbitCamera::adjustZoom(float amount)
 {
 	zoom -= amount;

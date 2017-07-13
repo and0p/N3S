@@ -2,6 +2,7 @@
 
 #pragma once
 #include <malloc.h>
+#include "N3sMath.hpp"
 
 enum ViewSide { v_front, v_back, v_left, v_right, v_top, v_facing, v_bottom };
 struct ViewingAngle { 
@@ -73,6 +74,7 @@ public:
 	void adjustZoom(float amount);
 	void setZoom(float z);
 	ViewingAngle getViewingAngle();
+	MirrorDirection getMirrorDirection();
 private:
 	float targetX, targetY, targetZ;
 	float rotationX, rotationY;

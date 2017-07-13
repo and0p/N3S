@@ -394,6 +394,7 @@ void InputState::createBindings()
 	functions[voxeleditor_color3].bindings.push_back({ keyboardMouse->keys[0x33] });
 	functions[voxeleditor_color3].bindings.push_back({ keyboardMouse->keys[VK_NUMPAD3] });
 	functions[voxeleditor_exit].bindings.push_back({ keyboardMouse->keys[VK_ESCAPE] });
+	functions[voxeleditor_mirror].bindings.push_back({ keyboardMouse->keys[0x4D] });
 	// Editor copy/paste
 	Binding copyBinding = { keyboardMouse->keys[0x43] };	// C
 	copyBinding.ctrl = true;

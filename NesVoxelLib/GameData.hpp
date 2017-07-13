@@ -120,3 +120,12 @@ void setVoxelColors(char a, char b, Voxel* row);
 bool getBitLeftSide(char byte, int position);
 string getPaddedStringFromInt(int i, int length);
 int charToInt(char c);
+
+struct SceneSprite {
+	shared_ptr<SpriteMesh> mesh;
+	int palette;
+	int x;
+	int y;
+	bool mirrorH;
+	bool mirrorV;
+};

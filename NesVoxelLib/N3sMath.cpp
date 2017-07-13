@@ -39,6 +39,14 @@ Vector2D Vector2D::diff(Vector2D a, Vector2D b)
 	return{ b.x - a.x, b.y - a.y };
 }
 
+bool Vector3D::equals(Vector3D v)
+{
+	if (v.x == x && v.y == y && v.z == z)
+		return true;
+	else
+		return false;
+}
+
 Vector3D Vector3D::mirror(bool h, bool v)
 {
 	int newX, newY;
@@ -53,4 +61,24 @@ Vector3D Vector3D::mirror(bool h, bool v)
 	else
 		newY = y;
 	return { newX, newY, z };
+}
+
+Vector3D Vector3D::mirrorMesh(Vector3D mirrorPoint, MirrorDirection mirrorDirection, MirrorStyle mirrorType)
+{
+	if (mirrorDirection == mirror_x)
+	{
+		return{ ((x - mirrorPoint.x) * -1) + mirrorPoint.x + 1, y, z };
+	}
+	else if (mirrorDirection == mirror_y)
+	{
+		return{ x, ((y - mirrorPoint.y) * -1) + mirrorPoint.y + 1, z };
+	}
+	else if (mirrorDirection == mirror_z)
+	{
+		return{ x, y, ((z - mirrorPoint.z) * -1) + mirrorPoint.z + 1 };
+	}
+	else
+	{
+		return{ 0, 0, 0 };
+	}
 }

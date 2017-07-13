@@ -662,7 +662,6 @@ void SpriteMesh::render(int x, int y, int palette, bool mirrorH, bool mirrorV, C
 				}
 			}
 		}
-
 	}
 }
 
