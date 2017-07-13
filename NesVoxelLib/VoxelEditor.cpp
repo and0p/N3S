@@ -332,6 +332,22 @@ void VoxelEditor::adjustWorkingPosition(int x, int y, int z)
 	{
 		mesh->moveLayer(oldX, oldY, oldZ, workingX, workingY, workingZ, false);
 	}
+	if (mirrorStyle > 0)
+	{
+		// Awkwardly transition to Vector3D for mirroring
+		Vector3D oldC = { oldX, oldY, oldZ };
+		Vector3D newC = { workingX, workingY, workingZ };
+		oldC = oldC.mirrorMesh(mirrorPoint, mirrorDirection, mirrorStyle);
+		newC = newC.mirrorMesh(mirrorPoint, mirrorDirection, mirrorStyle);
+		if (InputState::functions[selection_copy].active)
+		{
+			mesh->moveLayer(oldC.x, oldC.y, oldC.z, newC.x, newC.y, newC.z, true);
+		}
+		else if (InputState::functions[selection_add].active)
+		{
+			mesh->moveLayer(oldC.x, oldC.y, oldC.z, newC.x, newC.y, newC.z, false);
+		}
+	}
 }
 
 void VoxelEditor::adjustWorkingPositionAnalog(float x, float y, float z)
