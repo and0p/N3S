@@ -29,12 +29,17 @@ struct ColorVertex {
 	UINT32 Color;
 };
 
+struct OutlineVertex {
+	XMFLOAT4 Pos;
+};
+
 struct OverlayVertex {
 	XMFLOAT4 Pos;
 };
 
 struct VoxelMesh {
 	ID3D11Buffer *buffer;
+	void releaseBuffers();
 	ShaderType type;
 	int size;
 };
@@ -108,7 +113,7 @@ private:
 	static void initShaderExtras();
 	static void initSampleState();
 	static void initRasterDesc();
-	static void createIndexBuffer();
+	static void createIndexBuffers();
 	static bool initDepthStencils();
 };
 

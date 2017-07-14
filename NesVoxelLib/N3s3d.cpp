@@ -23,6 +23,7 @@ ID3D11Buffer *mirrorBuffer;
 ID3D11Buffer *paletteBuffer;
 ID3D11Buffer *paletteSelectionBuffer;
 ID3D11Buffer *indexBuffer;
+ID3D11Buffer *indexBufferReversed;
 ID3D11Buffer *overlayColorBuffer;
 ID3D11Buffer *cameraPosBuffer;
 //MatrixBuffer *worldMatrixPtr;
@@ -69,6 +70,7 @@ void N3s3d::initPipeline(N3sD3dContext c)
 	setDepthBufferState(true);
 	initSampleState();
 	initRasterDesc();
+	createIndexBuffers();
 
 	// select which primtive type we are using
 	context->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -386,6 +388,12 @@ void N3s3d::updateMirroring(bool horizontal, bool vertical) {
 		context1->Unmap(mirrorBuffer, 0);
 		// Finally set the constant buffer in the vertex shader with the updated values.
 		context1->VSSetConstantBuffers(mirrorBufferNumber, 1, &mirrorBuffer);
+
+		// Also, set index for rendering voxel meshes based on mirroring
+		if (horizontal == vertical)
+			context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R16_UINT, 0);
+		else
+			context->IASetIndexBuffer(indexBufferReversed, DXGI_FORMAT_R16_UINT, 0);
 	}
 }
 
@@ -758,11 +766,12 @@ void N3s3d::renderMesh(VoxelMesh *voxelMesh) {
 	}
 	UINT stride;
 	if(activeShader == color)
-		stride = sizeof(ColorVertex); // TODO optimize?
+		stride = sizeof(ColorVertex);
 	if (activeShader == overlay)
 		stride = sizeof(OverlayVertex);
 	UINT offset = 0;
 	context->IASetVertexBuffers(0, 1, &voxelMesh->buffer, &stride, &offset);
+	// TODO don't change buffer if selected is same as before
 	//context->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	// draw the vertex buffer to the back buffer
 #ifdef HOLOLENS
@@ -774,7 +783,14 @@ void N3s3d::renderMesh(VoxelMesh *voxelMesh) {
 		0               // Start instance location.
 		);
 #else
-	context->Draw(voxelMesh->size, 0);
+	if (activeShader == color)
+	{
+		context->DrawIndexed(voxelMesh->size / 4 * 6, 0, 0);
+	}
+	else
+	{
+		context->Draw(voxelMesh->size, 0);
+	}
 #endif
 }
 
@@ -800,24 +816,24 @@ void N3s3d::initRasterDesc()
 {
 	D3D11_RASTERIZER_DESC rasterDesc;
 	rasterDesc.AntialiasedLineEnable = false;
-	rasterDesc.CullMode = D3D11_CULL_NONE;
+	rasterDesc.CullMode = D3D11_CULL_BACK;
 	rasterDesc.DepthBias = 0;
 	rasterDesc.DepthBiasClamp = 0.0f;
 	rasterDesc.DepthClipEnable = true;
 	rasterDesc.FillMode = D3D11_FILL_SOLID;
-	rasterDesc.FrontCounterClockwise = true;
+	rasterDesc.FrontCounterClockwise = false;
 	rasterDesc.MultisampleEnable = false;
 	rasterDesc.ScissorEnable = false;
 	rasterDesc.SlopeScaledDepthBias = 0.0f;
 
 	D3D11_RASTERIZER_DESC wireRasterDesc;
 	wireRasterDesc.AntialiasedLineEnable = false;
-	wireRasterDesc.CullMode = D3D11_CULL_NONE;
+	wireRasterDesc.CullMode = D3D11_CULL_BACK;
 	wireRasterDesc.DepthBias = 0;
 	wireRasterDesc.DepthBiasClamp = 0.0f;
 	wireRasterDesc.DepthClipEnable = true;
 	wireRasterDesc.FillMode = D3D11_FILL_WIREFRAME;
-	wireRasterDesc.FrontCounterClockwise = true;
+	wireRasterDesc.FrontCounterClockwise = false;
 	wireRasterDesc.MultisampleEnable = false;
 	wireRasterDesc.ScissorEnable = false;
 	wireRasterDesc.SlopeScaledDepthBias = 0.0f;
@@ -827,23 +843,47 @@ void N3s3d::initRasterDesc()
 	context->RSSetState(fillRasterState);
 }
 
-void N3s3d::createIndexBuffer()
+void N3s3d::createIndexBuffers()
 {
-	unsigned short indices[73728];
-	for (int i = 0; i < 73728; i++)
+	unsigned short indices[36864];
+	unsigned short indicesReversed[36864];
+	// For each hypothetical face
+	for (int i = 0; i < 6144; i++)
 	{
-		indices[i] = i;
+		int faceIndex = i * 6;
+		int vertexIndex = i * 4;
+		// Do normal indices
+		indices[faceIndex] = vertexIndex;
+		indices[faceIndex + 1] = vertexIndex + 1;
+		indices[faceIndex + 2] = vertexIndex + 2;
+		indices[faceIndex + 3] = vertexIndex;
+		indices[faceIndex + 4] = vertexIndex + 2;
+		indices[faceIndex + 5] = vertexIndex + 3;
+		// Do reverse indices
+		indicesReversed[faceIndex] = vertexIndex;
+		indicesReversed[faceIndex + 1] = vertexIndex + 2;
+		indicesReversed[faceIndex + 2] = vertexIndex + 1;
+		indicesReversed[faceIndex + 3] = vertexIndex;
+		indicesReversed[faceIndex + 4] = vertexIndex + 3;
+		indicesReversed[faceIndex + 5] = vertexIndex + 2;
 	}
-	D3D11_SUBRESOURCE_DATA indexBufferData = { 0 };
-	indexBufferData.pSysMem = indices;
-	indexBufferData.SysMemPitch = 0;
-	indexBufferData.SysMemSlicePitch = 0;
-	const CD3D11_BUFFER_DESC indexBufferDesc(sizeof(indices), D3D11_BIND_INDEX_BUFFER);
-	device->CreateBuffer(
-		&indexBufferDesc,
-		&indexBufferData,
-		&indexBuffer
-		);
+
+	// Create buffer description, same for normal and reverse
+	D3D11_BUFFER_DESC bd;
+	ZeroMemory(&bd, sizeof(bd));
+
+	bd.Usage = D3D11_USAGE_DEFAULT;						// write access access by CPU and GPU
+	bd.ByteWidth = sizeof(unsigned short) * 36864;		// size is the int * indices
+	bd.BindFlags = D3D11_BIND_INDEX_BUFFER;				// use as a index buffer
+	bd.CPUAccessFlags = 0;								// disallow CPU to write in buffer
+
+	D3D11_SUBRESOURCE_DATA vData;
+
+	// Create normal and reverse buffers
+	vData.pSysMem = &(indices[0]);
+	device1->CreateBuffer(&bd, &vData, &indexBuffer);
+	vData.pSysMem = &(indicesReversed[0]);
+	device1->CreateBuffer(&bd, &vData, &indexBufferReversed);
 }
 
 bool N3s3d::initDepthStencils()
@@ -1003,4 +1043,9 @@ bool Crop::zeroed()
 		return true;
 	else
 		return false;
+}
+
+void VoxelMesh::releaseBuffers()
+{
+		buffer->Release();
 }

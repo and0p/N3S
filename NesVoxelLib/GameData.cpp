@@ -104,7 +104,7 @@ VoxelMesh buildZMesh(int zArray[32])
 			// TODO: Also add > evaluation for semi-transparent voxels in the future
 		}
 	}
-	mesh.size = sideCount * 6;
+	mesh.size = sideCount * 4;
 	mesh.type = color;
 	mesh.buffer = N3s3d::createBufferFromColorVertices(&vertices, mesh.size);
 	return mesh;
@@ -169,8 +169,6 @@ void buildSide(vector<ColorVertex> * vertices, int x, int y, int z, int color, V
 		break;
 	}
 	vertices->push_back(v1);
-	vertices->push_back(v2);
-	vertices->push_back(v4);
 	vertices->push_back(v2);
 	vertices->push_back(v3);
 	vertices->push_back(v4);
@@ -397,7 +395,7 @@ bool SpriteMesh::buildMesh()
 			}
 		}
 	}
-	mesh.size = sideCount * 6;
+	mesh.size = sideCount * 4;
 	mesh.type = color;
 	// Return true if there is an actual mesh to render
 	if (vertices.size() > 0)
