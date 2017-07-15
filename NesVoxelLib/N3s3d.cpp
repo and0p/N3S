@@ -828,7 +828,7 @@ void N3s3d::initRasterDesc()
 
 	D3D11_RASTERIZER_DESC wireRasterDesc;
 	wireRasterDesc.AntialiasedLineEnable = false;
-	wireRasterDesc.CullMode = D3D11_CULL_BACK;
+	wireRasterDesc.CullMode = D3D11_CULL_NONE;
 	wireRasterDesc.DepthBias = 0;
 	wireRasterDesc.DepthBiasClamp = 0.0f;
 	wireRasterDesc.DepthClipEnable = true;
