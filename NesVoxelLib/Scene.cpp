@@ -279,6 +279,14 @@ void Scene::render(bool renderBackground, bool renderOAM)
 				}
 				else // Otherwise render normally
 				{
+					// TEST try this stencil bullshit
+					if (i == 0)
+					{
+						N3s3d::setStencilForOutline(false);
+						s.mesh->render(s.x + 5, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
+						N3s3d::setStencilForOutline(true);
+						s.mesh->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
+					}
 					s.mesh->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
 				}
 			}

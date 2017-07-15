@@ -43,15 +43,18 @@ ID3D11DepthStencilState* m_depthStencilNoWriteState;
 ID3D11DepthStencilState* m_depthStencilWriteState;
 ID3D11DepthStencilState* m_depthDisabledStencilState;
 ID3D11DepthStencilState* m_depthDisabledStencilOnlyState;
-ID3D11DepthStencilState* m_depthStencilOutlineStates[2][256];
+ID3D11DepthStencilState* m_depthStencilMaskRefState;
 ID3D11DepthStencilView* m_depthStencilView;
 ID3D11RasterizerState* fillRasterState;
+ID3D11RasterizerState* reverseRasterState;
 ID3D11RasterizerState* wireframeRasterState;
 int selectedPalette;
 int mirrorBufferNumber;
 int paletteBufferNumber;
 int paletteSelectionBufferNumber;
 int cameraPosBufferNumber;
+
+int stencilReferenceNumber;
 
 D3D11_VIEWPORT N3s3d::viewport;
 
@@ -95,6 +98,8 @@ void N3s3d::initPipeline(N3sD3dContext c)
 	};
 	updatePalette(paletteArray, { 0.0f, 0.0f, 0.0f });
 	setOverlayColor(100, 100, 100, 64);
+
+	stencilReferenceNumber = 1;
 }
 
 void N3s3d::initShaders() {
@@ -633,12 +638,33 @@ void N3s3d::setDepthStencilState(bool depthTest, bool stencilWrite, bool stencil
 	}
 }
 
+void N3s3d::setStencilForOutline(bool outline)
+{
+	if (!outline)	// Writing normal sprite
+	{
+		incrementStencilReference();	// Increment, since we're now writing a new value
+		context->OMSetDepthStencilState(m_depthStencilWriteState, stencilReferenceNumber);
+	}
+	else			// Writing outline for previous sprite
+	{
+		context->OMSetDepthStencilState(m_depthStencilMaskRefState, stencilReferenceNumber);
+	}
+}
+
 void N3s3d::setRasterFillState(bool fill)
 {
 	if(fill)
 		context->RSSetState(fillRasterState);
 	else
 		context->RSSetState(wireframeRasterState);
+}
+
+void N3s3d::incrementStencilReference()
+{
+	stencilReferenceNumber++;
+	if (stencilReferenceNumber > 254)	// assuming 255 reserved
+		stencilReferenceNumber = 1;
+	// TODO: clear buffer if we ever exceed 254?
 }
 
 void N3s3d::setGuiProjection()
@@ -673,6 +699,11 @@ void N3s3d::setGuiProjection()
 	context1->Unmap(shaders[activeShader].matrices.projectionMatrixBuffer, 0);
 	// Finally set the constant buffer in the vertex shader with the updated values.
 	context1->VSSetConstantBuffers(2, 1, &shaders[activeShader].matrices.projectionMatrixBuffer);
+}
+
+void N3s3d::clear()
+{
+	stencilReferenceNumber = 1;
 }
 
 void N3s3d::updateViewport(D3D11_VIEWPORT v)
@@ -827,8 +858,20 @@ void N3s3d::initRasterDesc()
 	rasterDesc.ScissorEnable = false;
 	rasterDesc.SlopeScaledDepthBias = 0.0f;
 
+	D3D11_RASTERIZER_DESC reverseRasterDesc;
+	reverseRasterDesc.AntialiasedLineEnable = false;
+	reverseRasterDesc.CullMode = D3D11_CULL_FRONT;
+	reverseRasterDesc.DepthBias = 0;
+	reverseRasterDesc.DepthBiasClamp = 0.0f;
+	reverseRasterDesc.DepthClipEnable = true;
+	reverseRasterDesc.FillMode = D3D11_FILL_SOLID;
+	reverseRasterDesc.FrontCounterClockwise = false;
+	reverseRasterDesc.MultisampleEnable = false;
+	reverseRasterDesc.ScissorEnable = false;
+	reverseRasterDesc.SlopeScaledDepthBias = 0.0f;
+
 	D3D11_RASTERIZER_DESC wireRasterDesc;
-	wireRasterDesc.AntialiasedLineEnable = false;
+	wireRasterDesc.AntialiasedLineEnable = true;
 	wireRasterDesc.CullMode = D3D11_CULL_NONE;
 	wireRasterDesc.DepthBias = 0;
 	wireRasterDesc.DepthBiasClamp = 0.0f;
@@ -839,7 +882,8 @@ void N3s3d::initRasterDesc()
 	wireRasterDesc.ScissorEnable = false;
 	wireRasterDesc.SlopeScaledDepthBias = 0.0f;
 
-	device->CreateRasterizerState(&rasterDesc, &fillRasterState);
+	device->CreateRasterizerState(&rasterDesc, &fillRasterState); 
+	device->CreateRasterizerState(&reverseRasterDesc, &reverseRasterState);
 	device->CreateRasterizerState(&wireRasterDesc, &wireframeRasterState);
 	context->RSSetState(fillRasterState);
 }
@@ -916,7 +960,7 @@ bool N3s3d::initDepthStencils()
 #pragma region Standard depth, write stencil
 
 	// Initialize the description of the stencil state.
-	ZeroMemory(&depthStencilNoWriteDesc, sizeof(depthStencilNoWriteDesc));
+	ZeroMemory(&depthStencilWriteDesc, sizeof(depthStencilWriteDesc));
 
 	// Set up the description of the stencil state.
 	depthStencilWriteDesc.DepthEnable = true;
@@ -941,6 +985,42 @@ bool N3s3d::initDepthStencils()
 
 	// Create the depth stencil state.
 	result = device->CreateDepthStencilState(&depthStencilWriteDesc, &m_depthStencilWriteState);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+#pragma endregion
+
+#pragma region Standard depth, mask equal stencil value
+
+	// Initialize the description of the stencil state.
+	D3D11_DEPTH_STENCIL_DESC maskStencilDesc;
+	ZeroMemory(&depthStencilWriteDesc, sizeof(depthStencilWriteDesc));
+
+	// Set up the description of the stencil state.
+	maskStencilDesc.DepthEnable = true;
+	maskStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	maskStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+
+	maskStencilDesc.StencilEnable = true;
+	maskStencilDesc.StencilReadMask = 0xFF;
+	maskStencilDesc.StencilWriteMask = 0xFF;
+
+	// Stencil operations if pixel is front-facing.
+	maskStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	maskStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	maskStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	maskStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;
+
+	// Stencil operations if pixel is back-facing.
+	maskStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	maskStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	maskStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	maskStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;
+
+	// Create the depth stencil state.
+	result = device->CreateDepthStencilState(&maskStencilDesc, &m_depthStencilMaskRefState);
 	if (FAILED(result))
 	{
 		return false;

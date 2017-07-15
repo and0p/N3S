@@ -101,8 +101,11 @@ public:
 	static void setIndexBuffer();
 	static void setDepthBufferState(bool active);
 	static void setDepthStencilState(bool depthTest, bool stencilWrite, bool stencilTest);
+	static void setStencilForOutline(bool outline);
 	static void setRasterFillState(bool fill);
+	static void incrementStencilReference();
 	static void setGuiProjection();
+	static void clear();
 	static D3D11_VIEWPORT viewport;
 	static void updateViewport(D3D11_VIEWPORT viewport);
 	static XMVECTOR getMouseVector(Camera * camera, int mouseX, int mouseY);
