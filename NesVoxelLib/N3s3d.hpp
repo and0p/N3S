@@ -18,8 +18,8 @@ static float pixelSizeH = (2.0f / 240.0f); // normally 240
 using namespace DirectX;
 using namespace std;
 
-enum ShaderType { color = 0, overlay = 1 };
-const int shaderCount = 2;	// UPDATE THIS WHEN ADDING SHADERS
+enum ShaderType { color = 0, overlay = 1, outline = 2 };
+const int shaderCount = 3;	// UPDATE THIS WHEN ADDING SHADERS
 
 enum PlaneAxis { x_axis, y_axis, z_axis };
 

@@ -43,6 +43,7 @@ ID3D11DepthStencilState* m_depthStencilNoWriteState;
 ID3D11DepthStencilState* m_depthStencilWriteState;
 ID3D11DepthStencilState* m_depthDisabledStencilState;
 ID3D11DepthStencilState* m_depthDisabledStencilOnlyState;
+ID3D11DepthStencilState* m_depthStencilOutlineStates[2][256];
 ID3D11DepthStencilView* m_depthStencilView;
 ID3D11RasterizerState* fillRasterState;
 ID3D11RasterizerState* wireframeRasterState;
@@ -969,11 +970,6 @@ bool N3s3d::initDepthStencils()
 
 #pragma endregion
 
-	// D3D11_DEPTH_STENCIL_DESC depthStencilNoWriteDesc;
-	// D3D11_DEPTH_STENCIL_DESC depthStencilWriteDesc;
-	// D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc;
-	// D3D11_DEPTH_STENCIL_DESC depthDisabledStencilOnlyDesc;
-
 #pragma region No z-buffer stencil only
 
 	// Clear the second depth stencil state before setting the parameters.
@@ -1007,7 +1003,7 @@ bool N3s3d::initDepthStencils()
 
 #pragma endregion
 
-
+#pragma region Z-buffer enabled
 	// Set the z-buffer enabled depth stencil state
 	context->OMSetDepthStencilState(m_depthStencilNoWriteState, 1);
 
@@ -1027,6 +1023,8 @@ bool N3s3d::initDepthStencils()
 	BlendState.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 	BlendState.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 	device1->CreateBlendState1(&BlendState, &g_pBlendStateNoBlend);
+
+#pragma endregion
 
 	float blendFactor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	UINT sampleMask = 0xffffffff;
