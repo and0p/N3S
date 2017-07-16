@@ -162,6 +162,7 @@ void N3sApp::render()
 {
 	if (loaded)
 	{
+		N3s3d::clear(); // Reset anything that needs to be reset in D3D context
 		// See if we're in gameplay or editor mode and render respective view
 		switch (mode)
 		{

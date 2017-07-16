@@ -51,6 +51,61 @@ void SpriteMesh::updateVoxel(Vector3D v, int color)
 	rebuildZMesh(v.x, v.y);
 }
 
+VoxelMesh SpriteMesh::buildMeshFromVoxelCollection(shared_ptr<VoxelCollection> vc, bool outline)
+{
+	VoxelMesh m;
+	vector<ColorVertex> vertices;
+	int sideCount = 0;
+	for (int z = 0; z < spriteDepth; z++)
+	{
+		for (int y = 0; y < spriteHeight; y++)
+		{
+			for (int x = 0; x < spriteWidth; x++)
+			{
+				int color = vc->getVoxel(x, y, z).color;
+				// See if the voxel is not empty
+				if (color > 0)
+				{
+					// Check each adjacent voxel/edge and draw a square as needed
+					// TODO: Also add > evaluation for semi-transparent voxels in the future?
+					if (x == 0 || vc->getVoxel(x - 1, y, z).color == 0) {
+						buildSide(&vertices, x, y, z, color, VoxelSide::left);
+						sideCount++;
+					}
+					if (x == spriteWidth - 1 || vc->getVoxel(x + 1, y, z).color == 0) {
+						buildSide(&vertices, x, y, z, color, VoxelSide::right);
+						sideCount++;
+					}
+					if (y == 0 || vc->getVoxel(x, y - 1, z).color == 0) {
+						buildSide(&vertices, x, y, z, color, VoxelSide::top);
+						sideCount++;
+					}
+					if (y == spriteHeight - 1 || vc->getVoxel(x, y + 1, z).color == 0) {
+						buildSide(&vertices, x, y, z, color, VoxelSide::bottom);
+						sideCount++;
+					}
+					if (z == 0 || vc->getVoxel(x, y, z - 1).color == 0) {
+						buildSide(&vertices, x, y, z, color, VoxelSide::front);
+						sideCount++;
+					}
+					if (z == spriteDepth - 1 || vc->getVoxel(x, y, z + 1).color == 0) {
+						buildSide(&vertices, x, y, z, color, VoxelSide::back);
+						sideCount++;
+					}
+				}
+			}
+		}
+	}
+	m.size = sideCount * 4;
+	m.type = color;
+	if (vertices.size() > 0)
+	{
+		m.buffer = N3s3d::createBufferFromColorVertices(&vertices, m.size);
+		
+	}
+	return m;
+}
+
 void SpriteMesh::buildZMeshes()
 {
 	for (int y = 0; y < 8; y++)
@@ -353,60 +408,19 @@ bool SpriteMesh::buildMesh()
 	// Release old buffer, if this mesh is being changed
 	if (meshExists)
 		mesh.buffer->Release();
-	vector<ColorVertex> vertices;
-	int sideCount = 0;
-	for (int z = 0; z < spriteDepth; z++)
+
+	// Build the main mesh
+	mesh = buildMeshFromVoxelCollection(voxels, false);
+
+	if(mesh.size > 0)
 	{
-		for (int y = 0; y < spriteHeight; y++)
-		{
-			for (int x = 0; x < spriteWidth; x++)
-			{
-				int color = voxels->getVoxel(x, y, z).color;
-				// See if the voxel is not empty
-				if (color > 0)
-				{
-					// Check each adjacent voxel/edge and draw a square as needed
-					// TODO: Also add > evaluation for semi-transparent voxels in the future?
-					if (x == 0 || voxels->getVoxel(x - 1, y, z).color == 0) {
-						buildSide(&vertices, x, y, z, color, VoxelSide::left);
-						sideCount++;
-					}
-					if (x == spriteWidth - 1 || voxels->getVoxel(x + 1, y, z).color == 0) {
-						buildSide(&vertices, x, y, z, color, VoxelSide::right);
-						sideCount++;
-					}
-					if (y == 0 || voxels->getVoxel(x, y - 1, z).color == 0) {
-						buildSide(&vertices, x, y, z, color, VoxelSide::top);
-						sideCount++;
-					}
-					if (y == spriteHeight - 1 || voxels->getVoxel(x, y + 1, z).color == 0) {
-						buildSide(&vertices, x, y, z, color, VoxelSide::bottom);
-						sideCount++;
-					}
-					if (z == 0 || voxels->getVoxel(x, y, z - 1).color == 0) {
-						buildSide(&vertices, x, y, z, color, VoxelSide::front);
-						sideCount++;
-					}
-					if (z == spriteDepth - 1 || voxels->getVoxel(x, y, z + 1).color == 0) {
-						buildSide(&vertices, x, y, z, color, VoxelSide::back);
-						sideCount++;
-					}
-				}
-			}
-		}
-	}
-	mesh.size = sideCount * 4;
-	mesh.type = color;
-	// Return true if there is an actual mesh to render
-	if (vertices.size() > 0)
-	{
-		mesh.buffer = N3s3d::createBufferFromColorVertices(&vertices, mesh.size);
-		if(!meshExists)
-			buildZMeshes();
+		meshExists = true;
+		buildZMeshes();
 		return true;
 	}
 	else
 	{
+		meshExists = false;
 		return false;
 	}
 }

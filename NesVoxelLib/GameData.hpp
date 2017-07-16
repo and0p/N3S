@@ -47,7 +47,7 @@ public:
 	SpriteMesh(char* spriteData);
 	SpriteMesh(json j);
 	int id;
-	unique_ptr<VoxelCollection> voxels;
+	shared_ptr<VoxelCollection> voxels;
 	VoxelMesh mesh;
 	VoxelMesh zMeshes[64];
 	void setVoxel(Vector3D v, int color);
@@ -60,6 +60,7 @@ public:
 	void setOutline(int o);
 	int outlineColor = -1;
 private:
+	static VoxelMesh buildMeshFromVoxelCollection(shared_ptr<VoxelCollection> vc, bool outline);
 	void buildZMeshes();
 	void rebuildZMesh(int x, int y);
 };
