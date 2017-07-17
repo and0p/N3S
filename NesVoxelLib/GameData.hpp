@@ -49,6 +49,7 @@ public:
 	int id;
 	shared_ptr<VoxelCollection> voxels;
 	VoxelMesh mesh;
+	VoxelMesh outlineMesh;
 	VoxelMesh zMeshes[64];
 	void setVoxel(Vector3D v, int color);
 	void updateVoxel(Vector3D v, int color);
@@ -60,6 +61,7 @@ public:
 	void setOutline(int o);
 	int outlineColor = -1;
 private:
+	static shared_ptr<VoxelCollection> makeOutlineVoxelCollection(shared_ptr<VoxelCollection> vc);
 	static VoxelMesh buildMeshFromVoxelCollection(shared_ptr<VoxelCollection> vc, bool outline);
 	void buildZMeshes();
 	void rebuildZMesh(int x, int y);
@@ -117,6 +119,7 @@ private:
 
 static VoxelMesh buildZMesh(int zArray[32]);
 static void buildSide(vector<ColorVertex> * vertices, int x, int y, int z, int color, VoxelSide side);
+static void buildSideOutline(vector<OverlayVertex> * vertices, int x, int y, int z, VoxelSide side);
 void setVoxelColors(char a, char b, Voxel* row);
 bool getBitLeftSide(char byte, int position);
 string getPaddedStringFromInt(int i, int length);

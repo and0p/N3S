@@ -254,10 +254,18 @@ void Scene::render(bool renderBackground, bool renderOAM)
 	// Update camera math
 	if (voxelEditor != nullptr)
 	{
+		N3s3d::setShader(overlay);
+		N3s3d::updateMatricesWithCamera(&voxelEditor->camera);
+		N3s3d::setShader(color);
 		N3s3d::updateMatricesWithCamera(&voxelEditor->camera);
 	}
 	else
+	{
+		N3s3d::setShader(overlay);
 		N3s3d::updateMatricesWithCamera(&mainCamera);
+		N3s3d::setShader(color);
+		N3s3d::updateMatricesWithCamera(&mainCamera);
+	}
 	// Update palette in video card
 	palettes[selectedPalette].updateShaderPalette();
 	// Render sprites
@@ -277,16 +285,8 @@ void Scene::render(bool renderBackground, bool renderOAM)
 					s.mesh->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
 					N3s3d::setDepthStencilState(true, false, false);
 				}
-				else // Otherwise render normally
+				else
 				{
-					// TEST try this stencil bullshit
-					if (i == 0)
-					{
-						N3s3d::setStencilForOutline(false);
-						s.mesh->render(s.x + 5, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
-						N3s3d::setStencilForOutline(true);
-						s.mesh->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
-					}
 					s.mesh->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
 				}
 			}
