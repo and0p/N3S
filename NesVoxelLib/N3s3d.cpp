@@ -15,20 +15,15 @@ Microsoft::WRL::ComPtr<ID3D11DeviceContext1>    context1;
 
 
 Shader shaders[shaderCount];
-//ID3D11InputLayout *inputLayouts[2];
-//ID3D11Buffer *worldMatrixBuffer;
-//ID3D11Buffer *viewMatrixBuffer;
-//ID3D11Buffer *projectionMatrixBuffer;
 ID3D11Buffer *mirrorBuffer;
 ID3D11Buffer *paletteBuffer;
 ID3D11Buffer *paletteSelectionBuffer;
 ID3D11Buffer *indexBuffer;
 ID3D11Buffer *indexBufferReversed;
+ID3D11Buffer *outlineMirrorBuffer;
+ID3D11Buffer *outlineColorBuffer;
 ID3D11Buffer *overlayColorBuffer;
 ID3D11Buffer *cameraPosBuffer;
-//MatrixBuffer *worldMatrixPtr;
-//MatrixBuffer *viewMatrixPtr;
-//MatrixBuffer *projectionMatrixPtr;
 ID3D11SamplerState* sampleState;
 ID3D11Texture2D* texture2d;
 ID3D11ShaderResourceView* textureView;
@@ -179,6 +174,34 @@ void N3s3d::initShaders() {
 	s_stream.close();
 
 	device1->CreatePixelShader(s_data, s_size, 0, &shaders[overlay].pixelShader);
+
+	// Init outline shaders
+	s_stream.open(L"outline_vertex.cso", ifstream::in | ifstream::binary);
+	s_stream.seekg(0, ios::end);
+	s_size = size_t(s_stream.tellg());
+	s_data = new char[s_size];
+	s_stream.seekg(0, ios::beg);
+	s_stream.read(&s_data[0], s_size);
+	s_stream.close();
+
+	device1->CreateVertexShader(s_data, s_size, 0, &shaders[outline].vertexShader);
+
+	D3D11_INPUT_ELEMENT_DESC outlineLayout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
+
+	device1->CreateInputLayout(outlineLayout, 1, &s_data[0], s_size, &shaders[outline].inputLayout);
+
+	s_stream.open(L"outline_pixel.cso", ifstream::in | ifstream::binary);
+	s_stream.seekg(0, ios::end);
+	s_size = size_t(s_stream.tellg());
+	s_data = new char[s_size];
+	s_stream.seekg(0, ios::beg);
+	s_stream.read(&s_data[0], s_size);
+	s_stream.close();
+
+	device1->CreatePixelShader(s_data, s_size, 0, &shaders[outline].pixelShader);
 }
 
 void N3s3d::initShaderExtras()
@@ -237,6 +260,17 @@ void N3s3d::initShaderExtras()
 	cameraPosBufferDesc.StructureByteStride = 0;
 
 	device1->CreateBuffer(&cameraPosBufferDesc, NULL, &cameraPosBuffer);
+
+	// Create mirror buffer desc for outline shader
+	D3D11_BUFFER_DESC overlayMirrorBufferDesc;
+	overlayMirrorBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	overlayMirrorBufferDesc.ByteWidth = 16;
+	overlayMirrorBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	overlayMirrorBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	overlayMirrorBufferDesc.MiscFlags = 0;
+	overlayMirrorBufferDesc.StructureByteStride = 0;
+
+	device1->CreateBuffer(&overlayMirrorBufferDesc, NULL, &mirrorBuffer);
 
 	// Set buffer slots
 	mirrorBufferNumber = 3;
