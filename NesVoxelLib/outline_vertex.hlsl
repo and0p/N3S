@@ -48,13 +48,19 @@ struct VOut
 	float4 color : COLOR;
 };
 
-VOut main(float4 pos : POSITION)
+VOut main(float4 position : POSITION)
 {
 	VOut output;
-	output.position = mul(pos, worldMatrix);
+	// Mirror vertex, if sprite needed
+	position.x *= mirrorState.x;
+	position.y *= mirrorState.y;
+	// World transform
+	output.position = mul(position, worldMatrix);
+	// View + Projection transform
 	output.position = mul(output.position, viewMatrix);
 	output.position = mul(output.position, projectionMatrix);
+	// Get palette color
 	output.color.rgb = palettes.palettes[selection[0]].hues[selection[1]];
-	output.color.a = 1;
+	output.color.a = 255;
 	return output;
 }

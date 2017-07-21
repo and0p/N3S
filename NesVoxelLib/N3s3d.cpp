@@ -521,8 +521,8 @@ void N3s3d::selectOutlinePalette(int palette, int color)
 		// Get a pointer to the data in the constant buffer.
 		dataPtr = (int*)mappedResource.pData;
 		// Copy the values into the constant buffer.
-		*dataPtr = palette;
-		*(dataPtr + 1) = color;
+		*dataPtr = selectedOutlinePalette;
+		*(dataPtr + 1) = selectedOutlineColor;
 		// Unlock the constant buffer.
 		context1->Unmap(outlinePaletteSelectionBuffer, 0);
 		// Finally set the constant buffer in the pixel shader with the updated values.
