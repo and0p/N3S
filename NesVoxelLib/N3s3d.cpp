@@ -13,7 +13,6 @@ Microsoft::WRL::ComPtr<ID3D11Device1>           device1;
 Microsoft::WRL::ComPtr<ID3D11DeviceContext>     context;
 Microsoft::WRL::ComPtr<ID3D11DeviceContext1>    context1;
 
-
 Shader shaders[shaderCount];
 ID3D11Buffer *mirrorBuffer;
 ID3D11Buffer *paletteBuffer;
@@ -24,6 +23,7 @@ ID3D11Buffer *outlineMirrorBuffer;
 ID3D11Buffer *outlineColorBuffer;
 ID3D11Buffer *overlayColorBuffer;
 ID3D11Buffer *cameraPosBuffer;
+ID3D11Buffer *outlinePaletteSelectionBuffer;
 ID3D11SamplerState* sampleState;
 ID3D11Texture2D* texture2d;
 ID3D11ShaderResourceView* textureView;
@@ -49,9 +49,15 @@ int paletteBufferNumber;
 int paletteSelectionBufferNumber;
 int cameraPosBufferNumber;
 
+int selectedOutlinePalette = -1;
+int selectedOutlineColor = -1;
+
 int stencilReferenceNumber;
+vector<OutlineCache> cachedOutlines;
 
 D3D11_VIEWPORT N3s3d::viewport;
+
+bool stenciling = false;
 
 void N3s3d::initPipeline(N3sD3dContext c)
 {
@@ -272,12 +278,22 @@ void N3s3d::initShaderExtras()
 
 	device1->CreateBuffer(&overlayMirrorBufferDesc, NULL, &mirrorBuffer);
 
+	// Create pallete selection buffer for outline shader
+	D3D11_BUFFER_DESC outlinePaletteSelectionBufferDesc;
+	outlinePaletteSelectionBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	outlinePaletteSelectionBufferDesc.ByteWidth = 16;
+	outlinePaletteSelectionBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	outlinePaletteSelectionBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	outlinePaletteSelectionBufferDesc.MiscFlags = 0;
+	outlinePaletteSelectionBufferDesc.StructureByteStride = 0;
+
+	device1->CreateBuffer(&outlinePaletteSelectionBufferDesc, NULL, &outlinePaletteSelectionBuffer);	
+
 	// Set buffer slots
 	mirrorBufferNumber = 3;
 	paletteBufferNumber = 4;
 	paletteSelectionBufferNumber = 5;
 	cameraPosBufferNumber = 6;
-
 }
 
 void N3s3d::setShader(ShaderType type) {
@@ -492,6 +508,28 @@ void N3s3d::selectPalette(int palette)
 	}
 }
 
+void N3s3d::selectOutlinePalette(int palette, int color)
+{
+	if (palette != selectedOutlinePalette || color != selectedOutlineColor)
+	{
+		selectedOutlinePalette = palette;
+		selectedOutlineColor = color;
+		D3D11_MAPPED_SUBRESOURCE mappedResource;
+		int* dataPtr;
+		// Lock the constant buffer so it can be written to.
+		context1->Map(outlinePaletteSelectionBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+		// Get a pointer to the data in the constant buffer.
+		dataPtr = (int*)mappedResource.pData;
+		// Copy the values into the constant buffer.
+		*dataPtr = palette;
+		*(dataPtr + 1) = color;
+		// Unlock the constant buffer.
+		context1->Unmap(outlinePaletteSelectionBuffer, 0);
+		// Finally set the constant buffer in the pixel shader with the updated values.
+		context1->VSSetConstantBuffers(paletteSelectionBufferNumber, 1, &outlinePaletteSelectionBuffer);
+	}
+}
+
 void N3s3d::setCameraPos(float x, float y, float z)
 {
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -672,16 +710,37 @@ void N3s3d::setDepthStencilState(bool depthTest, bool stencilWrite, bool stencil
 	}
 }
 
-void N3s3d::setStencilForOutline(bool outline)
+void N3s3d::prepareStencilForOutline()
 {
-	if (!outline)	// Writing normal sprite
+	incrementStencilReference();	// Increment, since we're now writing a new value
+	context->OMSetDepthStencilState(m_depthStencilWriteState, stencilReferenceNumber);
+}
+
+void N3s3d::stopStencilingForOutline()
+{
+	context->OMSetDepthStencilState(m_depthStencilNoWriteState, stencilReferenceNumber);
+}
+
+void N3s3d::cacheOutlineMesh(VoxelMesh * outlineMesh, int palette, int color, float x, float y, bool mirrorH, bool mirrorV)
+{
+	cachedOutlines.push_back({ stencilReferenceNumber, outlineMesh, palette, color, x, y, mirrorH, mirrorV });
+}
+
+void N3s3d::renderOutlines()
+{
+	if (cachedOutlines.size() > 0)
 	{
-		incrementStencilReference();	// Increment, since we're now writing a new value
-		context->OMSetDepthStencilState(m_depthStencilWriteState, stencilReferenceNumber);
-	}
-	else			// Writing outline for previous sprite
-	{
-		context->OMSetDepthStencilState(m_depthStencilMaskRefState, stencilReferenceNumber);
+		setShader(outline);
+		// Update palette buffer, same one as palette shader
+		context1->VSSetConstantBuffers(paletteBufferNumber, 1, &paletteBuffer);
+		for each (OutlineCache c in cachedOutlines)
+		{
+			selectOutlinePalette(c.palette, c.color);
+			updateMirroring(c.mirrorH, c.mirrorV);
+			updateWorldMatrix(c.posX, c.posY, 0.0f);
+			context->OMSetDepthStencilState(m_depthStencilMaskRefState, c.stencilValue);
+			renderMesh(c.outlineMesh);
+		}
 	}
 }
 
@@ -695,10 +754,8 @@ void N3s3d::setRasterFillState(bool fill)
 
 void N3s3d::incrementStencilReference()
 {
-	stencilReferenceNumber++;
-	if (stencilReferenceNumber > 254)	// assuming 255 reserved
-		stencilReferenceNumber = 1;
-	// TODO: clear buffer if we ever exceed 254?
+	if (stencilReferenceNumber < 254)
+		stencilReferenceNumber++;
 }
 
 void N3s3d::setGuiProjection()
@@ -738,6 +795,7 @@ void N3s3d::setGuiProjection()
 void N3s3d::clear()
 {
 	stencilReferenceNumber = 1;
+	cachedOutlines.clear();
 }
 
 void N3s3d::updateViewport(D3D11_VIEWPORT v)
@@ -833,7 +891,7 @@ void N3s3d::renderMesh(VoxelMesh *voxelMesh) {
 	UINT stride;
 	if(activeShader == color)
 		stride = sizeof(ColorVertex);
-	if (activeShader == overlay)
+	if (activeShader == overlay || activeShader == outline)
 		stride = sizeof(OverlayVertex);
 	UINT offset = 0;
 	context->IASetVertexBuffers(0, 1, &voxelMesh->buffer, &stride, &offset);
@@ -849,7 +907,7 @@ void N3s3d::renderMesh(VoxelMesh *voxelMesh) {
 		0               // Start instance location.
 		);
 #else
-	if (activeShader == color)
+	if (activeShader == color || activeShader == outline)
 	{
 		context->DrawIndexed(voxelMesh->size / 4 * 6, 0, 0);
 	}

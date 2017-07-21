@@ -780,13 +780,11 @@ void SpriteMesh::render(int x, int y, int palette, bool mirrorH, bool mirrorV, C
 			if (outlineColor >= 0)
 			{
 				// Render mesh, writing to stencil buffer with unique id
-				N3s3d::setStencilForOutline(false);
+				N3s3d::prepareStencilForOutline();
 				N3s3d::renderMesh(&mesh);
-				// Render outline, not overwriting mesh at all
-				N3s3d::setStencilForOutline(true);
-				N3s3d::setShader(overlay);
-				N3s3d::renderMesh(&outlineMesh);
-				N3s3d::setShader(color);
+				// Cache outline to be rendered later
+				N3s3d::cacheOutlineMesh(&outlineMesh, palette, outlineColor, posX, posY, mirrorH, mirrorV);
+				N3s3d::stopStencilingForOutline();
 			}
 			else
 				N3s3d::renderMesh(&mesh);

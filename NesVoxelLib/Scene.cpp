@@ -292,6 +292,7 @@ void Scene::render(bool renderBackground, bool renderOAM)
 			}
 		}
 	}
+	N3s3d::renderOutlines();
 	// Branch based on voxel editing mode
 	if (voxelEditor != nullptr)
 	{

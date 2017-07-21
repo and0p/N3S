@@ -79,6 +79,18 @@ struct MirrorState
 	int y;
 };
 
+struct OutlineCache
+{
+	int stencilValue;
+	VoxelMesh *outlineMesh;
+	int palette;
+	int color;
+	float posX;
+	float posY;
+	bool mirrorH;
+	bool mirrorV;
+};
+
 class N3s3d {
 public:
 	static void initPipeline(N3sD3dContext context);
@@ -92,6 +104,7 @@ public:
 	static void updateMirroring(bool horizontal, bool vertical);
 	static void updatePalette(float palette[72], Hue bg);
 	static void selectPalette(int palette);
+	static void selectOutlinePalette(int palette, int color);
 	static void setCameraPos(float x, float y, float z);
 	static void setOverlayColor(float r, float g, float b, float a);
 	static void setOverlayColor(int r, int g, int b, int a);
@@ -101,7 +114,10 @@ public:
 	static void setIndexBuffer();
 	static void setDepthBufferState(bool active);
 	static void setDepthStencilState(bool depthTest, bool stencilWrite, bool stencilTest);
-	static void setStencilForOutline(bool outline);
+	static void prepareStencilForOutline();
+	static void stopStencilingForOutline();
+	static void cacheOutlineMesh(VoxelMesh * outlineMesh, int palette, int color, float x, float y, bool mirrorH, bool mirrorV);
+	static void renderOutlines();
 	static void setRasterFillState(bool fill);
 	static void incrementStencilReference();
 	static void setGuiProjection();
