@@ -1,8 +1,4 @@
-cbuffer OverlayColor {
-	float4 color;
-};
-
-float4 main() : SV_TARGET
+float4 main(float4 position : SV_POSITION, float4 color : COLOR) : SV_TARGET
 {
 	return color;
 }

@@ -162,7 +162,7 @@ VoxelMesh SpriteMesh::buildMeshFromVoxelCollection(shared_ptr<VoxelCollection> v
 	// Set size and type
 	m.size = sideCount * 4;
 	if (outline)
-		m.type = overlay;
+		m.type = ShaderType::outline;
 	else
 		m.type = color;
 	// Build mesh if any voxels exist
