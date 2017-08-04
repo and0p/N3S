@@ -8,6 +8,8 @@
 
 using namespace std;
 
+#define DEPTH_BIAS_D32_FLOAT(d) (d/(1/pow(2,23)));
+
 Microsoft::WRL::ComPtr<ID3D11Device>            device;
 Microsoft::WRL::ComPtr<ID3D11Device1>           device1;
 Microsoft::WRL::ComPtr<ID3D11DeviceContext>     context;
@@ -55,9 +57,14 @@ int selectedOutlineColor = -1;
 int stencilReferenceNumber;
 vector<OutlineCache> cachedOutlines;
 
+ID3D11DepthStencilState * currentStencilState = nullptr;
+int currentStencilValue = -1;
+
 D3D11_VIEWPORT N3s3d::viewport;
 
 bool stenciling = false;
+
+struct OutlineSelection { int a; int b; };
 
 void N3s3d::initPipeline(N3sD3dContext c)
 {
@@ -523,6 +530,8 @@ void N3s3d::selectOutlinePalette(int palette, int color)
 		// Copy the values into the constant buffer.
 		*dataPtr = selectedOutlinePalette;
 		*(dataPtr + 1) = selectedOutlineColor;
+		*(dataPtr + 2) = 0;
+		*(dataPtr + 3) = 0;
 		// Unlock the constant buffer.
 		context1->Unmap(outlinePaletteSelectionBuffer, 0);
 		// Finally set the constant buffer in the pixel shader with the updated values.
@@ -710,15 +719,26 @@ void N3s3d::setDepthStencilState(bool depthTest, bool stencilWrite, bool stencil
 	}
 }
 
-void N3s3d::prepareStencilForOutline()
+void N3s3d::prepareStencilForOutline(bool increment)
 {
-	incrementStencilReference();	// Increment, since we're now writing a new value
-	context->OMSetDepthStencilState(m_depthStencilWriteState, stencilReferenceNumber);
+	if(increment)
+		incrementStencilReference();	// Increment, since we're now writing a new value
+	setStencilingState(m_depthStencilWriteState, stencilReferenceNumber);
 }
 
 void N3s3d::stopStencilingForOutline()
 {
-	context->OMSetDepthStencilState(m_depthStencilNoWriteState, stencilReferenceNumber);
+	setStencilingState(m_depthStencilNoWriteState, stencilReferenceNumber);
+}
+
+void N3s3d::setStencilingState(ID3D11DepthStencilState * state, int value)
+{
+	if (state != currentStencilState || value != currentStencilValue)
+	{
+		context->OMSetDepthStencilState(state, stencilReferenceNumber);
+		currentStencilState = state;
+		currentStencilValue = value;
+	}
 }
 
 void N3s3d::cacheOutlineMesh(VoxelMesh * outlineMesh, int palette, int color, float x, float y, bool mirrorH, bool mirrorV)
@@ -731,6 +751,7 @@ void N3s3d::renderOutlines()
 	if (cachedOutlines.size() > 0)
 	{
 		setShader(outline);
+		context->RSSetState(reverseRasterState);
 		// Update palette buffer, same one as palette shader
 		context1->VSSetConstantBuffers(paletteBufferNumber, 1, &paletteBuffer);
 		for each (OutlineCache c in cachedOutlines)
@@ -738,9 +759,10 @@ void N3s3d::renderOutlines()
 			selectOutlinePalette(c.palette, c.color);
 			updateMirroring(c.mirrorH, c.mirrorV);
 			updateWorldMatrix(c.posX, c.posY, 0.0f);
-			context->OMSetDepthStencilState(m_depthStencilMaskRefState, c.stencilValue);
+			setStencilingState(m_depthStencilMaskRefState, c.stencilValue);
 			renderMesh(c.outlineMesh);
 		}
+		context->RSSetState(fillRasterState);
 	}
 }
 
@@ -754,7 +776,7 @@ void N3s3d::setRasterFillState(bool fill)
 
 void N3s3d::incrementStencilReference()
 {
-	if (stencilReferenceNumber < 254)
+	if (stencilReferenceNumber < 254)	// TODO: wrap around (again)
 		stencilReferenceNumber++;
 }
 
@@ -795,6 +817,8 @@ void N3s3d::setGuiProjection()
 void N3s3d::clear()
 {
 	stencilReferenceNumber = 1;
+	selectedOutlineColor = -1;
+	selectedOutlinePalette = -1;
 	cachedOutlines.clear();
 }
 
@@ -953,7 +977,7 @@ void N3s3d::initRasterDesc()
 	D3D11_RASTERIZER_DESC reverseRasterDesc;
 	reverseRasterDesc.AntialiasedLineEnable = false;
 	reverseRasterDesc.CullMode = D3D11_CULL_FRONT;
-	reverseRasterDesc.DepthBias = 0;
+	reverseRasterDesc.DepthBias = 0; // DEPTH_BIAS_D32_FLOAT(0.02);
 	reverseRasterDesc.DepthBiasClamp = 0.0f;
 	reverseRasterDesc.DepthClipEnable = true;
 	reverseRasterDesc.FillMode = D3D11_FILL_SOLID;

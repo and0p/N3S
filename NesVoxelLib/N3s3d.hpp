@@ -114,8 +114,9 @@ public:
 	static void setIndexBuffer();
 	static void setDepthBufferState(bool active);
 	static void setDepthStencilState(bool depthTest, bool stencilWrite, bool stencilTest);
-	static void prepareStencilForOutline();
+	static void prepareStencilForOutline(bool increment);
 	static void stopStencilingForOutline();
+	static void setStencilingState(ID3D11DepthStencilState * state, int value);
 	static void cacheOutlineMesh(VoxelMesh * outlineMesh, int palette, int color, float x, float y, bool mirrorH, bool mirrorV);
 	static void renderOutlines();
 	static void setRasterFillState(bool fill);

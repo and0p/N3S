@@ -39,7 +39,8 @@ cbuffer PaletteBuffer
 
 cbuffer PaletteSelectionBuffer
 {
-	int selection[2];
+	int selectedPalette;
+	int selectedColor;
 };
 
 struct VOut
@@ -60,7 +61,7 @@ VOut main(float4 position : POSITION)
 	output.position = mul(output.position, viewMatrix);
 	output.position = mul(output.position, projectionMatrix);
 	// Get palette color
-	output.color.rgb = palettes.palettes[selection[0]].hues[selection[1]];
+	output.color.rgb = palettes.palettes[selectedPalette].hues[selectedColor];
 	output.color.a = 255;
 	return output;
 }

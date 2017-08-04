@@ -28,6 +28,8 @@ bool edittingIn3d = false;
 
 shared_ptr<vector<SceneSprite>> Editor::copiedSprites = nullptr;
 
+Hue previousHue;
+
 bool isSpriteIn2dRect(int top, int left, int bottom, int right, int x, int y)
 {
 	if ((x >= left && x < right) || (x + 8 >= left && x + 8 < right))
@@ -268,6 +270,8 @@ void Scene::render(bool renderBackground, bool renderOAM)
 	}
 	// Update palette in video card
 	palettes[selectedPalette].updateShaderPalette();
+	N3sPalette p = palettes[selectedPalette];
+	previousHue = { -1, -1, -1 };
 	// Render sprites
 	for (int i = 0; i < sprites.size(); i++)
 	{
@@ -278,21 +282,31 @@ void Scene::render(bool renderBackground, bool renderOAM)
 			// Don't render the sprite that is being edited
 			if (voxelEditor == nullptr || spriteBeingEdited != i)
 			{
-				// See if sprite is highlighted and write to stencil buffer if so
-				if (displaySelection->selectedIndices.count(i) > 0 || highlight.highlightedIndices.count(i) > 0)
+				// See if mesh has outlines and increment if different from previous
+				if (s.mesh->outlineColor >= 0)
 				{
-					N3s3d::setDepthStencilState(true, true, false);
-					s.mesh->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
-					N3s3d::setDepthStencilState(true, false, false);
+					Hue h;
+					// See what the actual hue of that outline is
+					if (s.mesh->outlineColor == 4) // YO MAKE THIS 3
+						h = p.getBackgroundColor();
+					else
+						h = p.getHue(p.colorIndices[s.palette * 3 + s.mesh->outlineColor]);
+					// See if it's different from before
+					if(h.red != previousHue.red && h.green != previousHue.green && h.blue != previousHue.blue)
+						N3s3d::prepareStencilForOutline(true);
+					previousHue = h;
 				}
 				else
 				{
-					s.mesh->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
+					previousHue = { -1, -1, -1 };
+					N3s3d::stopStencilingForOutline();
 				}
+				s.mesh->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
 			}
 		}
 	}
 	N3s3d::renderOutlines();
+	// TODO stencil and shade highlights afterwards
 	// Branch based on voxel editing mode
 	if (voxelEditor != nullptr)
 	{

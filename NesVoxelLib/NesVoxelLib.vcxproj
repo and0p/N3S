@@ -262,6 +262,7 @@
     <ClInclude Include="NesEmulator.hpp" />
     <ClInclude Include="Overlay.hpp" />
     <ClInclude Include="PpuSnapshot.hpp" />
+    <ClInclude Include="RenderBatch.hpp" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Scene.hpp" />
     <ClInclude Include="stdafx.h" />
