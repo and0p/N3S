@@ -286,6 +286,7 @@
     <ClCompile Include="NesEmulator.cpp" />
     <ClCompile Include="Overlay.cpp" />
     <ClCompile Include="PpuSnapshot.cpp" />
+    <ClCompile Include="RenderBatch.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

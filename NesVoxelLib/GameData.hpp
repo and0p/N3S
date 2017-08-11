@@ -19,6 +19,8 @@ const char intChars[10] = { '0','1','2','3','4','5','6','7','8','9' };
 
 enum VoxelSide { left, right, top, bottom, front, back };
 
+enum StencilGrouping { continous_samecolor };
+
 struct SharedMesh {
 	VoxelMesh mesh;
 	int referenceCount;
@@ -113,6 +115,7 @@ public:
 	static void releaseSharedMesh(string hash);
 	void unload();
 	json getJSON();
+	StencilGrouping oamGrouping = continous_samecolor;
 private:
 	static unordered_map<string, SharedMesh> sharedMeshes;
 };
