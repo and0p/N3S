@@ -15,6 +15,7 @@ struct ComputedSprite
 	int palette;
 	bool mirrorH;
 	bool mirrorV;
+	int stencilGroup = -1;
 };
 
 struct PaletteDrawCall
@@ -43,8 +44,10 @@ public:
 	void processOAM();
 	void processNametable();
 	void processMeshes();
+	void processOAMStencilGroups();
 	void render(shared_ptr<Camera> camera);
 private:
+	int currentStencilNumber = 1;
 	shared_ptr<GameData> gameData;
 	shared_ptr<PpuSnapshot> snapshot;
 	shared_ptr<VirtualPatternTable> vPatternTable;

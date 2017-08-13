@@ -80,6 +80,19 @@ void RenderBatch::processMeshes()
 	}
 }
 
+void RenderBatch::processOAMStencilGroups()
+{
+	int previousHueIndex = -1;
+	for (int i = 0; i < computedSprites.size; i++)
+	{
+		if (gameData->oamGrouping == continous_samecolor)
+		{
+			// See if the hues are the same as the previous color
+
+		}
+	}
+}
+
 void RenderBatch::render(shared_ptr<Camera> camera)
 {
 }
