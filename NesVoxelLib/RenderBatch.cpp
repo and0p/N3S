@@ -4,11 +4,12 @@
 RenderBatch::RenderBatch(shared_ptr<GameData> gameData, shared_ptr<PpuSnapshot> snapshot, shared_ptr<VirtualPatternTable> vPatternTable)
 	:	gameData(gameData), snapshot(snapshot), vPatternTable(vPatternTable)
 {
-	processOAM();
-	processNametable();
+	computeSpritesOAM();
+	computeSpritesNametable();
+	processStencilGroups();
 }
 
-void RenderBatch::processOAM()
+void RenderBatch::computeSpritesOAM()
 {
 	// Grab all (true) sprites from the snapshot
 	for each (OamSprite s in snapshot->sprites)
@@ -65,13 +66,15 @@ void RenderBatch::processOAM()
 			computedSprites.push_back({ vSprite, nullptr, x, y, palette, s.hFlip, s.vFlip });
 		}
 	}
+	// Finally, process dynamic meshes
+	processMeshesOAM();
 }
 
-void RenderBatch::processNametable()
+void RenderBatch::computeSpritesNametable()
 {
 }
 
-void RenderBatch::processMeshes()
+void RenderBatch::processMeshesOAM()
 {
 	// Process meshes (FOR NOW ASSUMING DEFAULT)
 	for each(ComputedSprite s in computedSprites)
@@ -80,17 +83,40 @@ void RenderBatch::processMeshes()
 	}
 }
 
-void RenderBatch::processOAMStencilGroups()
+void RenderBatch::processStencilGroups()
 {
-	int previousHueIndex = -1;
-	for (int i = 0; i < computedSprites.size; i++)
+	int previousColorIndex = -1;
+	for each(ComputedSprite s in computedSprites)	// Assuming this maintains insertion order...
 	{
-		if (gameData->oamGrouping == continous_samecolor)
+		int newColorIndex = s.palette + s.mesh->outlineColor;
+		// See if this mesh has any outlines
+		if (s.mesh->outlineColor >= 0)
 		{
-			// See if the hues are the same as the previous color
-
+			// Create bool, assuming same group
+			bool sameGroup = true;
+			// Check all grouping restraints
+			if (gameData->oamGrouping == continous_samecolor)
+			{
+				// See if the color is the same as before
+				if (newColorIndex != previousColorIndex)
+					sameGroup = false;
+			}
+			// If grouping is not the same, increment stencil number
+			if (!sameGroup)
+				currentStencilNumber++;
+			s.stencilGroup = currentStencilNumber;
+		}
+		else	// If this has no outline, 
+		{
+			s.stencilGroup = -1;
+			previousColorIndex = -1;
 		}
 	}
+}
+
+void RenderBatch::batchDrawCalls()
+{
+
 }
 
 void RenderBatch::render(shared_ptr<Camera> camera)

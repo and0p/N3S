@@ -21,14 +21,15 @@ struct ComputedSprite
 struct PaletteDrawCall
 {
 	VoxelMesh mesh;
-	float x, y;
+	Vector2F position;
 	int palette;
+	int stencilGroup = -1;
 };
 
 struct OutlineDrawCall
 {
 	VoxelMesh mesh;
-	float x, y;
+	Vector2F position;
 };
 
 struct OutlineBatch
@@ -36,15 +37,17 @@ struct OutlineBatch
 	vector<OutlineDrawCall> outlines;
 	int palette;
 	int color;
+	int stencilGroup;
 };
 
 class RenderBatch {
 public:
 	RenderBatch(shared_ptr<GameData> gameData, shared_ptr<PpuSnapshot> snapshot, shared_ptr<VirtualPatternTable> vPatternTable);
-	void processOAM();
-	void processNametable();
-	void processMeshes();
-	void processOAMStencilGroups();
+	void computeSpritesOAM();
+	void computeSpritesNametable();
+	void processMeshesOAM();
+	void processStencilGroups();
+	void batchDrawCalls();
 	void render(shared_ptr<Camera> camera);
 private:
 	int currentStencilNumber = 1;
