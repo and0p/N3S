@@ -69,6 +69,7 @@ public:
 	MirrorType mirrorType = vertical;
 	NameTableTile getTile(int x, int y, int nametable);
 	void addQuadrant(char * data, bool nameTableSelection);
+	Vector2D getTrueXY(int x, int y, int nametable);
 private:
 	std::vector<NameTableQuadrant> quadrants;
 };

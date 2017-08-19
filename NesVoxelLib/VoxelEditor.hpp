@@ -7,14 +7,14 @@ using namespace std;
 
 class VoxelEditor {
 public:
-	VoxelEditor(shared_ptr<SpriteMesh> mesh, SceneSprite *ss, OrbitCamera referenceCamera);
+	VoxelEditor(shared_ptr<SpriteMesh> mesh, SceneSprite *ss, shared_ptr<OrbitCamera> referenceCamera);
 	bool update(bool mouseAvailable);
 	void render();
 	void renderGrid(Vector3D v, ViewingAngle vA, Color4F color, bool depthEnabled);
 	void adjustWorkingPosition(int x, int y, int z);
 	void adjustWorkingPositionAnalog(float x, float y, float z);
 	void changeLayers(int amount);
-	OrbitCamera camera;
+	shared_ptr<OrbitCamera> camera;
 	int selectedColor = 1;
 	shared_ptr<SpriteMesh> mesh;
 	float workingX, workingY, workingZ;

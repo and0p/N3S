@@ -8,7 +8,7 @@
 float gridOpacity = 1.0f;
 float gridCoveredOpacity = 0.1f;
 
-VoxelEditor::VoxelEditor(shared_ptr<SpriteMesh> mesh, SceneSprite *ss, OrbitCamera referenceCamera) : mesh(mesh), ss(ss)
+VoxelEditor::VoxelEditor(shared_ptr<SpriteMesh> mesh, SceneSprite *ss, shared_ptr<OrbitCamera> referenceCamera) : mesh(mesh), ss(ss)
 {
 	workingX = 0.5f;
 	workingY = 0.5f;
@@ -22,7 +22,7 @@ VoxelEditor::VoxelEditor(shared_ptr<SpriteMesh> mesh, SceneSprite *ss, OrbitCame
 	editorZ = 0.0f;
 	// Use scene camera as rotational reference, but adjust position to zero and zoom in
 	camera = referenceCamera;
-	camera.setZoom(0.3f);
+	camera->setZoom(0.3f);
 	crop = { 0, 0, 0 ,0 };
 	mirrorStyle = no_mirroring;
 	mirrorPoint = { 0, 0 ,0 };
@@ -36,9 +36,9 @@ bool VoxelEditor::update(bool mouseAvailable)
 	{
 		float xRot = InputState::keyboardMouse->mouseDeltaX / 5;
 		float yRot = InputState::keyboardMouse->mouseDeltaY / 5;
-		camera.AdjustRotation(xRot, yRot, 0.0f);
+		camera->AdjustRotation(xRot, yRot, 0.0f);
 	}
-	viewingAngle = camera.getViewingAngle();
+	viewingAngle = camera->getViewingAngle();
 	// Check for camera panning, and pan along editing plane
 	if (InputState::keyboardMouse->mouseButtons[middle_mouse].state > 0)
 	{
@@ -123,7 +123,7 @@ void VoxelEditor::render()
 	}
 	// Render overlays
 	N3s3d::setShader(overlay);
-	N3s3d::updateMatricesWithCamera(&camera);
+	N3s3d::updateMatricesWithCamera(camera);
 	// Check which side the camera is facing and draw appropriate guides
 	Overlay::setColor(1.0f, 1.0f, 1.0f, 0.2f);
 	N3s3d::setRasterFillState(true);
@@ -452,7 +452,7 @@ void VoxelEditor::changeLayers(int amount)
 
 void VoxelEditor::updateCamera()
 {
-	camera.SetPosition(
+	camera->SetPosition(
 		editorX + (workingX * pixelSizeW),
 		editorY - (workingY * pixelSizeW),
 		editorZ + (workingZ * pixelSizeW)
@@ -489,12 +489,12 @@ void VoxelEditor::getMouseHighlight()
 	int mouseY = InputState::keyboardMouse->mouseY;
 	// Figure out which plane we're on
 	if (viewingAngle.y == v_top || viewingAngle.y == v_bottom)
-		mouseHighlight = N3s3d::getPixelCoordsFromFloat3(N3s3d::getPlaneIntersection(y_axis, ySelect + ss->y, &camera, mouseX, mouseY));
+		mouseHighlight = N3s3d::getPixelCoordsFromFloat3(N3s3d::getPlaneIntersection(y_axis, ySelect + ss->y, camera.get(), mouseX, mouseY));
 	else
 		if ( viewingAngle.x == v_front || viewingAngle.x == v_back)
-			mouseHighlight = N3s3d::getPixelCoordsFromFloat3(N3s3d::getPlaneIntersection(z_axis, zSelect, &camera, mouseX, mouseY));
+			mouseHighlight = N3s3d::getPixelCoordsFromFloat3(N3s3d::getPlaneIntersection(z_axis, zSelect, camera.get(), mouseX, mouseY));
 		else
-			mouseHighlight = N3s3d::getPixelCoordsFromFloat3(N3s3d::getPlaneIntersection(x_axis, xSelect + ss->x, &camera, mouseX, mouseY));
+			mouseHighlight = N3s3d::getPixelCoordsFromFloat3(N3s3d::getPlaneIntersection(x_axis, xSelect + ss->x, camera.get(), mouseX, mouseY));
 	// TODO: add shift-modifier to lock on X/Y/Z axis
 	mouseHighlight.x -= ss->x;
 	mouseHighlight.y -= ss->y;
@@ -516,12 +516,12 @@ void VoxelEditor::setMirroring()
 	{
 		mirrorPoint = selection;
 		mirrorStyle = mirror_single;
-		mirrorDirection = camera.getMirrorDirection();
+		mirrorDirection = camera->getMirrorDirection();
 	}
 	else
 	{
 		// See if mirror spot / direction is the same
-		MirrorDirection mD = camera.getMirrorDirection();
+		MirrorDirection mD = camera->getMirrorDirection();
 		if (mirrorPoint.equals(selection) && mirrorDirection == mD)
 		{
 			// Cycle (or remove) mirroring

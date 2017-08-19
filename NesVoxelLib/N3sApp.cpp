@@ -148,6 +148,7 @@ void N3sApp::update(bool runThisNesFrame)
 				NesEmulator::ExecuteFrame();
 				snapshot.reset(new PpuSnapshot((N3sRawPpu*)NesEmulator::getVRam()));
 				virtualPatternTable->update(snapshot->patternTable);
+				renderBatch.reset(new RenderBatch(gameData, snapshot, virtualPatternTable));
 			}
 			GameView::update();
 			break;
@@ -167,7 +168,8 @@ void N3sApp::render()
 		switch (mode)
 		{
 		case (gameMode):
-			GameView::render();
+			renderBatch->render(GameView::getCamera());
+			//GameView::render();
 			break;
 		case (editorMode):
 			Editor::render();

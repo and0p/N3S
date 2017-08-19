@@ -2,7 +2,7 @@
 #include "GameView.hpp"
 #include "N3sConsole.hpp"
 
-OrbitCamera gameCamera;
+shared_ptr<OrbitCamera> gameCamera = make_shared<OrbitCamera>(OrbitCamera());
 
 void GameView::update()
 {
@@ -11,30 +11,30 @@ void GameView::update()
 	float camXMove = (InputState::functions[cam_move_left].value * -0.03f) + (InputState::functions[cam_move_right].value * 0.03f);
 	float camYMove = InputState::functions[cam_move_up].value * 0.03f - InputState::functions[cam_move_down].value * 0.03f;
 	float camZoom = InputState::functions[cam_pan_in].value * 0.05f - InputState::functions[cam_pan_out].value * 0.05f;
-	gameCamera.AdjustPosition(camXMove, camYMove, 0.0f);
-	gameCamera.AdjustRotation(camXRotation, camYRotation, 0.0f);
-	gameCamera.adjustZoom(camZoom);
+	gameCamera->AdjustPosition(camXMove, camYMove, 0.0f);
+	gameCamera->AdjustRotation(camXRotation, camYRotation, 0.0f);
+	gameCamera->adjustZoom(camZoom);
 
 	// Update camera position
 	if (InputState::keyboardMouse->mouseButtons[right_mouse].state > 0)
 	{
 		float xRot = InputState::keyboardMouse->mouseDeltaX / 5;
 		float yRot = InputState::keyboardMouse->mouseDeltaY / 5;
-		gameCamera.AdjustRotation(xRot, yRot, 0.0f);
+		gameCamera->AdjustRotation(xRot, yRot, 0.0f);
 	}
 	if (InputState::keyboardMouse->mouseButtons[middle_mouse].state > 0)
 	{
 		float xPos = InputState::keyboardMouse->mouseDeltaX / 400;
 		float yPos = InputState::keyboardMouse->mouseDeltaY / 400;
-		gameCamera.AdjustPosition(-xPos, yPos, 0.0f);
+		gameCamera->AdjustPosition(-xPos, yPos, 0.0f);
 	}
 	// Update camera zoom
-	gameCamera.adjustZoom((float)InputState::keyboardMouse->calculatedWheelDelta / 10);
+	gameCamera->adjustZoom((float)InputState::keyboardMouse->calculatedWheelDelta / 10);
 
 	//if (inputState->gamePads[0].buttonStates[brb])
 	//{
-	//	//gameCamera.SetPosition(0, 0, 0);
-	//	//gameCamera.SetRotation(0, 0, 0);
+	//	//gameCamera->SetPosition(0, 0, 0);
+	//	//gameCamera->SetRotation(0, 0, 0);
 	//}
 
 	//N3sConsole::update();
@@ -43,12 +43,12 @@ void GameView::update()
 void GameView::render()
 {
 	// "Render" camera to matrices
-	gameCamera.Render();
+	gameCamera->Render();
 	// Enable depth buffer
 	N3s3d::setDepthBufferState(true);
 	// Render scene
 	N3s3d::setShader(color);
-	N3s3d::updateMatricesWithCamera(&gameCamera);
+	N3s3d::updateMatricesWithCamera(gameCamera);
 	N3s3d::updateWorldMatrix(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
 	N3s3d::updateMirroring(true, true);				// TODO add N3s3d function to reset mirroring
 	N3s3d::updateMirroring(false, false);
@@ -59,9 +59,9 @@ void GameView::render()
 	renderNameTables();
 }
 
-OrbitCamera * GameView::getCamera()
+shared_ptr<OrbitCamera> GameView::getCamera()
 {
-	return &gameCamera;
+	return gameCamera;
 }
 
 void GameView::parseInput()

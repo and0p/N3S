@@ -14,6 +14,7 @@
 #include <iostream>
 #include <fstream>
 #include "Windows.h"
+#include "RenderBatch.hpp"
 
 enum n3sMode { gameMode, editorMode };
 
@@ -51,7 +52,9 @@ private:
 	string romPath;
 	string n3sPath;
 	SoundDriver *audioEngine;
+	shared_ptr<RenderBatch> renderBatch;
 	HWND hwnd;
 	bool emulationPaused;
 	bool muted;
+
 };

@@ -588,7 +588,7 @@ void N3s3d::setOverlayColor(int r, int g, int b, int a)
 	setOverlayColor((float)r / 255, (float)g / 255, (float)b / 255, (float)a / 255);
 }
 
-void N3s3d::updateMatricesWithCamera(Camera * camera) {
+void N3s3d::updateMatricesWithCamera(shared_ptr<Camera> camera) {
 
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -729,6 +729,16 @@ void N3s3d::prepareStencilForOutline(bool increment)
 void N3s3d::stopStencilingForOutline()
 {
 	setStencilingState(m_depthStencilNoWriteState, stencilReferenceNumber);
+}
+
+void N3s3d::setStencilingState(StencilMode mode, int referenceNumber)
+{
+	if (mode == stencil_nowrite)
+		setStencilingState(m_depthStencilNoWriteState, referenceNumber);
+	else if (mode == stencil_write)
+		setStencilingState(m_depthStencilWriteState, referenceNumber);
+	else if (mode == stencil_mask)
+		setStencilingState(m_depthStencilMaskRefState, referenceNumber);
 }
 
 void N3s3d::setStencilingState(ID3D11DepthStencilState * state, int value)

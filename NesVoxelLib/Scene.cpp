@@ -9,7 +9,7 @@ XMFLOAT3 zIntersect;
 
 Vector2D mousePixelCoordinates;
 
-OrbitCamera mainCamera;
+shared_ptr<OrbitCamera> mainCamera;
 
 bool mouseCaptured = false;
 
@@ -44,8 +44,9 @@ bool isSpriteIn2dRect(int top, int left, int bottom, int right, int x, int y)
 
 Scene::Scene()
 {
+	mainCamera = make_shared<OrbitCamera>(OrbitCamera());
 	// Set camera to default position
-	mainCamera.SetPosition(0, 0, 0);
+	mainCamera->SetPosition(0, 0, 0);
 	selection = make_shared<Selection>();
 	displaySelection = make_shared<Selection>();
 }
@@ -53,7 +54,7 @@ Scene::Scene()
 Scene::Scene(shared_ptr<PpuSnapshot> snapshot)
 {
 	// Set camera to default position
-	mainCamera.SetPosition(0, 0, 0);
+	mainCamera->SetPosition(0, 0, 0);
 	selection = make_shared<Selection>();
 	displaySelection = make_shared<Selection>();
 	// Create scene from snapshot
@@ -132,8 +133,9 @@ Scene::Scene(shared_ptr<PpuSnapshot> snapshot)
 
 Scene::Scene(json j)
 {
+	mainCamera = make_shared<OrbitCamera>(OrbitCamera());
 	// Set camera to default position
-	mainCamera.SetPosition(0, 0, 0);
+	mainCamera->SetPosition(0, 0, 0);
 	selection = make_shared<Selection>();
 	displaySelection = make_shared<Selection>();
 	// Add sprites from JSON
@@ -216,21 +218,21 @@ bool Scene::update(bool mouseAvailable)
 		{
 			float xRot = InputState::keyboardMouse->mouseDeltaX / 5;
 			float yRot = InputState::keyboardMouse->mouseDeltaY / 5;
-			mainCamera.AdjustRotation(xRot, yRot, 0.0f);
+			mainCamera->AdjustRotation(xRot, yRot, 0.0f);
 		}
 		if (InputState::keyboardMouse->mouseButtons[middle_mouse].state > 0)
 		{
 			float xPos = InputState::keyboardMouse->mouseDeltaX / 400;
 			float yPos = InputState::keyboardMouse->mouseDeltaY / 400;
-			mainCamera.AdjustPosition(-xPos, yPos, 0.0f);
+			mainCamera->AdjustPosition(-xPos, yPos, 0.0f);
 		}
 		// Update camera zoom
-		mainCamera.adjustZoom((float)InputState::keyboardMouse->calculatedWheelDelta / 10);
+		mainCamera->adjustZoom((float)InputState::keyboardMouse->calculatedWheelDelta / 10);
 		// Update camera math
-		mainCamera.Render();
+		mainCamera->Render();
 		// Calculate mouse vector and z-intersect
-		mouseVector = N3s3d::getMouseVector(&mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
-		zIntersect = N3s3d::getPlaneIntersection(z_axis, 15, &mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
+		mouseVector = N3s3d::getMouseVector(mainCamera.get(), InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
+		zIntersect = N3s3d::getPlaneIntersection(z_axis, 15, mainCamera.get(), InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
 		Vector3D zIntersectPixels = N3s3d::getPixelCoordsFromFloat3(zIntersect);
 		mousePixelCoordinates.x = zIntersectPixels.x;
 		mousePixelCoordinates.y = zIntersectPixels.y;
@@ -243,7 +245,7 @@ bool Scene::update(bool mouseAvailable)
 	}
 	else
 	{
-		voxelEditor->camera.Render();
+		voxelEditor->camera->Render();
 		return voxelEditor->update(mouseAvailable);
 	}
 }
@@ -257,16 +259,16 @@ void Scene::render(bool renderBackground, bool renderOAM)
 	if (voxelEditor != nullptr)
 	{
 		N3s3d::setShader(overlay);
-		N3s3d::updateMatricesWithCamera(&voxelEditor->camera);
+		N3s3d::updateMatricesWithCamera(voxelEditor->camera);
 		N3s3d::setShader(color);
-		N3s3d::updateMatricesWithCamera(&voxelEditor->camera);
+		N3s3d::updateMatricesWithCamera(voxelEditor->camera);
 	}
 	else
 	{
 		N3s3d::setShader(overlay);
-		N3s3d::updateMatricesWithCamera(&mainCamera);
+		N3s3d::updateMatricesWithCamera(mainCamera);
 		N3s3d::setShader(color);
-		N3s3d::updateMatricesWithCamera(&mainCamera);
+		N3s3d::updateMatricesWithCamera(mainCamera);
 	}
 	// Update palette in video card
 	palettes[selectedPalette].updateShaderPalette();
@@ -332,13 +334,13 @@ void Scene::render(bool renderBackground, bool renderOAM)
 			else
 			{
 				// Draw onto z-axis in pixel-space
-				N3s3d::updateMatricesWithCamera(&mainCamera);
+				N3s3d::updateMatricesWithCamera(mainCamera);
 				Overlay::drawRectangleInScene(sel_left, sel_top, 15, sel_right - sel_left, sel_bottom - sel_top);
 			}
 		}
 		// Render selection boxes around OAM and NT
 		N3s3d::setDepthBufferState(false);
-		N3s3d::updateMatricesWithCamera(&mainCamera);
+		N3s3d::updateMatricesWithCamera(mainCamera);
 		N3s3d::setRasterFillState(false);
 		displaySelection->render(&sprites, moveX, moveY);
 		N3s3d::setRasterFillState(true);
@@ -355,7 +357,7 @@ void Scene::renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights)
 	N3s3d::setDepthBufferState(false);
 	N3s3d::setRasterFillState(false);
 	// Update camera math (was probably left at GUI projection after scene rendering)
-	N3s3d::updateMatricesWithCamera(&mainCamera);
+	N3s3d::updateMatricesWithCamera(mainCamera);
 	// Render background grid, if enabled
 	if (drawBackgroundGrid && showGuides)
 	{

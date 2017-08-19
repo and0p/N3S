@@ -12,9 +12,6 @@
 #include "N3sD3DContext.h"
 #include "N3sMath.hpp"
 
-static float pixelSizeW = (2.0f / 256.0f);
-static float pixelSizeH = (2.0f / 240.0f); // normally 240
-
 using namespace DirectX;
 using namespace std;
 
@@ -91,12 +88,19 @@ struct OutlineCache
 	bool mirrorV;
 };
 
+enum StencilMode
+{
+	stencil_nowrite,
+	stencil_write,
+	stencil_mask
+};
+
 class N3s3d {
 public:
 	static void initPipeline(N3sD3dContext context);
 	static ID3D11Buffer* createBufferFromColorVertices(std::vector<ColorVertex> * vertices, int arraySize);
 	static ID3D11Buffer* createBufferFromOverlayVertices(std::vector<OverlayVertex> * vertices, int arraySize);
-	static void updateMatricesWithCamera(Camera * camera);
+	static void updateMatricesWithCamera(shared_ptr<Camera> camera);
 	static void updateViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 perspective);
 	static void updateWorldMatrix(float xPos, float yPos, float zPos);
 	static void updateWorldMatrix(float xPos, float yPos, float zPos, float xRot, float yRot, float zRot, float scale);
@@ -113,6 +117,7 @@ public:
 	static void renderMesh(VoxelMesh *voxelMesh);
 	static void setIndexBuffer();
 	static void setDepthBufferState(bool active);
+	static void setStencilingState(StencilMode mode, int referenceNumber);
 	static void setDepthStencilState(bool depthTest, bool stencilWrite, bool stencilTest);
 	static void prepareStencilForOutline(bool increment);
 	static void stopStencilingForOutline();
