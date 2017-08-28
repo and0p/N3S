@@ -7,8 +7,10 @@ RenderBatch::RenderBatch(shared_ptr<GameData> gameData, shared_ptr<PpuSnapshot> 
 	computeSpritesOAM();
 	processMeshesOAM();
 	computeSpritesNametable();
+	processMeshesNT();
 	processStencilGroups();
-	batchDrawCalls();
+	batchDrawCallsOAM();
+	batchDrawCallsNT();
 }
 
 void RenderBatch::computeSpritesOAM()
@@ -48,7 +50,7 @@ void RenderBatch::computeSpritesOAM()
 				shared_ptr<VirtualSprite> vSprite = vPatternTable->getSprite(tile);
 				shared_ptr<VirtualSprite> vSprite2 = vPatternTable->getSprite(tile + 1);
 				// Build and add the first computed sprite
-				ComputedOAMSprite cs;
+				ComputedSprite cs;
 				cs.virtualSprite = vSprite;
 				cs.mesh = nullptr;
 				cs.position = { x, y };
@@ -57,7 +59,7 @@ void RenderBatch::computeSpritesOAM()
 				cs.mirrorV = s.vFlip;
 				computedSprites.push_back(cs);
 				// Create the second sprite, which swaps place with vertical flip
-				ComputedOAMSprite cs2 = cs;
+				ComputedSprite cs2 = cs;
 				if (s.vFlip)
 					cs2.position.y -= 8;
 				else
@@ -78,7 +80,7 @@ void RenderBatch::computeSpritesOAM()
 				}
 				shared_ptr<VirtualSprite> vSprite = vPatternTable->getSprite(tile);
 				// Build and add the computed sprite
-				ComputedOAMSprite cs;
+				ComputedSprite cs;
 				cs.virtualSprite = vSprite;
 				cs.mesh = nullptr;
 				cs.position = { x, y };
@@ -89,8 +91,6 @@ void RenderBatch::computeSpritesOAM()
 			}
 		}
 	}
-	// Finally, process dynamic meshes
-	processMeshesOAM();
 }
 
 void RenderBatch::computeSpritesNametable()
@@ -101,11 +101,10 @@ void RenderBatch::computeSpritesNametable()
 		for (int y = 0; y < 60; y++)
 		{
 			NameTableTile n = snapshot->background.getTile(x, y, 0);
-			if (snapshot->namepatternSelect)
-				tile += 256;
-			//n.tile = virtual
-			ComputedNTSprite s;
-			//nametable[x][y] = { n.tile
+			if (snapshot->scrollSections[0].patternSelect)
+				n.tile += 256;
+			nametable.tiles[x][y].virtualSprite = vPatternTable->getSprite(n.tile);
+			nametable.tiles[x][y].palette = n.palette;
 		}
 	}
 }
@@ -119,12 +118,24 @@ void RenderBatch::processMeshesOAM()
 	}
 }
 
+void RenderBatch::processMeshesNT()
+{
+	// Process meshes (FOR NOW ASSUMING DEFAULT)
+	for (int x = 0; x < 64; x++)
+	{
+		for (int y = 0; y < 60; y++)
+		{
+			nametable.tiles[x][y].mesh = nametable.tiles[x][y].virtualSprite->defaultMesh;
+		}
+	}
+}
+
 void RenderBatch::processStencilGroups()
 {
 	int previousColorIndex = -1;
 	for (int i = 0; i < computedSprites.size(); i++)	// Assuming this maintains insertion order...
 	{
-		ComputedOAMSprite s = computedSprites[i];
+		ComputedSprite s = computedSprites[i];
 		int newColorIndex = s.palette + s.mesh->outlineColor;
 		// See if this mesh exists and has any outlines
 		if (s.mesh->meshExists && s.mesh->outlineColor >= 0)
@@ -151,9 +162,9 @@ void RenderBatch::processStencilGroups()
 	}
 }
 
-void RenderBatch::batchDrawCalls()
+void RenderBatch::batchDrawCallsOAM()
 {
-	for each(ComputedOAMSprite s in computedSprites)
+	for each(ComputedSprite s in computedSprites)
 	{
 		if (s.mesh->meshExists)
 		{
@@ -188,6 +199,105 @@ void RenderBatch::batchDrawCalls()
 			}
 		}
 	}
+}
+
+void RenderBatch::batchDrawCallsNT()
+{
+	for (ScrollSection section : snapshot->scrollSections)
+	{
+		// Get offset of top-left pixel within top-left sprite referenced
+		int xOffset = section.x % 8;
+		int yOffset = section.y % 8;
+		// Get size of section
+		int sectionHeight = section.bottom - section.top + 1;
+		// Render rows based on section size and yOffset
+		int topRowHeight = 8 - yOffset;
+		batchRow(section.top, topRowHeight, xOffset, yOffset, section.x, section.y, section.nameTable, section.patternSelect);
+		int yPositionOffset = topRowHeight;
+		// Render rest of rows, depending on how many there are
+		if (sectionHeight <= 8)
+		{
+			if (sectionHeight > topRowHeight)
+			{
+				int bottomRowHeight = sectionHeight - topRowHeight;
+				batchRow(section.top + yPositionOffset, bottomRowHeight, xOffset, 0, section.x, section.y + yPositionOffset, section.nameTable, section.patternSelect);
+			}
+		}
+		else
+		{
+			// Render all full rows
+			int fullRows = floor((sectionHeight - topRowHeight) / 8);
+			for (int i = 0; i < fullRows; i++)
+			{
+				batchRow(section.top + yPositionOffset, 8, xOffset, 0, section.x, section.y + yPositionOffset, section.nameTable, section.patternSelect);
+				yPositionOffset += 8;
+			}
+			if (yOffset != 0)
+			{
+				int bottomRowHeight = (sectionHeight - topRowHeight) % 8;
+				batchRow(section.top + yPositionOffset, bottomRowHeight, xOffset, 0, section.x, section.y + yPositionOffset, section.nameTable, section.patternSelect);
+			}
+		}
+	}
+}
+
+void RenderBatch::batchRow(int y, int height, int xOffset, int yOffset, int nametableX, int nametableY, int nameTable, bool patternSelect)
+{
+	int x = 0;
+	int tileX = floor(nametableX / 8);
+	int tileY = floor(nametableY / 8);
+	int tile;
+	int palette;
+	Crop crop = { yOffset, xOffset, 8 - yOffset - height, 0 };
+	// Branch based on whether or not there is any X offset / partial sprite
+	if (xOffset > 0)
+	{
+		int i = 0;
+		// Batch partial first sprite
+		ComputedSprite s = nametable.tiles[tileX][tileY];
+		batchMeshCropped(s, crop);
+		x += 8 - xOffset;
+		i++;
+		// Render middle sprites
+		crop.left = 0;
+		for (i; i < 32; i++)
+		{
+			int tileXMod = (x + i) % 64;
+			s = nametable.tiles[tileXMod][tileY];
+			batchMeshCropped(s, crop);
+			x += 8;
+		}
+		// Render partial last sprite
+		crop.right = 8 - xOffset;
+		int tileXMod = (x + i) % 64;
+		s = nametable.tiles[tileXMod][tileY];
+		batchMeshCropped(s, crop);
+	}
+	else
+	{
+		for (int i = 0; i < 32; i++)
+		{
+			int tileXMod = (x + i) % 64;
+			ComputedSprite s = nametable.tiles[tileXMod][tileY];
+			// Generate palette draw call and add to list, if mesh exists
+			if (s.mesh->meshExists)
+			{
+				PaletteDrawCall pDraw;
+				pDraw.palette = s.palette;
+				pDraw.mirrorH = false;
+				pDraw.mirrorV = false;
+				pDraw.mesh = s.mesh->mesh;
+				pDraw.stencilGroup = s.stencilGroup;
+				pDraw.position = { x * pixelSizeW, y * pixelSizeW };
+				paletteDrawCalls[s.palette].push_back(pDraw);
+			}
+			x += 8;
+		}
+	}
+}
+
+void RenderBatch::batchMeshCropped(ComputedSprite s, Crop crop)
+{
 }
 
 void RenderBatch::render(shared_ptr<Camera> camera)

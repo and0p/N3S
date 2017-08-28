@@ -7,29 +7,21 @@
 #include "Camera.hpp"
 #include "N3sMath.hpp"
 
-struct ComputedOAMSprite
+struct ComputedSprite
 {
 	shared_ptr<VirtualSprite> virtualSprite;
 	shared_ptr<SpriteMesh> mesh;
 	Vector2D position;
-	int palette;
-	bool mirrorH;
-	bool mirrorV;
+	int palette = 0;
+	bool mirrorH = false;
+	bool mirrorV = false;
 	int stencilGroup = -1;
 };
 
-struct ComputedNTSprite
-{
-	shared_ptr<VirtualSprite> virtualSprite;
-	shared_ptr<SpriteMesh> mesh;
-	int palette;
-	int stencilGroup = -1;
-};
 
-class ComputedNametable
+struct ComputedNametable
 {
-	ComputedNametable(shared_ptr<PpuSnapshot> snapshot);
-	ComputedNTSprite tiles[64][60];
+	ComputedSprite tiles[64][60];
 };
 
 struct PaletteDrawCall
@@ -61,19 +53,23 @@ struct OutlineBatch
 class RenderBatch {
 public:
 	RenderBatch(shared_ptr<GameData> gameData, shared_ptr<PpuSnapshot> snapshot, shared_ptr<VirtualPatternTable> vPatternTable);
+	void render(shared_ptr<Camera> camera);
+private:
 	void computeSpritesOAM();
 	void computeSpritesNametable();
 	void processMeshesOAM();
+	void processMeshesNT();
 	void processStencilGroups();
-	void batchDrawCalls();
-	void render(shared_ptr<Camera> camera);
-private:
+	void batchDrawCallsOAM();
+	void batchDrawCallsNT();
+	void batchRow(int y, int height, int xOffset, int yOffset, int nametableX, int nametableY, int nameTable, bool patternSelect);
+	void batchMeshCropped(ComputedSprite s, Crop crop);
 	int currentStencilNumber = 1;
 	shared_ptr<GameData> gameData;
 	shared_ptr<PpuSnapshot> snapshot;
 	shared_ptr<VirtualPatternTable> vPatternTable;
-	vector<ComputedOAMSprite> computedSprites;
-	Nametable nametable;
+	vector<ComputedSprite> computedSprites;
+	ComputedNametable nametable;
 	vector<PaletteDrawCall> paletteDrawCalls[8];
 	unordered_map<int, shared_ptr<OutlineBatch>> outlineBatches;
 };

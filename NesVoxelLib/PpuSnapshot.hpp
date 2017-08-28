@@ -3,6 +3,7 @@
 #include <vector>
 #include "N3sRawPpu.h"
 #include "N3sPalette.hpp"
+#include "N3sMath.hpp"
 
 struct Ctrl {
 	bool spriteNameTable;
