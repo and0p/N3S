@@ -255,6 +255,7 @@ void RenderBatch::batchRow(int y, int height, int xOffset, int yOffset, int name
 		int i = 0;
 		// Batch partial first sprite
 		ComputedSprite s = nametable.tiles[tileX][tileY];
+		s.position = { x, y };
 		batchMeshCropped(s, crop);
 		x += 8 - xOffset;
 		i++;
@@ -262,22 +263,24 @@ void RenderBatch::batchRow(int y, int height, int xOffset, int yOffset, int name
 		crop.left = 0;
 		for (i; i < 32; i++)
 		{
-			int tileXMod = (x + i) % 64;
+			int tileXMod = (tileX + i) % 64;
 			s = nametable.tiles[tileXMod][tileY];
+			s.position = { x, y };
 			batchMeshCropped(s, crop);
 			x += 8;
 		}
 		// Render partial last sprite
 		crop.right = 8 - xOffset;
-		int tileXMod = (x + i) % 64;
+		int tileXMod = (tileX + i) % 64;
 		s = nametable.tiles[tileXMod][tileY];
+		s.position = { x, y };
 		batchMeshCropped(s, crop);
 	}
 	else
 	{
 		for (int i = 0; i < 32; i++)
 		{
-			int tileXMod = (x + i) % 64;
+			int tileXMod = (tileX + i) % 64;
 			ComputedSprite s = nametable.tiles[tileXMod][tileY];
 			// Generate palette draw call and add to list, if mesh exists
 			if (s.mesh->meshExists)
@@ -288,7 +291,7 @@ void RenderBatch::batchRow(int y, int height, int xOffset, int yOffset, int name
 				pDraw.mirrorV = false;
 				pDraw.mesh = s.mesh->mesh;
 				pDraw.stencilGroup = s.stencilGroup;
-				pDraw.position = { x * pixelSizeW, y * pixelSizeW };
+				pDraw.position = { -1.0f + x * pixelSizeW, 1.0f - y * pixelSizeW };
 				paletteDrawCalls[s.palette].push_back(pDraw);
 			}
 			x += 8;
@@ -298,6 +301,56 @@ void RenderBatch::batchRow(int y, int height, int xOffset, int yOffset, int name
 
 void RenderBatch::batchMeshCropped(ComputedSprite s, Crop crop)
 {
+	if (s.mesh->meshExists)
+	{
+		// Don't bother with zMeshes if this sprite isn't actually being cropped
+		if (crop.zeroed())
+		{
+			PaletteDrawCall pDraw;
+			pDraw.palette = s.palette;
+			pDraw.mirrorH = false;
+			pDraw.mirrorV = false;
+			pDraw.mesh = s.mesh->mesh;
+			pDraw.stencilGroup = s.stencilGroup;
+			pDraw.position = { -1.0f + s.position.x * pixelSizeW, 1.0f - s.position.y * pixelSizeW };
+			paletteDrawCalls[s.palette].push_back(pDraw);
+			// TODO add stencil
+		}
+		else
+		{
+			Vector2F initialPosition = { -1.0f + (s.position.x * pixelSizeW), 1.0f - (s.position.y * pixelSizeW) };
+			int height = 8 - crop.top - crop.bottom;
+			int width = 8 - crop.left - crop.right;
+			for (int posY = 0; posY < height; posY++)
+			{
+				for (int posX = 0; posX < width; posX++)
+				{
+					// Grab different zMeshes based on mirroring
+					int meshX, meshY;
+					if (s.mirrorH)
+						meshX = 7 - (posX + crop.left);
+					else
+						meshX = posX + crop.left;
+					if (s.mirrorV)
+						meshY = 7 - (posY + crop.top);
+					else
+						meshY = posY + crop.top;
+					if (s.mesh->zMeshes[(meshY * 8) + meshX].buffer != nullptr)
+					{
+						PaletteDrawCall pDraw;
+						pDraw.position = { initialPosition.x + (posX * pixelSizeW), initialPosition.y - (posY * pixelSizeW) };
+						pDraw.palette = s.palette;
+						pDraw.mirrorH = s.mirrorH;
+						pDraw.mirrorV = s.mirrorV;
+						pDraw.mesh = s.mesh->zMeshes[(meshY * 8) + meshX];
+						pDraw.stencilGroup = s.stencilGroup;
+						paletteDrawCalls[s.palette].push_back(pDraw);
+						// TODO check for stencil mesh, if stenciling
+					}
+				}
+			}
+		}
+	}
 }
 
 void RenderBatch::render(shared_ptr<Camera> camera)

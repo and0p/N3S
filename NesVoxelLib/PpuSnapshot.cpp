@@ -273,6 +273,7 @@ Vector2D Background::getTrueXY(int x, int y, int nametable)
 	// If this new X,Y is out of bounds, make it wrap around back from the top-left
 	v.x %= mirrorSizes[mirrorType][0];
 	v.y %= mirrorSizes[mirrorType][1];
+	return v;
 }
 
 int PpuSnapshot::getTrueOamTile(int s)
