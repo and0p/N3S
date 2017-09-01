@@ -9,8 +9,8 @@ RenderBatch::RenderBatch(shared_ptr<GameData> gameData, shared_ptr<PpuSnapshot> 
 	computeSpritesNametable();
 	processMeshesNT();
 	processStencilGroups();
-	batchDrawCallsOAM();
 	batchDrawCallsNT();
+	batchDrawCallsOAM();
 }
 
 void RenderBatch::computeSpritesOAM()
@@ -293,6 +293,20 @@ void RenderBatch::batchRow(int y, int height, int xOffset, int yOffset, int name
 				pDraw.stencilGroup = s.stencilGroup;
 				pDraw.position = { -1.0f + x * pixelSizeW, 1.0f - y * pixelSizeW };
 				paletteDrawCalls[s.palette].push_back(pDraw);
+				// Also add the outline mesh, if it exists
+				if (s.mesh->outlineColor >= 0)
+				{
+					// See if batch already exists, create if needed
+					if (outlineBatches.count(s.stencilGroup) == 0)
+					{
+						shared_ptr<OutlineBatch> batch = make_shared<OutlineBatch>();
+						batch->palette = s.palette;
+						batch->color = s.mesh->outlineColor;
+						batch->stencilGroup = s.stencilGroup;
+						outlineBatches[s.stencilGroup] = batch;
+					}
+					outlineBatches[s.stencilGroup]->outlines.push_back({ s.mesh->outlineMesh, pDraw.position, s.mirrorH, s.mirrorV });
+				}
 			}
 			x += 8;
 		}
@@ -314,7 +328,20 @@ void RenderBatch::batchMeshCropped(ComputedSprite s, Crop crop)
 			pDraw.stencilGroup = s.stencilGroup;
 			pDraw.position = { -1.0f + s.position.x * pixelSizeW, 1.0f - s.position.y * pixelSizeW };
 			paletteDrawCalls[s.palette].push_back(pDraw);
-			// TODO add stencil
+			// Also add the outline mesh, if it exists
+			if (s.mesh->outlineColor >= 0)
+			{
+				// See if batch already exists, create if needed
+				if (outlineBatches.count(s.stencilGroup) == 0)
+				{
+					shared_ptr<OutlineBatch> batch = make_shared<OutlineBatch>();
+					batch->palette = s.palette;
+					batch->color = s.mesh->outlineColor;
+					batch->stencilGroup = s.stencilGroup;
+					outlineBatches[s.stencilGroup] = batch;
+				}
+				outlineBatches[s.stencilGroup]->outlines.push_back({ s.mesh->outlineMesh, pDraw.position, s.mirrorH, s.mirrorV });
+			}
 		}
 		else
 		{
@@ -335,17 +362,37 @@ void RenderBatch::batchMeshCropped(ComputedSprite s, Crop crop)
 						meshY = 7 - (posY + crop.top);
 					else
 						meshY = posY + crop.top;
-					if (s.mesh->zMeshes[(meshY * 8) + meshX].buffer != nullptr)
+					int i = (meshY * 8) + meshX;
+					if (s.mesh->zMeshes[i].buffer != nullptr)
 					{
 						PaletteDrawCall pDraw;
 						pDraw.position = { initialPosition.x + (posX * pixelSizeW), initialPosition.y - (posY * pixelSizeW) };
 						pDraw.palette = s.palette;
 						pDraw.mirrorH = s.mirrorH;
 						pDraw.mirrorV = s.mirrorV;
-						pDraw.mesh = s.mesh->zMeshes[(meshY * 8) + meshX];
+						pDraw.mesh = s.mesh->zMeshes[i];
 						pDraw.stencilGroup = s.stencilGroup;
 						paletteDrawCalls[s.palette].push_back(pDraw);
 						// TODO check for stencil mesh, if stenciling
+					}
+					// Grab the outline zmesh, if it exists
+					if (s.mesh->outlineColor >= 0 && s.mesh->outlineZMeshes[i].buffer != nullptr)
+					{
+						// See if batch already exists, create if needed
+						if (outlineBatches.count(s.stencilGroup) == 0)
+						{
+							shared_ptr<OutlineBatch> batch = make_shared<OutlineBatch>();
+							batch->palette = s.palette;
+							batch->color = s.mesh->outlineColor;
+							batch->stencilGroup = s.stencilGroup;
+							outlineBatches[s.stencilGroup] = batch;
+						}
+						OutlineDrawCall oDraw;
+						oDraw.position = { initialPosition.x + (posX * pixelSizeW), initialPosition.y - (posY * pixelSizeW) };
+						oDraw.mirrorH = s.mirrorH;
+						oDraw.mirrorV = s.mirrorV;
+						oDraw.mesh = s.mesh->outlineZMeshes[i];
+						outlineBatches[s.stencilGroup]->outlines.push_back(oDraw);
 					}
 				}
 			}
@@ -361,6 +408,8 @@ void RenderBatch::render(shared_ptr<Camera> camera)
 	N3s3d::updateMatricesWithCamera(camera);
 	// Update palette in shader
 	snapshot->palette.updateShaderPalette();
+	// Reset the rendering state
+	N3s3d::setStencilingState(stencil_nowrite, 1);
 	// Draw all palette meshes, which are grouped by palette for optimized rendering
 	for (int i = 0; i < 8; i++)
 	{

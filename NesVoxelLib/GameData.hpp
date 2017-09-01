@@ -53,6 +53,7 @@ public:
 	VoxelMesh mesh;
 	VoxelMesh outlineMesh;
 	VoxelMesh zMeshes[64];
+	VoxelMesh outlineZMeshes[64];
 	void setVoxel(Vector3D v, int color);
 	void updateVoxel(Vector3D v, int color);
 	bool buildMesh();
@@ -61,11 +62,12 @@ public:
 	void moveLayer(int x, int y, int z, int newX, int newY, int newZ, bool copy);
 	json getJSON();
 	void setOutline(int o);
+	bool fullOutline = false;
 	int outlineColor = -1;
 private:
 	static shared_ptr<VoxelCollection> makeOutlineVoxelCollection(shared_ptr<VoxelCollection> vc);
 	static VoxelMesh buildMeshFromVoxelCollection(shared_ptr<VoxelCollection> vc, bool outline);
-	void buildZMeshes();
+	void buildZMeshes(shared_ptr<VoxelCollection> vc, ShaderType type);
 	void rebuildZMesh(int x, int y);
 };
 
@@ -111,13 +113,14 @@ public:
 	shared_ptr<VirtualSprite> getSpriteByChrData(char* data);
 	RomInfo romInfo;
 	int totalSprites;
-	static VoxelMesh getSharedMesh(int zArray[32]);
-	static void releaseSharedMesh(string hash);
+	static VoxelMesh getSharedMesh(int zArray[32], ShaderType type);
+	static void releaseSharedMesh(string hash, ShaderType type);
 	void unload();
 	json getJSON();
 	StencilGrouping oamGrouping = continous_samecolor;
 private:
-	static unordered_map<string, SharedMesh> sharedMeshes;
+	static unordered_map<string, SharedMesh> sharedPaletteMeshes;
+	static unordered_map<string, SharedMesh> sharedOutlineMeshes;
 };
 
 static VoxelMesh buildZMesh(int zArray[32]);

@@ -1081,6 +1081,9 @@ bool N3s3d::initDepthStencils()
 		return false;
 	}
 
+	// Set the z-buffer enabled depth stencil state
+	context->OMSetDepthStencilState(m_depthStencilNoWriteState, 1);
+
 #pragma endregion
 
 #pragma region Standard depth, write stencil
@@ -1210,8 +1213,6 @@ bool N3s3d::initDepthStencils()
 #pragma endregion
 
 #pragma region Z-buffer enabled
-	// Set the z-buffer enabled depth stencil state
-	context->OMSetDepthStencilState(m_depthStencilNoWriteState, 1);
 
 	// Enable alpha blending in output merger
 	ID3D11BlendState1* g_pBlendStateNoBlend = NULL;
