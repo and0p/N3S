@@ -205,6 +205,11 @@ void RenderBatch::batchDrawCallsNT()
 {
 	for (ScrollSection section : snapshot->scrollSections)
 	{
+		// Change true X/Y based on section
+		if (section.nameTable == 1 || section.nameTable == 3)
+			section.x += 256;
+		if (section.nameTable > 1)
+			section.y += 240;
 		// Get offset of top-left pixel within top-left sprite referenced
 		int xOffset = section.x % 8;
 		int yOffset = section.y % 8;
@@ -246,6 +251,8 @@ void RenderBatch::batchRow(int y, int height, int xOffset, int yOffset, int name
 	int x = 0;
 	int tileX = floor(nametableX / 8);
 	int tileY = floor(nametableY / 8);
+	if (tileY >= 60)
+		tileY -= 60;
 	int tile;
 	int palette;
 	Crop crop = { yOffset, xOffset, 8 - yOffset - height, 0 };
