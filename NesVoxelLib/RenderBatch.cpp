@@ -26,7 +26,7 @@ void RenderBatch::computeSpritesOAM()
 		if (palette > 7)
 			palette = 7;
 		// Make sure sprite is on the screen and not garbage data
-		if (s.x > 0 && s.x < 256 && s.y > 0 && s.y < 240)
+		if (s.x >= 0 && s.x < 256 && s.y >= 0 && s.y < 240)
 		{
 			// Branch based on 16x8 mode
 			if (snapshot->ctrl.spriteSize16x8)
@@ -168,34 +168,50 @@ void RenderBatch::batchDrawCallsOAM()
 	{
 		if (s.mesh->meshExists)
 		{
-			// Generate palette draw call and add to list
-			PaletteDrawCall pDraw;
-			pDraw.palette = s.palette;
-			pDraw.mirrorH = s.mirrorH;
-			pDraw.mirrorV = s.mirrorV;
-			pDraw.mesh = s.mesh->mesh;
-			pDraw.stencilGroup = s.stencilGroup;
-			// Adjust position based on mirroring
-			pDraw.position = s.position.convertToWorldSpace();
-			if (pDraw.mirrorH)
-				pDraw.position.x += 8 * pixelSizeW;
-			if (pDraw.mirrorV)
-				pDraw.position.y -= 8 * pixelSizeW;
-			paletteDrawCalls[s.palette].push_back(pDraw);
-			// If outlining, add outline draw call to batch, based on stencil group
-			if (s.stencilGroup >= 0)
+			// See if the sprite is full in screen
+			if (s.position.x <= 248 && s.position.y <= 232)
 			{
-				// See if batch already exists, create if needed
-				if (outlineBatches.count(s.stencilGroup) == 0)
+				// Generate palette draw call and add to list
+				PaletteDrawCall pDraw;
+				pDraw.palette = s.palette;
+				pDraw.mirrorH = s.mirrorH;
+				pDraw.mirrorV = s.mirrorV;
+				pDraw.mesh = s.mesh->mesh;
+				pDraw.stencilGroup = s.stencilGroup;
+				// Adjust position based on mirroring
+				pDraw.position = s.position.convertToWorldSpace();
+				if (pDraw.mirrorH)
+					pDraw.position.x += 8 * pixelSizeW;
+				if (pDraw.mirrorV)
+					pDraw.position.y -= 8 * pixelSizeW;
+				paletteDrawCalls[s.palette].push_back(pDraw);
+				// If outlining, add outline draw call to batch, based on stencil group
+				if (s.stencilGroup >= 0)
 				{
-					shared_ptr<OutlineBatch> batch = make_shared<OutlineBatch>();
-					batch->palette = s.palette;
-					batch->color = s.mesh->outlineColor;
-					batch->stencilGroup = s.stencilGroup;
-					outlineBatches[s.stencilGroup] = batch;
+					// See if batch already exists, create if needed
+					if (outlineBatches.count(s.stencilGroup) == 0)
+					{
+						shared_ptr<OutlineBatch> batch = make_shared<OutlineBatch>();
+						batch->palette = s.palette;
+						batch->color = s.mesh->outlineColor;
+						batch->stencilGroup = s.stencilGroup;
+						outlineBatches[s.stencilGroup] = batch;
+					}
+					// Push outline to appropriate batch
+					outlineBatches[s.stencilGroup]->outlines.push_back({ s.mesh->outlineMesh, pDraw.position, s.mirrorH, s.mirrorV });
 				}
-				// Push outline to appropriate batch
-				outlineBatches[s.stencilGroup]->outlines.push_back({ s.mesh->outlineMesh, pDraw.position, s.mirrorH, s.mirrorV });
+			}
+			else
+			{
+				// Generate palette draw call and add to list for partial sprite
+				int rightCrop = 0;
+				int bottomCrop = 0; 
+				if(s.position.x > 248)
+					rightCrop = s.position.x - 256 + 8;
+				if(s.position.y > 232)
+					bottomCrop = s.position.y - 240 + 8;
+				Crop crop = { 0, 0, bottomCrop, rightCrop };
+				batchMeshCropped(s, crop);
 			}
 		}
 	}
@@ -329,11 +345,16 @@ void RenderBatch::batchMeshCropped(ComputedSprite s, Crop crop)
 		{
 			PaletteDrawCall pDraw;
 			pDraw.palette = s.palette;
-			pDraw.mirrorH = false;
-			pDraw.mirrorV = false;
+			pDraw.mirrorH = s.mirrorH;
+			pDraw.mirrorV = s.mirrorV;
 			pDraw.mesh = s.mesh->mesh;
 			pDraw.stencilGroup = s.stencilGroup;
-			pDraw.position = { -1.0f + s.position.x * pixelSizeW, 1.0f - s.position.y * pixelSizeW };
+			// Adjust position based on mirroring
+			pDraw.position = s.position.convertToWorldSpace();
+			if (pDraw.mirrorH)
+				pDraw.position.x += 8 * pixelSizeW;
+			if (pDraw.mirrorV)
+				pDraw.position.y -= 8 * pixelSizeW;
 			paletteDrawCalls[s.palette].push_back(pDraw);
 			// Also add the outline mesh, if it exists
 			if (s.mesh->outlineColor >= 0)
@@ -352,7 +373,8 @@ void RenderBatch::batchMeshCropped(ComputedSprite s, Crop crop)
 		}
 		else
 		{
-			Vector2F initialPosition = { -1.0f + (s.position.x * pixelSizeW), 1.0f - (s.position.y * pixelSizeW) };
+			// Adjust position based on mirroring
+			Vector2F initialPosition = s.position.convertToWorldSpace();
 			int height = 8 - crop.top - crop.bottom;
 			int width = 8 - crop.left - crop.right;
 			for (int posY = 0; posY < height; posY++)
