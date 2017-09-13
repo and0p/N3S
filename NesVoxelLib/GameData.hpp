@@ -19,7 +19,7 @@ const char intChars[10] = { '0','1','2','3','4','5','6','7','8','9' };
 
 enum VoxelSide { left, right, top, bottom, front, back };
 
-enum StencilGrouping { continous_samecolor };
+enum StencilGrouping { no_grouping, sameColor, continous, continous_samecolor, adjacent_samecolor };
 
 struct SharedMesh {
 	VoxelMesh mesh;
@@ -65,7 +65,7 @@ public:
 	bool fullOutline = false;
 	int outlineColor = -1;
 private:
-	static shared_ptr<VoxelCollection> makeOutlineVoxelCollection(shared_ptr<VoxelCollection> vc);
+	static shared_ptr<VoxelCollection> makeOutlineVoxelCollection(shared_ptr<VoxelCollection> vc, bool full);
 	static VoxelMesh buildMeshFromVoxelCollection(shared_ptr<VoxelCollection> vc, bool outline);
 	void buildZMeshes(shared_ptr<VoxelCollection> vc, ShaderType type);
 	void rebuildZMesh(int x, int y);
@@ -117,10 +117,12 @@ public:
 	static void releaseSharedMesh(string hash, ShaderType type);
 	void unload();
 	json getJSON();
-	StencilGrouping oamGrouping = continous_samecolor;
+	static StencilGrouping oamGrouping;
+	static StencilGrouping ntGrouping;
 private:
 	static unordered_map<string, SharedMesh> sharedPaletteMeshes;
 	static unordered_map<string, SharedMesh> sharedOutlineMeshes;
+	
 };
 
 static VoxelMesh buildZMesh(int zArray[32]);

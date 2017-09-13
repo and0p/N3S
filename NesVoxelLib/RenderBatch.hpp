@@ -19,8 +19,11 @@ struct ComputedSprite
 };
 
 
-struct ComputedNametable
+class ComputedNametable
 {
+public:
+	ComputedNametable();
+	ComputedSprite getTile(int x, int y);
 	ComputedSprite tiles[64][60];
 };
 
@@ -59,7 +62,10 @@ private:
 	void computeSpritesNametable();
 	void processMeshesOAM();
 	void processMeshesNT();
-	void processStencilGroups();
+	void processStencilsOAM();
+	void processStencilsNT();
+	void processNTSameColorAdjacentStencilling(int startingGroupNum);
+	void setAdjacentStencilGroups(int x, int y, int colorIndex, int groupNumber);
 	void batchDrawCallsOAM();
 	void batchDrawCallsNT();
 	void batchRow(int y, int height, int xOffset, int yOffset, int nametableX, int nametableY, int nameTable, bool patternSelect);
@@ -72,4 +78,6 @@ private:
 	ComputedNametable nametable;
 	vector<PaletteDrawCall> paletteDrawCalls[8];
 	unordered_map<int, shared_ptr<OutlineBatch>> outlineBatches;
+	bool renderingOAM = true;
+	bool renderingNT = true;
 };

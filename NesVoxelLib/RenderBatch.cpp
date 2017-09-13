@@ -4,13 +4,29 @@
 RenderBatch::RenderBatch(shared_ptr<GameData> gameData, shared_ptr<PpuSnapshot> snapshot, shared_ptr<VirtualPatternTable> vPatternTable)
 	:	gameData(gameData), snapshot(snapshot), vPatternTable(vPatternTable)
 {
-	computeSpritesOAM();
-	processMeshesOAM();
-	computeSpritesNametable();
-	processMeshesNT();
-	processStencilGroups();
-	batchDrawCallsNT();
-	batchDrawCallsOAM();
+	// Check if we're rendering OAM and NT, and batch if so
+	if (snapshot->mask.renderSprites)
+		renderingOAM = true;
+	else
+		renderingOAM = false;
+	if (snapshot->mask.renderBackground)
+		renderingNT = true;
+	else
+		renderingNT = false;
+	if (renderingOAM)
+	{
+		computeSpritesOAM();
+		processMeshesOAM();
+		processStencilsOAM();
+		batchDrawCallsOAM();
+	}
+	if (renderingNT)
+	{
+		computeSpritesNametable();
+		processMeshesNT();
+		processNTSameColorAdjacentStencilling(currentStencilNumber + 1);
+		batchDrawCallsNT();
+	}
 }
 
 void RenderBatch::computeSpritesOAM()
@@ -130,7 +146,7 @@ void RenderBatch::processMeshesNT()
 	}
 }
 
-void RenderBatch::processStencilGroups()
+void RenderBatch::processStencilsOAM()
 {
 	int previousColorIndex = -1;
 	for (int i = 0; i < computedSprites.size(); i++)	// Assuming this maintains insertion order...
@@ -158,6 +174,58 @@ void RenderBatch::processStencilGroups()
 		{
 			computedSprites[i].stencilGroup = -1;
 			previousColorIndex = -1;
+		}
+	}
+}
+
+void RenderBatch::processNTSameColorAdjacentStencilling(int startingGroupNum)
+{
+	int currentGroup = startingGroupNum;
+	// Iterate over X & Y
+	for (int x = 0; x < 64; x++)
+	{
+		for (int y = 0; y < 60; y++)
+		{
+			// Check for outline, and that it's not already in another stencil group
+			ComputedSprite s = nametable.tiles[x][y];
+			if (s.mesh->outlineColor >= 0 && s.stencilGroup <= 0)
+			{
+				int colorIndex = snapshot->palette.colorIndices[s.palette * 3 + s.mesh->outlineColor];
+				// Check for adjacent meshes with same outline color, keep crawling until no more matches
+				setAdjacentStencilGroups(x, y, colorIndex, currentGroup);
+				// Increment stencil group
+				currentGroup++;
+			}
+		}
+	}
+
+}
+
+void RenderBatch::setAdjacentStencilGroups(int x, int y, int runningColorIndex, int groupNumber)
+{
+	// Normalize coordinates, if we have wrapped
+	if (x < 0)
+		x += 64;
+	else if (x >= 64)
+		x = x % 64;
+	if (y < 0)
+		y += 60;
+	else if (y >= 60)
+		y = y % 60;
+	// See if this tile has an outline and is not already set
+	ComputedSprite s = nametable.tiles[x][y];
+	if (s.mesh->outlineColor >= 0 && s.stencilGroup <= 0)
+	{
+		int colorIndex = snapshot->palette.colorIndices[s.palette * 3 + s.mesh->outlineColor];
+		// See if this is the same color as the one we're crawling for
+		if (colorIndex = runningColorIndex)
+		{
+			nametable.tiles[x][y].stencilGroup = groupNumber;
+			// Check all adjacent tiles for the same info
+			setAdjacentStencilGroups(x + 1, y, colorIndex, groupNumber);
+			setAdjacentStencilGroups(x - 1, y, colorIndex, groupNumber);
+			setAdjacentStencilGroups(x, y + 1, colorIndex, groupNumber);
+			setAdjacentStencilGroups(x, y - 1, colorIndex, groupNumber);
 		}
 	}
 }
@@ -481,4 +549,21 @@ void RenderBatch::render(shared_ptr<Camera> camera)
 			}
 		}
 	}
+}
+
+ComputedNametable::ComputedNametable()
+{
+}
+
+ComputedSprite ComputedNametable::getTile(int x, int y)
+{
+	if (x < 0)
+		x += 64;
+	else if (x > 64)
+		x = x % 64;
+	if (y < 0)
+		y += 60;
+	else if (y > 60)
+		y = y % 60;
+	return tiles[x][y];
 }

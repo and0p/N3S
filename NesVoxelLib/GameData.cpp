@@ -5,6 +5,9 @@ char digits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 unordered_map<string, SharedMesh> GameData::sharedPaletteMeshes;
 unordered_map<string, SharedMesh> GameData::sharedOutlineMeshes;
 
+StencilGrouping GameData::oamGrouping = continous_samecolor;
+StencilGrouping GameData::ntGrouping = adjacent_samecolor;
+
 RomInfo getRomInfo(char * data)
 {
 	RomInfo r;
@@ -55,7 +58,7 @@ void SpriteMesh::updateVoxel(Vector3D v, int color)
 	rebuildZMesh(v.x, v.y);
 }
 
-shared_ptr<VoxelCollection> SpriteMesh::makeOutlineVoxelCollection(shared_ptr<VoxelCollection> vc)
+shared_ptr<VoxelCollection> SpriteMesh::makeOutlineVoxelCollection(shared_ptr<VoxelCollection> vc, bool full)
 {
 	shared_ptr<VoxelCollection> outlineVC = make_shared<VoxelCollection>();
 	// Create all outline voxels
@@ -64,11 +67,26 @@ shared_ptr<VoxelCollection> SpriteMesh::makeOutlineVoxelCollection(shared_ptr<Vo
 			for (int x = 0; x < spriteWidth; x++)
 				if (vc->getVoxel(x, y, z).color > 0) // TODO: do I want to grab background color voxels? Probably
 				{
-					// Add all 9 possible outline voxels
-					for (int newX = -1; newX < 2; newX++)
-						for (int newY = -1; newY < 2; newY++)
-							for (int newZ = -1; newZ < 2; newZ++)
-								outlineVC->setVoxel(x + newX, y + newY, z + newZ, { 1 });
+					// See if we're doing a full or partial outline
+					if (full)
+					{
+						// Add all 9 possible outline voxels
+						for (int newX = -1; newX < 2; newX++)
+							for (int newY = -1; newY < 2; newY++)
+								for (int newZ = -1; newZ < 2; newZ++)
+									outlineVC->setVoxel(x + newX, y + newY, z + newZ, { 1 });
+					}
+					else
+					{
+						// Create outline on adjacent, not diagonal, spots
+						outlineVC->setVoxel(x, y, z, { 1 });
+						outlineVC->setVoxel(x + 1, y, z, { 1 });
+						outlineVC->setVoxel(x - 1, y, z, { 1 });
+						outlineVC->setVoxel(x, y + 1, z, { 1 });
+						outlineVC->setVoxel(x, y - 1, z, { 1 });
+						outlineVC->setVoxel(x, y, z + 1, { 1 });
+						outlineVC->setVoxel(x, y, z - 1, { 1 });
+					}
 				}
 	return outlineVC;
 }
@@ -629,7 +647,7 @@ bool SpriteMesh::buildMesh()
 		// Build outline mesh, if set to a color
 		if (outlineColor >= 0)
 		{
-			shared_ptr<VoxelCollection> outlineVoxels = makeOutlineVoxelCollection(voxels);
+			shared_ptr<VoxelCollection> outlineVoxels = makeOutlineVoxelCollection(voxels, false);
 			outlineMesh = buildMeshFromVoxelCollection(outlineVoxels, true);
 			buildZMeshes(outlineVoxels, outline);
 		}
@@ -985,7 +1003,7 @@ void SpriteMesh::setOutline(int o)
 			outlineColor = o;
 			if (meshExists)
 			{
-				shared_ptr<VoxelCollection> vc = makeOutlineVoxelCollection(voxels);
+				shared_ptr<VoxelCollection> vc = makeOutlineVoxelCollection(voxels, false);
 				outlineMesh = buildMeshFromVoxelCollection(vc, true);
 				buildZMeshes(vc, outline);
 			}
