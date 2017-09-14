@@ -7,7 +7,7 @@ class GameView {
 public:
 	static void update();
 	static void render();
-	static OrbitCamera * getCamera();
+	static shared_ptr<OrbitCamera> getCamera();
 private:
 	static void parseInput();
 };

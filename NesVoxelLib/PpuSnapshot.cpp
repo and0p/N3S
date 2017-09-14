@@ -207,8 +207,6 @@ NameTableTile Background::getTile(int x, int y, int nametable)
 	{
 		y += 30;
 	}
-	if (x > 64)
-		int test = 0;
 	// If this new X,Y is out of bounds, make it wrap around back from the top-left
 	x %= mirrorSizes[mirrorType][0];
 	y %= mirrorSizes[mirrorType][1];
@@ -258,6 +256,24 @@ void Background::addQuadrant(char * data, bool nameTableSelection)
 		}
 	}
 	quadrants.push_back(quadrant);
+}
+
+Vector2D Background::getTrueXY(int x, int y, int nametable)
+{
+	Vector2D v = { x, y };
+	// Get true X,Y
+	if (mirrorPositions[mirrorType][nametable][0])
+	{
+		v.x += 32;
+	}
+	if (mirrorPositions[mirrorType][nametable][1])
+	{
+		v.y += 30;
+	}
+	// If this new X,Y is out of bounds, make it wrap around back from the top-left
+	v.x %= mirrorSizes[mirrorType][0];
+	v.y %= mirrorSizes[mirrorType][1];
+	return v;
 }
 
 int PpuSnapshot::getTrueOamTile(int s)

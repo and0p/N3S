@@ -42,6 +42,11 @@ void N3sPalette::updateShaderPalette()
 	N3s3d::updatePalette(&colors[0], standards[0].hueSets[0].hues[backgroundColorIndex]);
 }
 
+int N3sPalette::getIndex(int palette, int color)
+{
+	return colorIndices[palette * 3 + color];
+}
+
 Hue N3sPalette::getHue(int color)
 {
 	return standards[0].hueSets[0].hues[color];

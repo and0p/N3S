@@ -33,6 +33,7 @@ public:
 	int colorIndices[24];		// All palette colors that are not the background
 	int backgroundColorIndex;	// Background color
 	void updateShaderPalette();
+	int getIndex(int palette, int color);
 	Hue getBackgroundColor();
 	static Hue getHue(int color);
 	static void setPPUType(PPUType type);

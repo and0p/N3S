@@ -31,7 +31,12 @@ void Vector2D::snapRelative(Vector2D v)
 {
 	x = floor((x - v.x + 4) / 8) * 8 + v.x;
 	y = floor((y - v.y + 4) / 8) * 8 + v.y;
-} 
+}
+
+Vector2F Vector2D::convertToWorldSpace()
+{
+	return { -1.0f + (float)x * pixelSizeW, 1.0f - (float)y * pixelSizeH };
+}
 
 Vector2D Vector2D::diff(Vector2D a, Vector2D b)
 {

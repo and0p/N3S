@@ -19,6 +19,8 @@ const char intChars[10] = { '0','1','2','3','4','5','6','7','8','9' };
 
 enum VoxelSide { left, right, top, bottom, front, back };
 
+enum StencilGrouping { no_grouping, sameColor, continous, continous_samecolor, adjacent_samecolor };
+
 struct SharedMesh {
 	VoxelMesh mesh;
 	int referenceCount;
@@ -47,9 +49,11 @@ public:
 	SpriteMesh(char* spriteData);
 	SpriteMesh(json j);
 	int id;
-	unique_ptr<VoxelCollection> voxels;
+	shared_ptr<VoxelCollection> voxels;
 	VoxelMesh mesh;
+	VoxelMesh outlineMesh;
 	VoxelMesh zMeshes[64];
+	VoxelMesh outlineZMeshes[64];
 	void setVoxel(Vector3D v, int color);
 	void updateVoxel(Vector3D v, int color);
 	bool buildMesh();
@@ -58,9 +62,12 @@ public:
 	void moveLayer(int x, int y, int z, int newX, int newY, int newZ, bool copy);
 	json getJSON();
 	void setOutline(int o);
+	bool fullOutline = false;
 	int outlineColor = -1;
 private:
-	void buildZMeshes();
+	static shared_ptr<VoxelCollection> makeOutlineVoxelCollection(shared_ptr<VoxelCollection> vc, bool full);
+	static VoxelMesh buildMeshFromVoxelCollection(shared_ptr<VoxelCollection> vc, bool outline);
+	void buildZMeshes(shared_ptr<VoxelCollection> vc, ShaderType type);
 	void rebuildZMesh(int x, int y);
 };
 
@@ -106,16 +113,21 @@ public:
 	shared_ptr<VirtualSprite> getSpriteByChrData(char* data);
 	RomInfo romInfo;
 	int totalSprites;
-	static VoxelMesh getSharedMesh(int zArray[32]);
-	static void releaseSharedMesh(string hash);
+	static VoxelMesh getSharedMesh(int zArray[32], ShaderType type);
+	static void releaseSharedMesh(string hash, ShaderType type);
 	void unload();
 	json getJSON();
+	static StencilGrouping oamGrouping;
+	static StencilGrouping ntGrouping;
 private:
-	static unordered_map<string, SharedMesh> sharedMeshes;
+	static unordered_map<string, SharedMesh> sharedPaletteMeshes;
+	static unordered_map<string, SharedMesh> sharedOutlineMeshes;
+	
 };
 
 static VoxelMesh buildZMesh(int zArray[32]);
 static void buildSide(vector<ColorVertex> * vertices, int x, int y, int z, int color, VoxelSide side);
+static void buildSideOutline(vector<OverlayVertex> * vertices, int x, int y, int z, VoxelSide side);
 void setVoxelColors(char a, char b, Voxel* row);
 bool getBitLeftSide(char byte, int position);
 string getPaddedStringFromInt(int i, int length);

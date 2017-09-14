@@ -12,14 +12,11 @@
 #include "N3sD3DContext.h"
 #include "N3sMath.hpp"
 
-static float pixelSizeW = (2.0f / 256.0f);
-static float pixelSizeH = (2.0f / 240.0f); // normally 240
-
 using namespace DirectX;
 using namespace std;
 
-enum ShaderType { color = 0, overlay = 1 };
-const int shaderCount = 2;	// UPDATE THIS WHEN ADDING SHADERS
+enum ShaderType { color = 0, overlay = 1, outline = 2 };
+const int shaderCount = 3;	// UPDATE THIS WHEN ADDING SHADERS
 
 enum PlaneAxis { x_axis, y_axis, z_axis };
 
@@ -29,12 +26,17 @@ struct ColorVertex {
 	UINT32 Color;
 };
 
+struct OutlineVertex {
+	XMFLOAT4 Pos;
+};
+
 struct OverlayVertex {
 	XMFLOAT4 Pos;
 };
 
 struct VoxelMesh {
 	ID3D11Buffer *buffer;
+	void releaseBuffers();
 	ShaderType type;
 	int size;
 };
@@ -74,12 +76,31 @@ struct MirrorState
 	int y;
 };
 
+struct OutlineCache
+{
+	int stencilValue;
+	VoxelMesh *outlineMesh;
+	int palette;
+	int color;
+	float posX;
+	float posY;
+	bool mirrorH;
+	bool mirrorV;
+};
+
+enum StencilMode
+{
+	stencil_nowrite,
+	stencil_write,
+	stencil_mask
+};
+
 class N3s3d {
 public:
 	static void initPipeline(N3sD3dContext context);
 	static ID3D11Buffer* createBufferFromColorVertices(std::vector<ColorVertex> * vertices, int arraySize);
 	static ID3D11Buffer* createBufferFromOverlayVertices(std::vector<OverlayVertex> * vertices, int arraySize);
-	static void updateMatricesWithCamera(Camera * camera);
+	static void updateMatricesWithCamera(shared_ptr<Camera> camera);
 	static void updateViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 perspective);
 	static void updateWorldMatrix(float xPos, float yPos, float zPos);
 	static void updateWorldMatrix(float xPos, float yPos, float zPos, float xRot, float yRot, float zRot, float scale);
@@ -87,6 +108,7 @@ public:
 	static void updateMirroring(bool horizontal, bool vertical);
 	static void updatePalette(float palette[72], Hue bg);
 	static void selectPalette(int palette);
+	static void selectOutlinePalette(int palette, int color);
 	static void setCameraPos(float x, float y, float z);
 	static void setOverlayColor(float r, float g, float b, float a);
 	static void setOverlayColor(int r, int g, int b, int a);
@@ -95,9 +117,17 @@ public:
 	static void renderMesh(VoxelMesh *voxelMesh);
 	static void setIndexBuffer();
 	static void setDepthBufferState(bool active);
+	static void setStencilingState(StencilMode mode, int referenceNumber);
 	static void setDepthStencilState(bool depthTest, bool stencilWrite, bool stencilTest);
+	static void prepareStencilForOutline(bool increment);
+	static void stopStencilingForOutline();
+	static void setStencilingState(ID3D11DepthStencilState * state, int value);
+	static void cacheOutlineMesh(VoxelMesh * outlineMesh, int palette, int color, float x, float y, bool mirrorH, bool mirrorV);
+	static void renderOutlines();
 	static void setRasterFillState(bool fill);
+	static void incrementStencilReference();
 	static void setGuiProjection();
+	static void clear();
 	static D3D11_VIEWPORT viewport;
 	static void updateViewport(D3D11_VIEWPORT viewport);
 	static XMVECTOR getMouseVector(Camera * camera, int mouseX, int mouseY);
@@ -108,7 +138,7 @@ private:
 	static void initShaderExtras();
 	static void initSampleState();
 	static void initRasterDesc();
-	static void createIndexBuffer();
+	static void createIndexBuffers();
 	static bool initDepthStencils();
 };
 

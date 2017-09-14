@@ -3,6 +3,14 @@
 enum MirrorStyle { no_mirroring, mirror_single, mirror_offset };
 enum MirrorDirection { mirror_x, mirror_y, mirror_z };
 
+static float pixelSizeW = (2.0f / 256.0f);
+static float pixelSizeH = (2.0f / 256.0f); // normally 240
+
+struct Vector2F {
+	float x;
+	float y;
+};
+
 class Vector2D {
 public:
 	Vector2D();
@@ -11,6 +19,7 @@ public:
 	void sub(Vector2D v);
 	void snap();
 	void snapRelative(Vector2D v);
+	Vector2F convertToWorldSpace();
 	static Vector2D diff(Vector2D a, Vector2D b);
 	int x, y;
 };
@@ -22,11 +31,6 @@ struct Vector3D {
 	Vector3D mirrorMesh(Vector3D mirrorPoint,
 						MirrorDirection mirrorDirection,
 						MirrorStyle mirrorType);
-};
-
-struct Vector2F {
-	float x;
-	float y;
 };
 
 class Color4F {
@@ -41,8 +45,6 @@ class Vector3F {
 public:
 	float x, y, z;
 };
-
-
 
 inline int getArrayIndexFromXY(int x, int y, int arrayWidth)
 {

@@ -9,7 +9,7 @@ XMFLOAT3 zIntersect;
 
 Vector2D mousePixelCoordinates;
 
-OrbitCamera mainCamera;
+shared_ptr<OrbitCamera> mainCamera;
 
 bool mouseCaptured = false;
 
@@ -28,6 +28,8 @@ bool edittingIn3d = false;
 
 shared_ptr<vector<SceneSprite>> Editor::copiedSprites = nullptr;
 
+Hue previousHue;
+
 bool isSpriteIn2dRect(int top, int left, int bottom, int right, int x, int y)
 {
 	if ((x >= left && x < right) || (x + 8 >= left && x + 8 < right))
@@ -42,8 +44,9 @@ bool isSpriteIn2dRect(int top, int left, int bottom, int right, int x, int y)
 
 Scene::Scene()
 {
+	mainCamera = make_shared<OrbitCamera>(OrbitCamera());
 	// Set camera to default position
-	mainCamera.SetPosition(0, 0, 0);
+	mainCamera->SetPosition(0, 0, 0);
 	selection = make_shared<Selection>();
 	displaySelection = make_shared<Selection>();
 }
@@ -51,7 +54,7 @@ Scene::Scene()
 Scene::Scene(shared_ptr<PpuSnapshot> snapshot)
 {
 	// Set camera to default position
-	mainCamera.SetPosition(0, 0, 0);
+	mainCamera->SetPosition(0, 0, 0);
 	selection = make_shared<Selection>();
 	displaySelection = make_shared<Selection>();
 	// Create scene from snapshot
@@ -130,8 +133,9 @@ Scene::Scene(shared_ptr<PpuSnapshot> snapshot)
 
 Scene::Scene(json j)
 {
+	mainCamera = make_shared<OrbitCamera>(OrbitCamera());
 	// Set camera to default position
-	mainCamera.SetPosition(0, 0, 0);
+	mainCamera->SetPosition(0, 0, 0);
 	selection = make_shared<Selection>();
 	displaySelection = make_shared<Selection>();
 	// Add sprites from JSON
@@ -214,21 +218,21 @@ bool Scene::update(bool mouseAvailable)
 		{
 			float xRot = InputState::keyboardMouse->mouseDeltaX / 5;
 			float yRot = InputState::keyboardMouse->mouseDeltaY / 5;
-			mainCamera.AdjustRotation(xRot, yRot, 0.0f);
+			mainCamera->AdjustRotation(xRot, yRot, 0.0f);
 		}
 		if (InputState::keyboardMouse->mouseButtons[middle_mouse].state > 0)
 		{
 			float xPos = InputState::keyboardMouse->mouseDeltaX / 400;
 			float yPos = InputState::keyboardMouse->mouseDeltaY / 400;
-			mainCamera.AdjustPosition(-xPos, yPos, 0.0f);
+			mainCamera->AdjustPosition(-xPos, yPos, 0.0f);
 		}
 		// Update camera zoom
-		mainCamera.adjustZoom((float)InputState::keyboardMouse->calculatedWheelDelta / 10);
+		mainCamera->adjustZoom((float)InputState::keyboardMouse->calculatedWheelDelta / 10);
 		// Update camera math
-		mainCamera.Render();
+		mainCamera->Render();
 		// Calculate mouse vector and z-intersect
-		mouseVector = N3s3d::getMouseVector(&mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
-		zIntersect = N3s3d::getPlaneIntersection(z_axis, 15, &mainCamera, InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
+		mouseVector = N3s3d::getMouseVector(mainCamera.get(), InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
+		zIntersect = N3s3d::getPlaneIntersection(z_axis, 15, mainCamera.get(), InputState::keyboardMouse->mouseX, InputState::keyboardMouse->mouseY);
 		Vector3D zIntersectPixels = N3s3d::getPixelCoordsFromFloat3(zIntersect);
 		mousePixelCoordinates.x = zIntersectPixels.x;
 		mousePixelCoordinates.y = zIntersectPixels.y;
@@ -241,7 +245,7 @@ bool Scene::update(bool mouseAvailable)
 	}
 	else
 	{
-		voxelEditor->camera.Render();
+		voxelEditor->camera->Render();
 		return voxelEditor->update(mouseAvailable);
 	}
 }
@@ -254,12 +258,22 @@ void Scene::render(bool renderBackground, bool renderOAM)
 	// Update camera math
 	if (voxelEditor != nullptr)
 	{
-		N3s3d::updateMatricesWithCamera(&voxelEditor->camera);
+		N3s3d::setShader(overlay);
+		N3s3d::updateMatricesWithCamera(voxelEditor->camera);
+		N3s3d::setShader(color);
+		N3s3d::updateMatricesWithCamera(voxelEditor->camera);
 	}
 	else
-		N3s3d::updateMatricesWithCamera(&mainCamera);
+	{
+		N3s3d::setShader(overlay);
+		N3s3d::updateMatricesWithCamera(mainCamera);
+		N3s3d::setShader(color);
+		N3s3d::updateMatricesWithCamera(mainCamera);
+	}
 	// Update palette in video card
 	palettes[selectedPalette].updateShaderPalette();
+	N3sPalette p = palettes[selectedPalette];
+	previousHue = { -1, -1, -1 };
 	// Render sprites
 	for (int i = 0; i < sprites.size(); i++)
 	{
@@ -270,20 +284,31 @@ void Scene::render(bool renderBackground, bool renderOAM)
 			// Don't render the sprite that is being edited
 			if (voxelEditor == nullptr || spriteBeingEdited != i)
 			{
-				// See if sprite is highlighted and write to stencil buffer if so
-				if (displaySelection->selectedIndices.count(i) > 0 || highlight.highlightedIndices.count(i) > 0)
+				// See if mesh has outlines and increment if different from previous
+				if (s.mesh->outlineColor >= 0)
 				{
-					N3s3d::setDepthStencilState(true, true, false);
-					s.mesh->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
-					N3s3d::setDepthStencilState(true, false, false);
+					Hue h;
+					// See what the actual hue of that outline is
+					if (s.mesh->outlineColor == 4) // YO MAKE THIS 3
+						h = p.getBackgroundColor();
+					else
+						h = p.getHue(p.colorIndices[s.palette * 3 + s.mesh->outlineColor]);
+					// See if it's different from before
+					if(h.red != previousHue.red && h.green != previousHue.green && h.blue != previousHue.blue)
+						N3s3d::prepareStencilForOutline(true);
+					previousHue = h;
 				}
-				else // Otherwise render normally
+				else
 				{
-					s.mesh->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
+					previousHue = { -1, -1, -1 };
+					N3s3d::stopStencilingForOutline();
 				}
+				s.mesh->render(s.x, s.y, s.palette, s.mirrorH, s.mirrorV, { 0, 0, 0, 0 });
 			}
 		}
 	}
+	N3s3d::renderOutlines();
+	// TODO stencil and shade highlights afterwards
 	// Branch based on voxel editing mode
 	if (voxelEditor != nullptr)
 	{
@@ -309,13 +334,13 @@ void Scene::render(bool renderBackground, bool renderOAM)
 			else
 			{
 				// Draw onto z-axis in pixel-space
-				N3s3d::updateMatricesWithCamera(&mainCamera);
+				N3s3d::updateMatricesWithCamera(mainCamera);
 				Overlay::drawRectangleInScene(sel_left, sel_top, 15, sel_right - sel_left, sel_bottom - sel_top);
 			}
 		}
 		// Render selection boxes around OAM and NT
 		N3s3d::setDepthBufferState(false);
-		N3s3d::updateMatricesWithCamera(&mainCamera);
+		N3s3d::updateMatricesWithCamera(mainCamera);
 		N3s3d::setRasterFillState(false);
 		displaySelection->render(&sprites, moveX, moveY);
 		N3s3d::setRasterFillState(true);
@@ -332,7 +357,7 @@ void Scene::renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights)
 	N3s3d::setDepthBufferState(false);
 	N3s3d::setRasterFillState(false);
 	// Update camera math (was probably left at GUI projection after scene rendering)
-	N3s3d::updateMatricesWithCamera(&mainCamera);
+	N3s3d::updateMatricesWithCamera(mainCamera);
 	// Render background grid, if enabled
 	if (drawBackgroundGrid && showGuides)
 	{

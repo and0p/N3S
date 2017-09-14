@@ -1,6 +1,13 @@
 #include "stdafx.h"
 #include "GameData.hpp"
 
+char digits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+unordered_map<string, SharedMesh> GameData::sharedPaletteMeshes;
+unordered_map<string, SharedMesh> GameData::sharedOutlineMeshes;
+
+StencilGrouping GameData::oamGrouping = continous_samecolor;
+StencilGrouping GameData::ntGrouping = adjacent_samecolor;
+
 RomInfo getRomInfo(char * data)
 {
 	RomInfo r;
@@ -51,26 +58,169 @@ void SpriteMesh::updateVoxel(Vector3D v, int color)
 	rebuildZMesh(v.x, v.y);
 }
 
-void SpriteMesh::buildZMeshes()
+shared_ptr<VoxelCollection> SpriteMesh::makeOutlineVoxelCollection(shared_ptr<VoxelCollection> vc, bool full)
+{
+	shared_ptr<VoxelCollection> outlineVC = make_shared<VoxelCollection>();
+	// Create all outline voxels
+	for (int z = 0; z < spriteDepth; z++)
+		for (int y = 0; y < spriteHeight; y++)
+			for (int x = 0; x < spriteWidth; x++)
+				if (vc->getVoxel(x, y, z).color > 0) // TODO: do I want to grab background color voxels? Probably
+				{
+					// See if we're doing a full or partial outline
+					if (full)
+					{
+						// Add all 9 possible outline voxels
+						for (int newX = -1; newX < 2; newX++)
+							for (int newY = -1; newY < 2; newY++)
+								for (int newZ = -1; newZ < 2; newZ++)
+									outlineVC->setVoxel(x + newX, y + newY, z + newZ, { 1 });
+					}
+					else
+					{
+						// Create outline on adjacent, not diagonal, spots
+						outlineVC->setVoxel(x, y, z, { 1 });
+						outlineVC->setVoxel(x + 1, y, z, { 1 });
+						outlineVC->setVoxel(x - 1, y, z, { 1 });
+						outlineVC->setVoxel(x, y + 1, z, { 1 });
+						outlineVC->setVoxel(x, y - 1, z, { 1 });
+						outlineVC->setVoxel(x, y, z + 1, { 1 });
+						outlineVC->setVoxel(x, y, z - 1, { 1 });
+					}
+				}
+	return outlineVC;
+}
+
+VoxelMesh SpriteMesh::buildMeshFromVoxelCollection(shared_ptr<VoxelCollection> vc, bool outline)
+{
+	VoxelMesh m;
+	vector<ColorVertex> vertices;
+	vector<OverlayVertex> outlineVertices;	// Probably not needed
+	int sideCount = 0;
+	if(outline)
+		for (int z = 0; z < spriteDepth; z++)
+		{
+			for (int y = 0; y < spriteHeight; y++)
+			{
+				for (int x = 0; x < spriteWidth; x++)
+				{
+					int color = vc->getVoxel(x, y, z).color;
+					// See if the voxel is not empty
+					if (color > 0)
+					{
+						// Check each adjacent voxel/edge and draw a square as needed
+						// TODO: Also add > evaluation for semi-transparent voxels in the future?
+						if (x == 0 || vc->getVoxel(x - 1, y, z).color == 0) {
+							buildSideOutline(&outlineVertices, x, y, z, VoxelSide::left);
+							sideCount++;
+						}
+						if (x == spriteWidth - 1 || vc->getVoxel(x + 1, y, z).color == 0) {
+							buildSideOutline(&outlineVertices, x, y, z, VoxelSide::right);
+							sideCount++;
+						}
+						if (y == 0 || vc->getVoxel(x, y - 1, z).color == 0) {
+							buildSideOutline(&outlineVertices, x, y, z, VoxelSide::top);
+							sideCount++;
+						}
+						if (y == spriteHeight - 1 || vc->getVoxel(x, y + 1, z).color == 0) {
+							buildSideOutline(&outlineVertices, x, y, z, VoxelSide::bottom);
+							sideCount++;
+						}
+						if (z == 0 || vc->getVoxel(x, y, z - 1).color == 0) {
+							buildSideOutline(&outlineVertices, x, y, z, VoxelSide::front);
+							sideCount++;
+						}
+						if (z == spriteDepth - 1 || vc->getVoxel(x, y, z + 1).color == 0) {
+							buildSideOutline(&outlineVertices, x, y, z, VoxelSide::back);
+							sideCount++;
+						}
+					}
+				}
+			}
+		}
+	else // Normal color mesh
+	{
+		for (int z = 0; z < spriteDepth; z++)
+		{
+			for (int y = 0; y < spriteHeight; y++)
+			{
+				for (int x = 0; x < spriteWidth; x++)
+				{
+					int color = vc->getVoxel(x, y, z).color;
+					// See if the voxel is not empty
+					if (color > 0)
+					{
+						// Check each adjacent voxel/edge and draw a square as needed
+						// TODO: Also add > evaluation for semi-transparent voxels in the future?
+						if (x == 0 || vc->getVoxel(x - 1, y, z).color == 0) {
+							buildSide(&vertices, x, y, z, color, VoxelSide::left);
+							sideCount++;
+						}
+						if (x == spriteWidth - 1 || vc->getVoxel(x + 1, y, z).color == 0) {
+							buildSide(&vertices, x, y, z, color, VoxelSide::right);
+							sideCount++;
+						}
+						if (y == 0 || vc->getVoxel(x, y - 1, z).color == 0) {
+							buildSide(&vertices, x, y, z, color, VoxelSide::top);
+							sideCount++;
+						}
+						if (y == spriteHeight - 1 || vc->getVoxel(x, y + 1, z).color == 0) {
+							buildSide(&vertices, x, y, z, color, VoxelSide::bottom);
+							sideCount++;
+						}
+						if (z == 0 || vc->getVoxel(x, y, z - 1).color == 0) {
+							buildSide(&vertices, x, y, z, color, VoxelSide::front);
+							sideCount++;
+						}
+						if (z == spriteDepth - 1 || vc->getVoxel(x, y, z + 1).color == 0) {
+							buildSide(&vertices, x, y, z, color, VoxelSide::back);
+							sideCount++;
+						}
+					}
+				}
+			}
+		}
+	}
+	// Set size and type
+	m.size = sideCount * 4;
+	if (outline)
+		m.type = ShaderType::outline;
+	else
+		m.type = color;
+	// Build mesh if any voxels exist
+	if (m.size > 0)
+	{
+		if(outline)
+			m.buffer = N3s3d::createBufferFromOverlayVertices(&outlineVertices, m.size);
+		else
+			m.buffer = N3s3d::createBufferFromColorVertices(&vertices, m.size);	
+	}
+	return m;
+}
+
+void SpriteMesh::buildZMeshes(shared_ptr<VoxelCollection> vc, ShaderType type)
 {
 	for (int y = 0; y < 8; y++)
 	{
 		for (int x = 0; x < 8; x++)
 		{
-			rebuildZMesh(x, y);
+			int i = getArrayIndexFromXY(x, y, 8);
+			int zArray[32];
+			for (int z = 0; z < 32; z++)
+			{
+				zArray[z] = vc->getVoxel(x, y, z).color;
+			}
+			if(type == color)
+				zMeshes[i] = GameData::getSharedMesh(zArray, color);
+			else
+				outlineZMeshes[i] = GameData::getSharedMesh(zArray, outline);
 		}
 	}
 }
 
 void SpriteMesh::rebuildZMesh(int x, int y)
 {
-	int i = getArrayIndexFromXY(x, y, 8);
-	int zArray[32];
-	for (int z = 0; z < 32; z++)
-	{
-		zArray[z] = voxels->getVoxel(x, y, z).color;
-	}
-	zMeshes[i] = GameData::getSharedMesh(zArray);
+
 }
 
 VoxelMesh buildZMesh(int zArray[32])
@@ -104,9 +254,46 @@ VoxelMesh buildZMesh(int zArray[32])
 			// TODO: Also add > evaluation for semi-transparent voxels in the future
 		}
 	}
-	mesh.size = sideCount * 6;
+	mesh.size = sideCount * 4;
 	mesh.type = color;
 	mesh.buffer = N3s3d::createBufferFromColorVertices(&vertices, mesh.size);
+	return mesh;
+}
+
+VoxelMesh buildOutlineZMesh(int zArray[32])
+{
+	VoxelMesh mesh = VoxelMesh();
+	vector<OverlayVertex> vertices;
+	int sideCount = 0;
+	for (int z = 0; z < spriteDepth; z++)
+	{
+		int color = zArray[z];
+		// See if the voxel is not empty
+		if (color == 1)
+		{
+			// Draw left, right, top, and bottom edges, which should be visible on Z-Meshes no matter what
+			buildSideOutline(&vertices, 0, 0, z, VoxelSide::left);
+			buildSideOutline(&vertices, 0, 0, z, VoxelSide::right);
+			buildSideOutline(&vertices, 0, 0, z, VoxelSide::top);
+			buildSideOutline(&vertices, 0, 0, z, VoxelSide::bottom);
+			sideCount += 4;
+			// See if front and/or back are exposed, and add sides if sos
+			if (z == 0 || zArray[z - 1] == 0)
+			{
+				buildSideOutline(&vertices, 0, 0, z, front);
+				sideCount++;
+			}
+			if (z == 31 || zArray[z + 1] == 0)
+			{
+				buildSideOutline(&vertices, 0, 0, z, back);
+				sideCount++;
+			}
+			// TODO: Also add > evaluation for semi-transparent voxels in the future
+		}
+	}
+	mesh.size = sideCount * 4;
+	mesh.type = outline;
+	mesh.buffer = N3s3d::createBufferFromOverlayVertices(&vertices, mesh.size);
 	return mesh;
 }
 
@@ -170,13 +357,63 @@ void buildSide(vector<ColorVertex> * vertices, int x, int y, int z, int color, V
 	}
 	vertices->push_back(v1);
 	vertices->push_back(v2);
+	vertices->push_back(v3);
 	vertices->push_back(v4);
+}
+
+void buildSideOutline(vector<OverlayVertex> * vertices, int x, int y, int z, VoxelSide side) {
+	// Translate voxel-space xyz into model-space based on pixel size in 3d space, phew
+	float xf = x * pixelSizeW;
+	float yf = y * -pixelSizeW;
+	float zf = z * pixelSizeW;
+	// Init 4 vertices
+	OverlayVertex v1, v2, v3, v4;
+
+	// Switch based on side
+	switch (side) {
+	case VoxelSide::left:
+		v1.Pos = XMFLOAT4(xf, yf, zf + pixelSizeW, 1.0f);
+		v2.Pos = XMFLOAT4(xf, yf, zf, 1.0f);
+		v3.Pos = XMFLOAT4(xf, yf - pixelSizeW, zf, 1.0f);
+		v4.Pos = XMFLOAT4(xf, yf - pixelSizeW, zf + pixelSizeW, 1.0f);
+		break;
+	case VoxelSide::right:
+		v1.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf, 1.0f);
+		v2.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf + pixelSizeW, 1.0f);
+		v3.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeW, zf + pixelSizeW, 1.0f);
+		v4.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeW, zf, 1.0f);
+		break;
+	case VoxelSide::top:
+		v1.Pos = XMFLOAT4(xf, yf, zf + pixelSizeW, 1.0f);
+		v2.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf + pixelSizeW, 1.0f);
+		v3.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf, 1.0f);
+		v4.Pos = XMFLOAT4(xf, yf, zf, 1.0f);
+		break;
+	case VoxelSide::bottom:
+		v1.Pos = XMFLOAT4(xf, yf - pixelSizeW, zf, 1.0f);
+		v2.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeW, zf, 1.0f);
+		v3.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeW, zf + pixelSizeW, 1.0f);
+		v4.Pos = XMFLOAT4(xf, yf - pixelSizeW, zf + pixelSizeW, 1.0f);
+		break;
+	case VoxelSide::front:
+		v1.Pos = XMFLOAT4(xf, yf, zf, 1.0f);
+		v2.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf, 1.0f);
+		v3.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeW, zf, 1.0f);
+		v4.Pos = XMFLOAT4(xf, yf - pixelSizeW, zf, 1.0f);
+		break;
+	case VoxelSide::back:
+		v1.Pos = XMFLOAT4(xf + pixelSizeW, yf, zf + pixelSizeW, 1.0f);
+		v2.Pos = XMFLOAT4(xf, yf, zf + pixelSizeW, 1.0f);
+		v3.Pos = XMFLOAT4(xf, yf - pixelSizeW, zf + pixelSizeW, 1.0f);
+		v4.Pos = XMFLOAT4(xf + pixelSizeW, yf - pixelSizeW, zf + pixelSizeW, 1.0f);
+		break;
+	}
+	vertices->push_back(v1);
 	vertices->push_back(v2);
 	vertices->push_back(v3);
 	vertices->push_back(v4);
 }
 
-unordered_map<string, SharedMesh> GameData::sharedMeshes;
 
 GameData::GameData(char * data)
 {
@@ -264,11 +501,10 @@ shared_ptr<VirtualSprite> GameData::getSpriteByChrData(char * data)
 		return sprites[0];
 }
 
-VoxelMesh GameData::getSharedMesh(int zArray[32])
+VoxelMesh GameData::getSharedMesh(int zArray[32], ShaderType type)
 {
 	// Create simple string hash from the voxels
 	string hash = "";
-	char digits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 	for (int z = 0; z < 31; z++)
 	{
 		hash += digits[zArray[z]];
@@ -276,34 +512,73 @@ VoxelMesh GameData::getSharedMesh(int zArray[32])
 	}
 	hash += digits[zArray[31]];
 	// Return mesh if it exists, otherwise create
-	if (sharedMeshes.count(hash) > 0)
+	if (type == color)
 	{
-		// Increase number of references
-		sharedMeshes[hash].referenceCount++;
-		// Return reference
-		return sharedMeshes[hash].mesh;
+		if (sharedPaletteMeshes.count(hash) > 0)
+		{
+			// Increase number of references
+			sharedPaletteMeshes[hash].referenceCount++;
+			// Return reference
+			return sharedPaletteMeshes[hash].mesh;
+		}
+		else
+		{
+			SharedMesh m = SharedMesh();
+			m.mesh = buildZMesh(zArray);
+			m.referenceCount++;
+			sharedPaletteMeshes[hash] = m;
+			return m.mesh;
+		}
 	}
 	else
 	{
-		SharedMesh m = SharedMesh();
-		m.mesh = buildZMesh(zArray);
-		m.referenceCount++;
-		sharedMeshes[hash] = m;
-		return m.mesh;
+		if (sharedOutlineMeshes.count(hash) > 0)
+		{
+			// Increase number of references
+			sharedOutlineMeshes[hash].referenceCount++;
+			// Return reference
+			return sharedOutlineMeshes[hash].mesh;
+		}
+		else
+		{
+			SharedMesh m = SharedMesh();
+			m.mesh = buildOutlineZMesh(zArray);
+			m.referenceCount++;
+			sharedOutlineMeshes[hash] = m;
+			return m.mesh;
+		}
 	}
 }
 
-void GameData::releaseSharedMesh(string hash)
+void GameData::releaseSharedMesh(string hash, ShaderType type)
 {
-	// Make sure this actually exists
-	if (sharedMeshes.count(hash) > 0)
+	// Branch based on shader type
+	if (type == color)
 	{
-		sharedMeshes[hash].referenceCount--;
-		// Delete this mesh if it is no longer in use
-		if (sharedMeshes[hash].referenceCount <= 0)
+		// Make sure this actually exists
+		if (sharedPaletteMeshes.count(hash) > 0)
 		{
-			sharedMeshes[hash].mesh.buffer->Release();
-			sharedMeshes.erase(hash);
+			sharedPaletteMeshes[hash].referenceCount--;
+			// Delete this mesh if it is no longer in use
+			if (sharedPaletteMeshes[hash].referenceCount <= 0)
+			{
+				sharedPaletteMeshes[hash].mesh.buffer->Release();
+				sharedPaletteMeshes.erase(hash);
+			}
+		}
+	}
+	else
+	{
+		// Make sure this actually exists
+		if (sharedOutlineMeshes.count(hash) > 0)
+		{
+			sharedOutlineMeshes[hash].referenceCount--;
+			// Delete this mesh if it is no longer in use
+			if (sharedOutlineMeshes[hash].referenceCount <= 0)
+			{
+				sharedOutlineMeshes[hash].mesh.buffer->Release();
+				sharedOutlineMeshes.erase(hash);
+			}
 		}
 	}
 }
@@ -319,14 +594,20 @@ void GameData::unload()
 		}
 	}
 	// Release all partial meshes
-	for (auto kv : sharedMeshes)
+	for (auto kv : sharedPaletteMeshes)
+	{
+		if (kv.second.mesh.buffer != nullptr)
+			kv.second.mesh.buffer->Release();
+	}
+	for (auto kv : sharedOutlineMeshes)
 	{
 		if (kv.second.mesh.buffer != nullptr)
 			kv.second.mesh.buffer->Release();
 	}
 	meshes.clear();
 	sprites.clear();
-	sharedMeshes.clear();
+	sharedPaletteMeshes.clear();
+	sharedOutlineMeshes.clear();
 }
 
 json GameData::getJSON()
@@ -355,60 +636,27 @@ bool SpriteMesh::buildMesh()
 	// Release old buffer, if this mesh is being changed
 	if (meshExists)
 		mesh.buffer->Release();
-	vector<ColorVertex> vertices;
-	int sideCount = 0;
-	for (int z = 0; z < spriteDepth; z++)
+
+	// Build the main mesh
+	mesh = buildMeshFromVoxelCollection(voxels, false);
+
+	if(mesh.size > 0)
 	{
-		for (int y = 0; y < spriteHeight; y++)
+		meshExists = true;
+		buildZMeshes(voxels, color);
+		// Build outline mesh, if set to a color
+		if (outlineColor >= 0)
 		{
-			for (int x = 0; x < spriteWidth; x++)
-			{
-				int color = voxels->getVoxel(x, y, z).color;
-				// See if the voxel is not empty
-				if (color > 0)
-				{
-					// Check each adjacent voxel/edge and draw a square as needed
-					// TODO: Also add > evaluation for semi-transparent voxels in the future?
-					if (x == 0 || voxels->getVoxel(x - 1, y, z).color == 0) {
-						buildSide(&vertices, x, y, z, color, VoxelSide::left);
-						sideCount++;
-					}
-					if (x == spriteWidth - 1 || voxels->getVoxel(x + 1, y, z).color == 0) {
-						buildSide(&vertices, x, y, z, color, VoxelSide::right);
-						sideCount++;
-					}
-					if (y == 0 || voxels->getVoxel(x, y - 1, z).color == 0) {
-						buildSide(&vertices, x, y, z, color, VoxelSide::top);
-						sideCount++;
-					}
-					if (y == spriteHeight - 1 || voxels->getVoxel(x, y + 1, z).color == 0) {
-						buildSide(&vertices, x, y, z, color, VoxelSide::bottom);
-						sideCount++;
-					}
-					if (z == 0 || voxels->getVoxel(x, y, z - 1).color == 0) {
-						buildSide(&vertices, x, y, z, color, VoxelSide::front);
-						sideCount++;
-					}
-					if (z == spriteDepth - 1 || voxels->getVoxel(x, y, z + 1).color == 0) {
-						buildSide(&vertices, x, y, z, color, VoxelSide::back);
-						sideCount++;
-					}
-				}
-			}
+			shared_ptr<VoxelCollection> outlineVoxels = makeOutlineVoxelCollection(voxels, false);
+			outlineMesh = buildMeshFromVoxelCollection(outlineVoxels, true);
+			buildZMeshes(outlineVoxels, outline);
 		}
-	}
-	mesh.size = sideCount * 6;
-	mesh.type = color;
-	// Return true if there is an actual mesh to render
-	if (vertices.size() > 0)
-	{
-		mesh.buffer = N3s3d::createBufferFromColorVertices(&vertices, mesh.size);
-		if(!meshExists)
-			buildZMeshes();
 		return true;
 	}
 	else
 	{
+		meshExists = false;
+		mesh.buffer = nullptr;
 		return false;
 	}
 }
@@ -456,8 +704,11 @@ Voxel VoxelCollection::getVoxel(int x, int y, int z)
 
 void VoxelCollection::setVoxel(int x, int y, int z, Voxel v)
 {
-	int voxelSlot = x + (y * spriteWidth) + (z * (spriteHeight * spriteWidth));
-	voxels[voxelSlot] = v;
+	if (x >= 0 && x < 8 && y >= 0 && y < 8 && z >= 0 && z < 32)
+	{
+		int voxelSlot = x + (y * spriteWidth) + (z * (spriteHeight * spriteWidth));
+		voxels[voxelSlot] = v;
+	}
 }
 
 void VoxelCollection::clear()
@@ -622,6 +873,7 @@ void SpriteMesh::render(int x, int y, int palette, bool mirrorH, bool mirrorV, C
 		// Check if we're cropping
 		if (crop.zeroed())
 		{
+			// Not cropped, render normally
 			N3s3d::selectPalette(palette);
 			float posX, posY;
 			posX = -1.0f + (pixelSizeW * x);
@@ -632,7 +884,18 @@ void SpriteMesh::render(int x, int y, int palette, bool mirrorH, bool mirrorV, C
 			if (mirrorV)
 				posY -= (pixelSizeW * 8);
 			N3s3d::updateWorldMatrix(posX, posY, 0);
-			N3s3d::renderMesh(&mesh);
+			// See if we should be drawing any outlines
+			if (outlineColor >= 0)
+			{
+				// Render mesh, writing to stencil buffer with unique id
+				N3s3d::renderMesh(&mesh);
+				// Cache outline to be rendered later
+				N3s3d::cacheOutlineMesh(&outlineMesh, palette, outlineColor, posX, posY, mirrorH, mirrorV);
+			}
+			else
+			{
+				N3s3d::renderMesh(&mesh);
+			}
 		}
 		else
 		{
@@ -721,17 +984,6 @@ void SpriteMesh::moveLayer(int oldX, int oldY, int oldZ, int newX, int newY, int
 		// Rebuild the mesh
 		buildMesh();
 	}
-	if (newZ != oldZ)
-	{
-		// Rebuild all
-		buildZMeshes();
-	}
-	else
-	{
-		// If on a X or Y axis, only rebuild needed Z meshes
-		//TODO actually check which are necessary
-		buildZMeshes();
-	}
 }
 
 json SpriteMesh::getJSON()
@@ -745,5 +997,20 @@ json SpriteMesh::getJSON()
 void SpriteMesh::setOutline(int o)
 {
 	if (o >= -1 && o <= 3)
-		outlineColor = o;
+		// See if outline was set at all previously
+		if (outlineColor < 0 && o >= 0)
+		{
+			outlineColor = o;
+			if (meshExists)
+			{
+				shared_ptr<VoxelCollection> vc = makeOutlineVoxelCollection(voxels, false);
+				outlineMesh = buildMeshFromVoxelCollection(vc, true);
+				buildZMeshes(vc, outline);
+			}
+
+		}
+		else
+		{
+			outlineColor = o;
+		}
 }

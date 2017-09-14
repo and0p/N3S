@@ -8,26 +8,24 @@
 
 using namespace std;
 
+#define DEPTH_BIAS_D32_FLOAT(d) (d/(1/pow(2,23)));
+
 Microsoft::WRL::ComPtr<ID3D11Device>            device;
 Microsoft::WRL::ComPtr<ID3D11Device1>           device1;
 Microsoft::WRL::ComPtr<ID3D11DeviceContext>     context;
 Microsoft::WRL::ComPtr<ID3D11DeviceContext1>    context1;
 
-
 Shader shaders[shaderCount];
-//ID3D11InputLayout *inputLayouts[2];
-//ID3D11Buffer *worldMatrixBuffer;
-//ID3D11Buffer *viewMatrixBuffer;
-//ID3D11Buffer *projectionMatrixBuffer;
 ID3D11Buffer *mirrorBuffer;
 ID3D11Buffer *paletteBuffer;
 ID3D11Buffer *paletteSelectionBuffer;
 ID3D11Buffer *indexBuffer;
+ID3D11Buffer *indexBufferReversed;
+ID3D11Buffer *outlineMirrorBuffer;
+ID3D11Buffer *outlineColorBuffer;
 ID3D11Buffer *overlayColorBuffer;
 ID3D11Buffer *cameraPosBuffer;
-//MatrixBuffer *worldMatrixPtr;
-//MatrixBuffer *viewMatrixPtr;
-//MatrixBuffer *projectionMatrixPtr;
+ID3D11Buffer *outlinePaletteSelectionBuffer;
 ID3D11SamplerState* sampleState;
 ID3D11Texture2D* texture2d;
 ID3D11ShaderResourceView* textureView;
@@ -42,8 +40,10 @@ ID3D11DepthStencilState* m_depthStencilNoWriteState;
 ID3D11DepthStencilState* m_depthStencilWriteState;
 ID3D11DepthStencilState* m_depthDisabledStencilState;
 ID3D11DepthStencilState* m_depthDisabledStencilOnlyState;
+ID3D11DepthStencilState* m_depthStencilMaskRefState;
 ID3D11DepthStencilView* m_depthStencilView;
 ID3D11RasterizerState* fillRasterState;
+ID3D11RasterizerState* reverseRasterState;
 ID3D11RasterizerState* wireframeRasterState;
 int selectedPalette;
 int mirrorBufferNumber;
@@ -51,7 +51,20 @@ int paletteBufferNumber;
 int paletteSelectionBufferNumber;
 int cameraPosBufferNumber;
 
+int selectedOutlinePalette = -1;
+int selectedOutlineColor = -1;
+
+int stencilReferenceNumber;
+vector<OutlineCache> cachedOutlines;
+
+ID3D11DepthStencilState * currentStencilState = nullptr;
+int currentStencilValue = -1;
+
 D3D11_VIEWPORT N3s3d::viewport;
+
+bool stenciling = false;
+
+struct OutlineSelection { int a; int b; };
 
 void N3s3d::initPipeline(N3sD3dContext c)
 {
@@ -69,6 +82,7 @@ void N3s3d::initPipeline(N3sD3dContext c)
 	setDepthBufferState(true);
 	initSampleState();
 	initRasterDesc();
+	createIndexBuffers();
 
 	// select which primtive type we are using
 	context->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -92,6 +106,8 @@ void N3s3d::initPipeline(N3sD3dContext c)
 	};
 	updatePalette(paletteArray, { 0.0f, 0.0f, 0.0f });
 	setOverlayColor(100, 100, 100, 64);
+
+	stencilReferenceNumber = 1;
 }
 
 void N3s3d::initShaders() {
@@ -171,6 +187,34 @@ void N3s3d::initShaders() {
 	s_stream.close();
 
 	device1->CreatePixelShader(s_data, s_size, 0, &shaders[overlay].pixelShader);
+
+	// Init outline shaders
+	s_stream.open(L"outline_vertex.cso", ifstream::in | ifstream::binary);
+	s_stream.seekg(0, ios::end);
+	s_size = size_t(s_stream.tellg());
+	s_data = new char[s_size];
+	s_stream.seekg(0, ios::beg);
+	s_stream.read(&s_data[0], s_size);
+	s_stream.close();
+
+	device1->CreateVertexShader(s_data, s_size, 0, &shaders[outline].vertexShader);
+
+	D3D11_INPUT_ELEMENT_DESC outlineLayout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
+
+	device1->CreateInputLayout(outlineLayout, 1, &s_data[0], s_size, &shaders[outline].inputLayout);
+
+	s_stream.open(L"outline_pixel.cso", ifstream::in | ifstream::binary);
+	s_stream.seekg(0, ios::end);
+	s_size = size_t(s_stream.tellg());
+	s_data = new char[s_size];
+	s_stream.seekg(0, ios::beg);
+	s_stream.read(&s_data[0], s_size);
+	s_stream.close();
+
+	device1->CreatePixelShader(s_data, s_size, 0, &shaders[outline].pixelShader);
 }
 
 void N3s3d::initShaderExtras()
@@ -230,12 +274,33 @@ void N3s3d::initShaderExtras()
 
 	device1->CreateBuffer(&cameraPosBufferDesc, NULL, &cameraPosBuffer);
 
+	// Create mirror buffer desc for outline shader
+	D3D11_BUFFER_DESC overlayMirrorBufferDesc;
+	overlayMirrorBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	overlayMirrorBufferDesc.ByteWidth = 16;
+	overlayMirrorBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	overlayMirrorBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	overlayMirrorBufferDesc.MiscFlags = 0;
+	overlayMirrorBufferDesc.StructureByteStride = 0;
+
+	device1->CreateBuffer(&overlayMirrorBufferDesc, NULL, &mirrorBuffer);
+
+	// Create pallete selection buffer for outline shader
+	D3D11_BUFFER_DESC outlinePaletteSelectionBufferDesc;
+	outlinePaletteSelectionBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	outlinePaletteSelectionBufferDesc.ByteWidth = 16;
+	outlinePaletteSelectionBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	outlinePaletteSelectionBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	outlinePaletteSelectionBufferDesc.MiscFlags = 0;
+	outlinePaletteSelectionBufferDesc.StructureByteStride = 0;
+
+	device1->CreateBuffer(&outlinePaletteSelectionBufferDesc, NULL, &outlinePaletteSelectionBuffer);	
+
 	// Set buffer slots
 	mirrorBufferNumber = 3;
 	paletteBufferNumber = 4;
 	paletteSelectionBufferNumber = 5;
 	cameraPosBufferNumber = 6;
-
 }
 
 void N3s3d::setShader(ShaderType type) {
@@ -386,6 +451,12 @@ void N3s3d::updateMirroring(bool horizontal, bool vertical) {
 		context1->Unmap(mirrorBuffer, 0);
 		// Finally set the constant buffer in the vertex shader with the updated values.
 		context1->VSSetConstantBuffers(mirrorBufferNumber, 1, &mirrorBuffer);
+
+		// Also, set index for rendering voxel meshes based on mirroring
+		if (horizontal == vertical)
+			context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R16_UINT, 0);
+		else
+			context->IASetIndexBuffer(indexBufferReversed, DXGI_FORMAT_R16_UINT, 0);
 	}
 }
 
@@ -444,6 +515,30 @@ void N3s3d::selectPalette(int palette)
 	}
 }
 
+void N3s3d::selectOutlinePalette(int palette, int color)
+{
+	if (palette != selectedOutlinePalette || color != selectedOutlineColor)
+	{
+		selectedOutlinePalette = palette;
+		selectedOutlineColor = color;
+		D3D11_MAPPED_SUBRESOURCE mappedResource;
+		int* dataPtr;
+		// Lock the constant buffer so it can be written to.
+		context1->Map(outlinePaletteSelectionBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+		// Get a pointer to the data in the constant buffer.
+		dataPtr = (int*)mappedResource.pData;
+		// Copy the values into the constant buffer.
+		*dataPtr = selectedOutlinePalette;
+		*(dataPtr + 1) = selectedOutlineColor;
+		*(dataPtr + 2) = 0;
+		*(dataPtr + 3) = 0;
+		// Unlock the constant buffer.
+		context1->Unmap(outlinePaletteSelectionBuffer, 0);
+		// Finally set the constant buffer in the pixel shader with the updated values.
+		context1->VSSetConstantBuffers(paletteSelectionBufferNumber, 1, &outlinePaletteSelectionBuffer);
+	}
+}
+
 void N3s3d::setCameraPos(float x, float y, float z)
 {
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -493,7 +588,7 @@ void N3s3d::setOverlayColor(int r, int g, int b, int a)
 	setOverlayColor((float)r / 255, (float)g / 255, (float)b / 255, (float)a / 255);
 }
 
-void N3s3d::updateMatricesWithCamera(Camera * camera) {
+void N3s3d::updateMatricesWithCamera(shared_ptr<Camera> camera) {
 
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -624,12 +719,75 @@ void N3s3d::setDepthStencilState(bool depthTest, bool stencilWrite, bool stencil
 	}
 }
 
+void N3s3d::prepareStencilForOutline(bool increment)
+{
+	if(increment)
+		incrementStencilReference();	// Increment, since we're now writing a new value
+	setStencilingState(m_depthStencilWriteState, stencilReferenceNumber);
+}
+
+void N3s3d::stopStencilingForOutline()
+{
+	setStencilingState(m_depthStencilNoWriteState, stencilReferenceNumber);
+}
+
+void N3s3d::setStencilingState(StencilMode mode, int referenceNumber)
+{
+	if (mode == stencil_nowrite)
+		setStencilingState(m_depthStencilNoWriteState, referenceNumber);
+	else if (mode == stencil_write)
+		setStencilingState(m_depthStencilWriteState, referenceNumber);
+	else if (mode == stencil_mask)
+		setStencilingState(m_depthStencilMaskRefState, referenceNumber);
+}
+
+void N3s3d::setStencilingState(ID3D11DepthStencilState * state, int value)
+{
+	if (state != currentStencilState || value != currentStencilValue)
+	{
+		context->OMSetDepthStencilState(state, stencilReferenceNumber);
+		currentStencilState = state;
+		currentStencilValue = value;
+	}
+}
+
+void N3s3d::cacheOutlineMesh(VoxelMesh * outlineMesh, int palette, int color, float x, float y, bool mirrorH, bool mirrorV)
+{
+	cachedOutlines.push_back({ stencilReferenceNumber, outlineMesh, palette, color, x, y, mirrorH, mirrorV });
+}
+
+void N3s3d::renderOutlines()
+{
+	if (cachedOutlines.size() > 0)
+	{
+		setShader(outline);
+		context->RSSetState(reverseRasterState);
+		// Update palette buffer, same one as palette shader
+		context1->VSSetConstantBuffers(paletteBufferNumber, 1, &paletteBuffer);
+		for each (OutlineCache c in cachedOutlines)
+		{
+			selectOutlinePalette(c.palette, c.color);
+			updateMirroring(c.mirrorH, c.mirrorV);
+			updateWorldMatrix(c.posX, c.posY, 0.0f);
+			setStencilingState(m_depthStencilMaskRefState, c.stencilValue);
+			renderMesh(c.outlineMesh);
+		}
+		context->RSSetState(fillRasterState);
+	}
+}
+
 void N3s3d::setRasterFillState(bool fill)
 {
 	if(fill)
 		context->RSSetState(fillRasterState);
 	else
 		context->RSSetState(wireframeRasterState);
+}
+
+void N3s3d::incrementStencilReference()
+{
+	if (stencilReferenceNumber < 254)	// TODO: wrap around (again)
+		stencilReferenceNumber++;
 }
 
 void N3s3d::setGuiProjection()
@@ -664,6 +822,14 @@ void N3s3d::setGuiProjection()
 	context1->Unmap(shaders[activeShader].matrices.projectionMatrixBuffer, 0);
 	// Finally set the constant buffer in the vertex shader with the updated values.
 	context1->VSSetConstantBuffers(2, 1, &shaders[activeShader].matrices.projectionMatrixBuffer);
+}
+
+void N3s3d::clear()
+{
+	stencilReferenceNumber = 1;
+	selectedOutlineColor = -1;
+	selectedOutlinePalette = -1;
+	cachedOutlines.clear();
 }
 
 void N3s3d::updateViewport(D3D11_VIEWPORT v)
@@ -758,11 +924,12 @@ void N3s3d::renderMesh(VoxelMesh *voxelMesh) {
 	}
 	UINT stride;
 	if(activeShader == color)
-		stride = sizeof(ColorVertex); // TODO optimize?
-	if (activeShader == overlay)
+		stride = sizeof(ColorVertex);
+	if (activeShader == overlay || activeShader == outline)
 		stride = sizeof(OverlayVertex);
 	UINT offset = 0;
 	context->IASetVertexBuffers(0, 1, &voxelMesh->buffer, &stride, &offset);
+	// TODO don't change buffer if selected is same as before
 	//context->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	// draw the vertex buffer to the back buffer
 #ifdef HOLOLENS
@@ -774,7 +941,14 @@ void N3s3d::renderMesh(VoxelMesh *voxelMesh) {
 		0               // Start instance location.
 		);
 #else
-	context->Draw(voxelMesh->size, 0);
+	if (activeShader == color || activeShader == outline)
+	{
+		context->DrawIndexed(voxelMesh->size / 4 * 6, 0, 0);
+	}
+	else
+	{
+		context->Draw(voxelMesh->size, 0);
+	}
 #endif
 }
 
@@ -800,50 +974,87 @@ void N3s3d::initRasterDesc()
 {
 	D3D11_RASTERIZER_DESC rasterDesc;
 	rasterDesc.AntialiasedLineEnable = false;
-	rasterDesc.CullMode = D3D11_CULL_NONE;
+	rasterDesc.CullMode = D3D11_CULL_BACK;
 	rasterDesc.DepthBias = 0;
 	rasterDesc.DepthBiasClamp = 0.0f;
 	rasterDesc.DepthClipEnable = true;
 	rasterDesc.FillMode = D3D11_FILL_SOLID;
-	rasterDesc.FrontCounterClockwise = true;
+	rasterDesc.FrontCounterClockwise = false;
 	rasterDesc.MultisampleEnable = false;
 	rasterDesc.ScissorEnable = false;
 	rasterDesc.SlopeScaledDepthBias = 0.0f;
 
+	D3D11_RASTERIZER_DESC reverseRasterDesc;
+	reverseRasterDesc.AntialiasedLineEnable = false;
+	reverseRasterDesc.CullMode = D3D11_CULL_FRONT;
+	reverseRasterDesc.DepthBias = 0; // DEPTH_BIAS_D32_FLOAT(0.02);
+	reverseRasterDesc.DepthBiasClamp = 0.0f;
+	reverseRasterDesc.DepthClipEnable = true;
+	reverseRasterDesc.FillMode = D3D11_FILL_SOLID;
+	reverseRasterDesc.FrontCounterClockwise = false;
+	reverseRasterDesc.MultisampleEnable = false;
+	reverseRasterDesc.ScissorEnable = false;
+	reverseRasterDesc.SlopeScaledDepthBias = 0.0f;
+
 	D3D11_RASTERIZER_DESC wireRasterDesc;
-	wireRasterDesc.AntialiasedLineEnable = false;
+	wireRasterDesc.AntialiasedLineEnable = true;
 	wireRasterDesc.CullMode = D3D11_CULL_NONE;
 	wireRasterDesc.DepthBias = 0;
 	wireRasterDesc.DepthBiasClamp = 0.0f;
 	wireRasterDesc.DepthClipEnable = true;
 	wireRasterDesc.FillMode = D3D11_FILL_WIREFRAME;
-	wireRasterDesc.FrontCounterClockwise = true;
+	wireRasterDesc.FrontCounterClockwise = false;
 	wireRasterDesc.MultisampleEnable = false;
 	wireRasterDesc.ScissorEnable = false;
 	wireRasterDesc.SlopeScaledDepthBias = 0.0f;
 
-	device->CreateRasterizerState(&rasterDesc, &fillRasterState);
+	device->CreateRasterizerState(&rasterDesc, &fillRasterState); 
+	device->CreateRasterizerState(&reverseRasterDesc, &reverseRasterState);
 	device->CreateRasterizerState(&wireRasterDesc, &wireframeRasterState);
 	context->RSSetState(fillRasterState);
 }
 
-void N3s3d::createIndexBuffer()
+void N3s3d::createIndexBuffers()
 {
-	unsigned short indices[73728];
-	for (int i = 0; i < 73728; i++)
+	unsigned short indices[36864];
+	unsigned short indicesReversed[36864];
+	// For each hypothetical face
+	for (int i = 0; i < 6144; i++)
 	{
-		indices[i] = i;
+		int faceIndex = i * 6;
+		int vertexIndex = i * 4;
+		// Do normal indices
+		indices[faceIndex] = vertexIndex;
+		indices[faceIndex + 1] = vertexIndex + 1;
+		indices[faceIndex + 2] = vertexIndex + 2;
+		indices[faceIndex + 3] = vertexIndex;
+		indices[faceIndex + 4] = vertexIndex + 2;
+		indices[faceIndex + 5] = vertexIndex + 3;
+		// Do reverse indices
+		indicesReversed[faceIndex] = vertexIndex;
+		indicesReversed[faceIndex + 1] = vertexIndex + 2;
+		indicesReversed[faceIndex + 2] = vertexIndex + 1;
+		indicesReversed[faceIndex + 3] = vertexIndex;
+		indicesReversed[faceIndex + 4] = vertexIndex + 3;
+		indicesReversed[faceIndex + 5] = vertexIndex + 2;
 	}
-	D3D11_SUBRESOURCE_DATA indexBufferData = { 0 };
-	indexBufferData.pSysMem = indices;
-	indexBufferData.SysMemPitch = 0;
-	indexBufferData.SysMemSlicePitch = 0;
-	const CD3D11_BUFFER_DESC indexBufferDesc(sizeof(indices), D3D11_BIND_INDEX_BUFFER);
-	device->CreateBuffer(
-		&indexBufferDesc,
-		&indexBufferData,
-		&indexBuffer
-		);
+
+	// Create buffer description, same for normal and reverse
+	D3D11_BUFFER_DESC bd;
+	ZeroMemory(&bd, sizeof(bd));
+
+	bd.Usage = D3D11_USAGE_DEFAULT;						// write access access by CPU and GPU
+	bd.ByteWidth = sizeof(unsigned short) * 36864;		// size is the int * indices
+	bd.BindFlags = D3D11_BIND_INDEX_BUFFER;				// use as a index buffer
+	bd.CPUAccessFlags = 0;								// disallow CPU to write in buffer
+
+	D3D11_SUBRESOURCE_DATA vData;
+
+	// Create normal and reverse buffers
+	vData.pSysMem = &(indices[0]);
+	device1->CreateBuffer(&bd, &vData, &indexBuffer);
+	vData.pSysMem = &(indicesReversed[0]);
+	device1->CreateBuffer(&bd, &vData, &indexBufferReversed);
 }
 
 bool N3s3d::initDepthStencils()
@@ -870,12 +1081,15 @@ bool N3s3d::initDepthStencils()
 		return false;
 	}
 
+	// Set the z-buffer enabled depth stencil state
+	context->OMSetDepthStencilState(m_depthStencilNoWriteState, 1);
+
 #pragma endregion
 
 #pragma region Standard depth, write stencil
 
 	// Initialize the description of the stencil state.
-	ZeroMemory(&depthStencilNoWriteDesc, sizeof(depthStencilNoWriteDesc));
+	ZeroMemory(&depthStencilWriteDesc, sizeof(depthStencilWriteDesc));
 
 	// Set up the description of the stencil state.
 	depthStencilWriteDesc.DepthEnable = true;
@@ -906,6 +1120,42 @@ bool N3s3d::initDepthStencils()
 	}
 
 #pragma endregion
+
+#pragma region Standard depth, mask equal stencil value
+
+	// Initialize the description of the stencil state.
+	D3D11_DEPTH_STENCIL_DESC maskStencilDesc;
+	ZeroMemory(&depthStencilWriteDesc, sizeof(depthStencilWriteDesc));
+
+	// Set up the description of the stencil state.
+	maskStencilDesc.DepthEnable = true;
+	maskStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	maskStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+
+	maskStencilDesc.StencilEnable = true;
+	maskStencilDesc.StencilReadMask = 0xFF;
+	maskStencilDesc.StencilWriteMask = 0xFF;
+
+	// Stencil operations if pixel is front-facing.
+	maskStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	maskStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	maskStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	maskStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;
+
+	// Stencil operations if pixel is back-facing.
+	maskStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	maskStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	maskStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	maskStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;
+
+	// Create the depth stencil state.
+	result = device->CreateDepthStencilState(&maskStencilDesc, &m_depthStencilMaskRefState);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+#pragma endregion
 	
 #pragma region No z-buffer depth stencil
 
@@ -928,11 +1178,6 @@ bool N3s3d::initDepthStencils()
 	}
 
 #pragma endregion
-
-	// D3D11_DEPTH_STENCIL_DESC depthStencilNoWriteDesc;
-	// D3D11_DEPTH_STENCIL_DESC depthStencilWriteDesc;
-	// D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc;
-	// D3D11_DEPTH_STENCIL_DESC depthDisabledStencilOnlyDesc;
 
 #pragma region No z-buffer stencil only
 
@@ -967,9 +1212,7 @@ bool N3s3d::initDepthStencils()
 
 #pragma endregion
 
-
-	// Set the z-buffer enabled depth stencil state
-	context->OMSetDepthStencilState(m_depthStencilNoWriteState, 1);
+#pragma region Z-buffer enabled
 
 	// Enable alpha blending in output merger
 	ID3D11BlendState1* g_pBlendStateNoBlend = NULL;
@@ -988,6 +1231,8 @@ bool N3s3d::initDepthStencils()
 	BlendState.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 	device1->CreateBlendState1(&BlendState, &g_pBlendStateNoBlend);
 
+#pragma endregion
+
 	float blendFactor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	UINT sampleMask = 0xffffffff;
 
@@ -1003,4 +1248,9 @@ bool Crop::zeroed()
 		return true;
 	else
 		return false;
+}
+
+void VoxelMesh::releaseBuffers()
+{
+		buffer->Release();
 }
