@@ -73,14 +73,14 @@ void Editor::update()
 		MeshInfo::clear();
 		VoxelEditorInfo::clear();
 		// See if copy buttons were pressed
-		if (InputState::functions[editor_copy].activatedThisFrame)
+		if (InputState::functions[editor_copy]->activatedThisFrame)
 			copiedSprites = activeScene->copySelection();
-		else if (InputState::functions[editor_paste].activatedThisFrame)
+		else if (InputState::functions[editor_paste]->activatedThisFrame)
 			activeScene->pasteSelection(copiedSprites);
 		// Check copy/paste palette keys
-		if (InputState::functions[palette_copy].activatedThisFrame)
+		if (InputState::functions[palette_copy]->activatedThisFrame)
 			copiedPalette = *activeScene->getSelectedPalette();
-		if (InputState::functions[palette_paste].activatedThisFrame)
+		if (InputState::functions[palette_paste]->activatedThisFrame)
 			activeScene->palettes[activeScene->selectedPalette] = copiedPalette;
 	}
 

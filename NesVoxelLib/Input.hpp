@@ -2,38 +2,21 @@
 
 #include <Xinput.h>
 #include <vector>
+#include <set>
+#include <map>
+#include "InputMapping.hpp"
+#include "json.hpp"
 
 #pragma comment(lib, "XInput.lib") // XInput library
 
 using namespace std;
+using json = nlohmann::json;
 
 const int totalKeys = 256;
-
-enum virtualKeyCodes {};
-
-enum inputFunctions {
-	nes_p1_a, nes_p1_b, nes_p1_up, nes_p1_left, nes_p1_down, nes_p1_right, nes_p1_start, nes_p1_select,
-	nes_p2_a, nes_p2_b, nes_p2_up, nes_p2_left, nes_p2_down, nes_p2_right, nes_p2_start, nes_p2_select,
-	emu_pause, emu_reset, 
-	tog_game, tog_editor, editor_alt,
-	cam_left, cam_right, cam_up, cam_down, cam_pan_in, cam_pan_out,
-	cam_move_left, cam_move_right, cam_move_up, cam_move_down,
-	selection_add, selection_remove, selection_copy, selection_delete, selection_deselect,
-	editor_moveleft, editor_moveright, editor_moveup, editor_movedown,
-	voxeleditor_movein, voxeleditor_moveout, voxeleditor_setvoxel, voxeleditor_deletevoxel,
-	voxeleditor_color0, voxeleditor_color1, voxeleditor_color2, voxeleditor_color3,	voxeleditor_exit,
-	editor_copy, editor_paste, palette_copy, palette_paste,
-	voxeleditor_mirror,
-	INPUTCOUNT
-};
-
-enum device { keyboardMouse, gamepad1, gamepad2 };
-
-enum buttonNames { bdUp, bdDown, bdLeft, bdRight, ba, bb, bx, by, blb, brb, bselect, bstart, blClick, brClick, BUTTONCOUNT };
-enum axisNames { leftXPos, leftXNeg, leftYPos, leftYNeg, rightXPos, rightXNeg, rightYPos, rightYNeg, lTrigger, rTrigger, AXISCOUNT };
-
 enum MouseState { inactive, clicked, down, pressed, dragging };
 enum MouseButtons { left_mouse, right_mouse, middle_mouse, MOUSEBUTTONCOUNT };
+
+const int keyNameCount = 108;
 
 class Input
 {
@@ -42,10 +25,12 @@ public:
 	bool active = false;
 	int framesActive = 0;
 	bool activatedThisFrame = false;
+	string name = "";
 	// Jesus Christ, C++ polymorphism is the worst
 	void setActive(bool a) { active = a; }
 	void setFramesActive(int a) { framesActive = a; }
 	void setActivatedThisFrame(bool a) { activatedThisFrame = a; }
+	void setName(string n);
 	virtual float getValue() = 0;
 	virtual void update() = 0;
 };
@@ -109,6 +94,7 @@ public:
 	void setUp(int key);
 	void update();
 	bool hasMouseMoved();
+	string getInputNameThisFrame();
 };
 
 class GamepadDevice : InputDevice
@@ -119,6 +105,7 @@ public:
 	shared_ptr<DigitalInput> buttons[BUTTONCOUNT];
 	shared_ptr<AnalogInput> analogInputs[AXISCOUNT];
 	void update(bool connected, XINPUT_GAMEPAD gamepad);
+	string getInputNameThisFrame(int gamepadNumber);
 };
 
 class Binding
@@ -137,6 +124,7 @@ public:
 class InputFunction
 {
 public:
+	inline InputFunction() {}
 	vector<Binding> bindings;
 	bool active;
 	bool activatedThisFrame;
@@ -145,15 +133,34 @@ public:
 	void update();
 };
 
+class InputConfig
+{
+public:
+	InputConfig();
+	bool load(json j);
+	json toJSON();
+	map<string, string[2]> bindings;
+};
+
 class InputState
 {
 public:
 	InputState();
 	static shared_ptr<KeyboardMouseDevice> keyboardMouse;
 	static shared_ptr<GamepadDevice> gamepads[2];
-	static InputFunction functions[INPUTCOUNT];
+	static shared_ptr<InputFunction> functions[FUNCTION_COUNT];
+	static map<int, string> keyNameMap;
 	static void checkGamePads();
 	static void refreshInput();
 	static void sendNesInput();
 	static void createBindings();
+	static InputConfig getInputConfig();
+	static void setDefaultInputConfig();
+	static bool applyInputConfig(InputConfig c);
+	static map<string, shared_ptr<Input>> inputsByName;
+	static map<string, shared_ptr<InputFunction>> functionsByName;
+	static set<string> configurableFunctions;
+	static set<string> bindableInputs;
+private:
+	static InputConfig inputConfig;
 };

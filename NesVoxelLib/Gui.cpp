@@ -223,19 +223,19 @@ bool PaletteSelector::update(bool mouseAvailable, shared_ptr<Scene> scene, share
 				selectedPalette = -1;
 		}
 		// Check to see if any keys were pressed that would change selected color
-		if (InputState::functions[voxeleditor_color0].activatedThisFrame)
+		if (InputState::functions[voxeleditor_color0]->activatedThisFrame)
 		{
 			selectColor(bg_swatch, scene, editor);
 		}
-		if (InputState::functions[voxeleditor_color1].activatedThisFrame)
+		if (InputState::functions[voxeleditor_color1]->activatedThisFrame)
 		{
 			selectColor(getRelativeColor(0), scene, editor);
 		}
-		if (InputState::functions[voxeleditor_color2].activatedThisFrame)
+		if (InputState::functions[voxeleditor_color2]->activatedThisFrame)
 		{
 			selectColor(getRelativeColor(1), scene, editor);
 		}
-		if (InputState::functions[voxeleditor_color3].activatedThisFrame)
+		if (InputState::functions[voxeleditor_color3]->activatedThisFrame)
 		{
 			selectColor(getRelativeColor(2), scene, editor);
 		}

@@ -5,7 +5,13 @@
 
 shared_ptr<KeyboardMouseDevice> InputState::keyboardMouse;
 shared_ptr<GamepadDevice> InputState::gamepads[2];
-InputFunction InputState::functions[INPUTCOUNT];
+shared_ptr<InputFunction> InputState::functions[FUNCTION_COUNT];
+map<string, shared_ptr<Input>> InputState::inputsByName;
+InputConfig InputState::inputConfig;
+map<string, shared_ptr<InputFunction>> InputState::functionsByName;
+set<string> InputState::configurableFunctions;
+set<string> InputState::bindableInputs;
+map<int, string> InputState::keyNameMap;
 
 void DigitalInput::update()
 {
@@ -164,22 +170,44 @@ bool KeyboardMouseDevice::hasMouseMoved()
 		return false;
 }
 
+// For configuration window, lets it know what button was pressed this frame
+string KeyboardMouseDevice::getInputNameThisFrame()
+{
+	// Check if any keyboard keys have been activated this frame
+	for (int i = 0; i < 256; i++)
+	{
+		// See if activated this frame
+		if (keys[i]->activatedThisFrame)
+		{
+			// See if this is a bindable (or named) input (not ESC or anything...)
+			if (InputState::keyNameMap.count(i) > 0)
+			{
+				return InputState::keyNameMap[i];
+			}
+		}
+	}
+	// Check if any bindable mouse buttons were pressed
+		// Actually, since right and middle click are taken, I don't think there should be...
+		// TODO: think about this later
+	return "";
+}
+
 GamepadDevice::GamepadDevice()
 {
 	for (int i = 0; i < BUTTONCOUNT; i++)
 	{
 		buttons[i] = make_shared<DigitalInput>();
 	}
-	analogInputs[leftXPos] = make_shared<AnalogInput>(false);
-	analogInputs[leftXNeg] = make_shared<AnalogInput>(true);
-	analogInputs[leftYPos] = make_shared<AnalogInput>(false);
-	analogInputs[leftYNeg] = make_shared<AnalogInput>(true);
-	analogInputs[rightXPos] = make_shared<AnalogInput>(false);
-	analogInputs[rightXNeg] = make_shared<AnalogInput>(true);
-	analogInputs[rightYPos] = make_shared<AnalogInput>(false);
-	analogInputs[rightYNeg] = make_shared<AnalogInput>(true);
-	analogInputs[lTrigger] = make_shared<AnalogInput>(false);
-	analogInputs[rTrigger] = make_shared<AnalogInput>(false);
+	analogInputs[AX_L_STICK_RIGHT] = make_shared<AnalogInput>(false);
+	analogInputs[AX_L_STICK_LEFT] = make_shared<AnalogInput>(true);
+	analogInputs[AX_L_STICK_UP] = make_shared<AnalogInput>(false);
+	analogInputs[AX_L_STICK_DOWN] = make_shared<AnalogInput>(true);
+	analogInputs[AX_R_STICK_RIGHT] = make_shared<AnalogInput>(false);
+	analogInputs[AX_R_STICK_LEFT] = make_shared<AnalogInput>(true);
+	analogInputs[AX_R_STICK_UP] = make_shared<AnalogInput>(false);
+	analogInputs[AX_R_STICK_DOWN] = make_shared<AnalogInput>(true);
+	analogInputs[AX_L_TRIGGER] = make_shared<AnalogInput>(false);
+	analogInputs[AX_R_TRIGGER] = make_shared<AnalogInput>(false);
 }
 
 void GamepadDevice::update(bool connected, XINPUT_GAMEPAD gamepad)
@@ -187,29 +215,29 @@ void GamepadDevice::update(bool connected, XINPUT_GAMEPAD gamepad)
 	if (connected)
 	{
 		// Read buttons
-		buttons[ba]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_A) != 0));
-		buttons[bb]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_B) != 0));
-		buttons[bx]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_X) != 0));
-		buttons[by]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_Y) != 0));
-		buttons[bstart]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_START) != 0));
-		buttons[bselect]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_BACK) != 0));
-		buttons[bdLeft]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) != 0));
-		buttons[bdRight]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT) != 0));
-		buttons[bdUp]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP) != 0));
-		buttons[bdDown]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN) != 0));
-		buttons[blb]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER) != 0));
-		buttons[brb]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER) != 0));
+		buttons[BTN_A]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_A) != 0));
+		buttons[BTN_B]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_B) != 0));
+		buttons[BTN_X]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_X) != 0));
+		buttons[BTN_Y]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_Y) != 0));
+		buttons[BTN_START]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_START) != 0));
+		buttons[BTN_SELECT]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_BACK) != 0));
+		buttons[DPAD_LEFT]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) != 0));
+		buttons[DPAD_RIGHT]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT) != 0));
+		buttons[DPAD_UP]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP) != 0));
+		buttons[DPAD_DOWN]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN) != 0));
+		buttons[BTN_L_BUMPER]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER) != 0));
+		buttons[BTN_R_BUMPER]->setActive(((gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER) != 0));
 		// Read analog sticks
-		analogInputs[leftXNeg]->value = gamepad.sThumbLX / 32767.0f;
-		analogInputs[leftXPos]->value = gamepad.sThumbLX / 32767.0f;
-		analogInputs[leftYNeg]->value = gamepad.sThumbLY / 32767.0f;
-		analogInputs[leftYPos]->value = gamepad.sThumbLY / 32767.0f;
-		analogInputs[rightXNeg]->value = gamepad.sThumbRX / 32767.0f;
-		analogInputs[rightXPos]->value = gamepad.sThumbRX / 32767.0f;
-		analogInputs[rightYNeg]->value = gamepad.sThumbRY / 32767.0f;
-		analogInputs[rightYPos]->value = gamepad.sThumbRY / 32767.0f; 
-		analogInputs[lTrigger]->value = gamepad.bLeftTrigger / 255.0f;
-		analogInputs[rTrigger]->value = gamepad.bRightTrigger / 255.0f;
+		analogInputs[AX_L_STICK_LEFT]->value = gamepad.sThumbLX / 32767.0f;
+		analogInputs[AX_L_STICK_RIGHT]->value = gamepad.sThumbLX / 32767.0f;
+		analogInputs[AX_L_STICK_DOWN]->value = gamepad.sThumbLY / 32767.0f;
+		analogInputs[AX_L_STICK_UP]->value = gamepad.sThumbLY / 32767.0f;
+		analogInputs[AX_R_STICK_LEFT]->value = gamepad.sThumbRX / 32767.0f;
+		analogInputs[AX_R_STICK_RIGHT]->value = gamepad.sThumbRX / 32767.0f;
+		analogInputs[AX_R_STICK_DOWN]->value = gamepad.sThumbRY / 32767.0f;
+		analogInputs[AX_R_STICK_UP]->value = gamepad.sThumbRY / 32767.0f; 
+		analogInputs[AX_L_TRIGGER]->value = gamepad.bLeftTrigger / 255.0f;
+		analogInputs[AX_R_TRIGGER]->value = gamepad.bRightTrigger / 255.0f;
 
 		// Update all
 		for (int i = 0; i < BUTTONCOUNT; i++)
@@ -234,12 +262,43 @@ void GamepadDevice::update(bool connected, XINPUT_GAMEPAD gamepad)
 	}
 }
 
+string GamepadDevice::getInputNameThisFrame(int gamepadNumber)
+{
+	string gpString = to_string(gamepadNumber);
+	if (buttons[BTN_A]->active) return "JOY" + gpString + "_BTN_A";
+	else if (buttons[BTN_B]->active) return "JOY" + gpString + "_BTN_B";
+	else if (buttons[BTN_X]->active) return "JOY" + gpString + "_BTN_X";
+	else if (buttons[BTN_Y]->active) return "JOY" + gpString + "_BTN_Y";
+	else if (buttons[BTN_START]->active) return "JOY" + gpString + "_BTN_START";
+	else if (buttons[BTN_SELECT]->active) return "JOY" + gpString + "_BTN_SELECT";
+	else if (buttons[DPAD_LEFT]->active) return "JOY" + gpString + "_DPAD_LEFT";
+	else if (buttons[DPAD_RIGHT]->active) return "JOY" + gpString + "_DPAD_RIGHT";
+	else if (buttons[DPAD_UP]->active) return "JOY" + gpString + "_DPAD_UP";
+	else if (buttons[DPAD_DOWN]->active) return "JOY" + gpString + "_DPAD_DOWN";
+	else if (buttons[BTN_L_BUMPER]->active) return "JOY" + gpString + "_L_BUMPER";
+	else if (buttons[BTN_R_BUMPER]->active) return "JOY" + gpString + "_R_BUMPER";
+	else if (buttons[BTN_L_CLICK]->active) return "JOY" + gpString + "_L_CLICK";
+	else if (buttons[BTN_R_CLICK]->active) return "JOY" + gpString + "_R_CLICK";
+	else if (analogInputs[AX_L_STICK_RIGHT]->active) return "JOY" + gpString + "_L_RIGHT";
+	else if (analogInputs[AX_L_STICK_LEFT]->active) return "JOY" + gpString + "_L_LEFT";
+	else if (analogInputs[AX_L_STICK_UP]->active) return "JOY" + gpString + "_L_UP";
+	else if (analogInputs[AX_L_STICK_DOWN]->active) return "JOY" + gpString + "_L_DOWN";
+	else if (analogInputs[AX_R_STICK_RIGHT]->active) return "JOY" + gpString + "_R_RIGHT";
+	else if (analogInputs[AX_R_STICK_LEFT]->active) return "JOY" + gpString + "_R_LEFT";
+	else if (analogInputs[AX_R_STICK_UP]->active) return "JOY" + gpString + "_R_UP";
+	else if (analogInputs[AX_R_STICK_DOWN]->active) return "JOY" + gpString + "_R_DOWN";
+	else if (analogInputs[AX_L_TRIGGER]->active) return "JOY" + gpString + "_L_TRIGGER";
+	else if (analogInputs[AX_R_TRIGGER]->active) return "JOY" + gpString + "_R_TRIGGER";
+	else return "";
+}
+
 InputState::InputState()
 {
 	keyboardMouse = make_shared<KeyboardMouseDevice>();
 	gamepads[0] = make_shared<GamepadDevice>();
 	gamepads[1] = make_shared<GamepadDevice>();
 	createBindings();
+	setDefaultInputConfig();
 }
 
 void InputState::checkGamePads()
@@ -269,9 +328,9 @@ void InputState::refreshInput()
 	checkGamePads();
 	keyboardMouse->update();
 	// Update bindings and send input to NES
-	for (int i = 0; i < INPUTCOUNT; i++)
+	for (int i = 0; i < FUNCTION_COUNT; i++)
 	{
-		functions[i].update();
+		functions[i]->update();
 	}
 	sendNesInput();
 }
@@ -279,23 +338,23 @@ void InputState::refreshInput()
 void InputState::sendNesInput()
 {
 	// Player 1
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_A] = functions[nes_p1_a].active;
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_B] = functions[nes_p1_b].active;
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_SELECT] = functions[nes_p1_select].active;
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_START] = functions[nes_p1_start].active;
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_UP] = functions[nes_p1_up].active;
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_DOWN] = functions[nes_p1_down].active;
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_LEFT] = functions[nes_p1_left].active;
-	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_RIGHT] = functions[nes_p1_right].active;
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_A] = functions[nes_p1_a]->active;
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_B] = functions[nes_p1_b]->active;
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_SELECT] = functions[nes_p1_select]->active;
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_START] = functions[nes_p1_start]->active;
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_UP] = functions[nes_p1_up]->active;
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_DOWN] = functions[nes_p1_down]->active;
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_LEFT] = functions[nes_p1_left]->active;
+	NesEmulator::inputs[0][RETRO_DEVICE_ID_JOYPAD_RIGHT] = functions[nes_p1_right]->active;
 	// Player 2
-	NesEmulator::inputs[1][RETRO_DEVICE_ID_JOYPAD_A] = functions[nes_p2_a].active;
-	NesEmulator::inputs[1][RETRO_DEVICE_ID_JOYPAD_B] = functions[nes_p2_b].active;
-	NesEmulator::inputs[1][RETRO_DEVICE_ID_JOYPAD_SELECT] = functions[nes_p2_select].active;
-	NesEmulator::inputs[1][RETRO_DEVICE_ID_JOYPAD_START] = functions[nes_p2_start].active;
-	NesEmulator::inputs[1][RETRO_DEVICE_ID_JOYPAD_UP] = functions[nes_p2_up].active;
-	NesEmulator::inputs[1][RETRO_DEVICE_ID_JOYPAD_DOWN] = functions[nes_p2_down].active;
-	NesEmulator::inputs[1][RETRO_DEVICE_ID_JOYPAD_LEFT] = functions[nes_p2_left].active;
-	NesEmulator::inputs[1][RETRO_DEVICE_ID_JOYPAD_RIGHT] = functions[nes_p2_right].active;
+	NesEmulator::inputs[1][RETRO_DEVICE_ID_JOYPAD_A] = functions[nes_p2_a]->active;
+	NesEmulator::inputs[1][RETRO_DEVICE_ID_JOYPAD_B] = functions[nes_p2_b]->active;
+	NesEmulator::inputs[1][RETRO_DEVICE_ID_JOYPAD_SELECT] = functions[nes_p2_select]->active;
+	NesEmulator::inputs[1][RETRO_DEVICE_ID_JOYPAD_START] = functions[nes_p2_start]->active;
+	NesEmulator::inputs[1][RETRO_DEVICE_ID_JOYPAD_UP] = functions[nes_p2_up]->active;
+	NesEmulator::inputs[1][RETRO_DEVICE_ID_JOYPAD_DOWN] = functions[nes_p2_down]->active;
+	NesEmulator::inputs[1][RETRO_DEVICE_ID_JOYPAD_LEFT] = functions[nes_p2_left]->active;
+	NesEmulator::inputs[1][RETRO_DEVICE_ID_JOYPAD_RIGHT] = functions[nes_p2_right]->active;
 }
 
 void InputFunction::update()
@@ -319,91 +378,98 @@ void InputFunction::update()
 
 void InputState::createBindings()
 {
-	// Crappy hard-coded test bindings
 	// TODO: load from a proper config, build menu to edit
 
-	// NES Player 1 controls
-	functions[nes_p1_a].bindings.push_back({ InputState::keyboardMouse->keys[0x4B] });
-	functions[nes_p1_b].bindings.push_back({ InputState::keyboardMouse->keys[0x4A] });
-	functions[nes_p1_select].bindings.push_back({ InputState::keyboardMouse->keys[0x55] });
-	functions[nes_p1_start].bindings.push_back({ InputState::keyboardMouse->keys[0x49] });
-	functions[nes_p1_up].bindings.push_back({ InputState::keyboardMouse->keys[0x57] });
-	functions[nes_p1_down].bindings.push_back({ InputState::keyboardMouse->keys[0x53] });
-	functions[nes_p1_left].bindings.push_back({ InputState::keyboardMouse->keys[0x41] });
-	functions[nes_p1_right].bindings.push_back({ InputState::keyboardMouse->keys[0x44] });
-	// Gamepad
-	functions[nes_p1_a].bindings.push_back({ gamepads[0]->buttons[bb] });
-	functions[nes_p1_b].bindings.push_back({ gamepads[0]->buttons[ba] });
-	functions[nes_p1_select].bindings.push_back({ gamepads[0]->buttons[bselect] });
-	functions[nes_p1_start].bindings.push_back({ gamepads[0]->buttons[bstart] });
-	functions[nes_p1_up].bindings.push_back({ gamepads[0]->buttons[bdUp] });
-	functions[nes_p1_down].bindings.push_back({ gamepads[0]->buttons[bdDown] });
-	functions[nes_p1_left].bindings.push_back({ gamepads[0]->buttons[bdLeft] });
-	functions[nes_p1_right].bindings.push_back({ gamepads[0]->buttons[bdRight] });
-	functions[nes_p1_up].bindings.push_back({ gamepads[0]->analogInputs[leftYPos] });
-	functions[nes_p1_down].bindings.push_back({ gamepads[0]->analogInputs[leftYNeg] });
-	functions[nes_p1_left].bindings.push_back({ gamepads[0]->analogInputs[leftXNeg] });
-	functions[nes_p1_right].bindings.push_back({ gamepads[0]->analogInputs[leftXPos] });
+	// Map names of bindable inputs to digital / analog inputs
+	for (int i = 0; i < inputCount; i++)
+	{
+		shared_ptr<Input> input;
+		InputMapping m = inputMap[i];
+		if (m.type == KEYBOARD)
+		{
+			// Map the input name to instance
+			inputsByName[m.name] = keyboardMouse->keys[m.enumNumber];
+			// Give the instance it's name
+			keyboardMouse->keys[m.enumNumber]->setName(m.name);
+			// If this input is bindable (not a critical system key) add to the set
+			bindableInputs.insert(m.name);
+		}
+		else
+		{
+			if (m.analog)	// Switch based on analog input
+			{
+				// Map input name to instance
+				inputsByName[m.name] = gamepads[m.deviceNumber]->analogInputs[m.enumNumber];
+				// Give the instance it's name
+				gamepads[m.deviceNumber]->analogInputs[m.enumNumber]->setName(m.name);
+			}
+			else
+			{
+				// Map input name to instance
+				inputsByName[m.name] = gamepads[m.deviceNumber]->buttons[m.enumNumber];
+				// Give the instance it's name
+				gamepads[m.deviceNumber]->buttons[m.enumNumber]->setName(m.name);
+			}
+			// If this input is bindable (not a critical system key) add to the set
+			bindableInputs.insert(m.name);
+		}
+	}
 
-	// Camera controls
-	functions[cam_up].bindings.push_back({ keyboardMouse->keys[VK_UP] });
-	functions[cam_down].bindings.push_back({ keyboardMouse->keys[VK_DOWN] });
-	functions[cam_left].bindings.push_back({ keyboardMouse->keys[VK_LEFT] });
-	functions[cam_right].bindings.push_back({ keyboardMouse->keys[VK_RIGHT] });
-	functions[cam_pan_in].bindings.push_back({ keyboardMouse->keys[VK_OEM_PERIOD] });
-	functions[cam_pan_out].bindings.push_back({ keyboardMouse->keys[VK_OEM_COMMA] });
+	// Set up functions
+	for (int i = 0; i < FUNCTION_COUNT; i++)
+	{
+		// Create the function
+		functions[i] = make_shared<InputFunction>();
+		FunctionMapping f = functionMap[i];
+		// Map function name to instance
+		functionsByName[f.name] = functions[f.function];
+		// Add to list of configurable if appropriate, for security
+		if (f.configurable)
+			configurableFunctions.insert(f.name);
+	}
+}
 
-	functions[cam_left].bindings.push_back({ gamepads[0]->analogInputs[rightXNeg] });
-	functions[cam_right].bindings.push_back({ gamepads[0]->analogInputs[rightXPos] });
-	functions[cam_up].bindings.push_back({ gamepads[0]->analogInputs[rightYPos] });
-	functions[cam_down].bindings.push_back({ gamepads[0]->analogInputs[rightYNeg] });
 
-	functions[cam_move_left].bindings.push_back({ gamepads[0]->analogInputs[leftXNeg] });
-	functions[cam_move_right].bindings.push_back({ gamepads[0]->analogInputs[leftXPos] });
-	functions[cam_move_up].bindings.push_back({ gamepads[0]->analogInputs[leftYPos] });
-	functions[cam_move_down].bindings.push_back({ gamepads[0]->analogInputs[leftYNeg] });
+InputConfig InputState::getInputConfig()
+{
+	return inputConfig;
+}
 
-	functions[cam_pan_in].bindings.push_back({ gamepads[0]->analogInputs[rTrigger] });
-	functions[cam_pan_out].bindings.push_back({ gamepads[0]->analogInputs[lTrigger] });
+void InputState::setDefaultInputConfig()
+{
+	// Load default bindings
+	for (int i = 0; i < FUNCTION_COUNT; i++)
+	{
+		FunctionMapping m = functionMap[i];
+		// Grab associated function
+		shared_ptr<InputFunction> f = functions[m.function];
+		// Apply default bindings
+		if (m.defaultBinding1 != "")
+		{
+			shared_ptr<Input> firstDefault = inputsByName[m.defaultBinding1];
+			f->bindings.push_back({ firstDefault });
+		}
+		if (m.defaultBinding2 != "")
+		{
+			shared_ptr<Input> secondDefault = inputsByName[m.defaultBinding2];
+			f->bindings.push_back({ secondDefault });
+		}
+		// If this is configurable, add to input configuration
+		if (m.configurable)
+		{
+			// Am I awful at this or is C++ just obnoxious about doing simple things?
+			if(m.defaultBinding1 != "")
+				inputConfig.bindings[m.name][0] = m.defaultBinding1;
+			if(m.defaultBinding2 != "")
+				inputConfig.bindings[m.name][1] = m.defaultBinding2;
+		}
+	}
+}
 
-	// Switching between editor and game
-	functions[tog_game].bindings.push_back({ keyboardMouse->keys[VK_OEM_1] });		// semicolon
-	functions[tog_editor].bindings.push_back({ keyboardMouse->keys[VK_OEM_7] });	// single quote
-
-	// Editor controls
-	functions[selection_add].bindings.push_back({ keyboardMouse->keys[VK_SHIFT] });
-	functions[selection_remove].bindings.push_back({ keyboardMouse->keys[VK_MENU] });
-	functions[selection_copy].bindings.push_back({ keyboardMouse->keys[VK_CONTROL] });
-	functions[selection_delete].bindings.push_back({ keyboardMouse->keys[VK_DELETE] });
-	functions[selection_deselect].bindings.push_back({ keyboardMouse->keys[VK_ESCAPE] });
-	functions[editor_alt].bindings.push_back({ keyboardMouse->keys[VK_MENU] });
-	functions[editor_moveleft].bindings.push_back({ keyboardMouse->keys[VK_LEFT] });
-	functions[editor_moveright].bindings.push_back({ keyboardMouse->keys[VK_RIGHT] });
-	functions[editor_moveup].bindings.push_back({ keyboardMouse->keys[VK_UP] });
-	functions[editor_movedown].bindings.push_back({ keyboardMouse->keys[VK_DOWN] });
-	functions[voxeleditor_setvoxel].bindings.push_back({ keyboardMouse->keys[0x4B] });
-	functions[voxeleditor_deletevoxel].bindings.push_back({ keyboardMouse->keys[0x4A] });
-	functions[voxeleditor_movein].bindings.push_back({ keyboardMouse->keys[0x55] });
-	functions[voxeleditor_moveout].bindings.push_back({ keyboardMouse->keys[0x49] });
-	functions[voxeleditor_color0].bindings.push_back({ keyboardMouse->keys[0x30] });
-	functions[voxeleditor_color0].bindings.push_back({ keyboardMouse->keys[VK_NUMPAD0] });
-	functions[voxeleditor_color1].bindings.push_back({ keyboardMouse->keys[0x31] });
-	functions[voxeleditor_color1].bindings.push_back({ keyboardMouse->keys[VK_NUMPAD1] });
-	functions[voxeleditor_color2].bindings.push_back({ keyboardMouse->keys[0x32] });
-	functions[voxeleditor_color2].bindings.push_back({ keyboardMouse->keys[VK_NUMPAD2] });
-	functions[voxeleditor_color3].bindings.push_back({ keyboardMouse->keys[0x33] });
-	functions[voxeleditor_color3].bindings.push_back({ keyboardMouse->keys[VK_NUMPAD3] });
-	functions[voxeleditor_exit].bindings.push_back({ keyboardMouse->keys[VK_ESCAPE] });
-	functions[voxeleditor_mirror].bindings.push_back({ keyboardMouse->keys[0x4D] });
-	// Editor copy/paste
-	Binding copyBinding = { keyboardMouse->keys[0x43] };	// C
-	copyBinding.ctrl = true;
-	Binding pasteBinding = { keyboardMouse->keys[0x56] };	// V
-	pasteBinding.ctrl = true;
-	functions[editor_copy].bindings.push_back({ copyBinding });
-	functions[editor_paste].bindings.push_back({ pasteBinding });
-	functions[palette_copy].bindings.push_back({ keyboardMouse->keys[0x4F] });
-	functions[palette_paste].bindings.push_back({ keyboardMouse->keys[0x50] });
+bool InputState::applyInputConfig(InputConfig c)
+{
+	// Make sure input config is not malformed
+	return false;
 }
 
 bool Binding::activatedThisFrame()
@@ -423,5 +489,30 @@ bool Binding::activatedThisFrame()
 	{
 		return false;
 	}
+}
 
+InputConfig::InputConfig()
+{
+}
+
+bool InputConfig::load(json j)
+{
+	return false;
+}
+
+json InputConfig::toJSON()
+{
+	json j;
+	for (int i; i < FUNCTION_COUNT; i++)
+	{
+		// See if function is configurable
+
+		// If so, add to JSON output
+	}
+	return j;
+}
+
+void Input::setName(string n)
+{
+	name = n;
 }

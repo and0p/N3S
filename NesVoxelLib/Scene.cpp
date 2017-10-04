@@ -207,7 +207,7 @@ json Scene::getJSON()
 
 bool Scene::update(bool mouseAvailable)
 {
-	if (voxelEditor != nullptr && InputState::functions[voxeleditor_exit].activatedThisFrame)
+	if (voxelEditor != nullptr && InputState::functions[voxeleditor_exit]->activatedThisFrame)
 	{
 		voxelEditor = nullptr;
 	}
@@ -237,7 +237,7 @@ bool Scene::update(bool mouseAvailable)
 		mousePixelCoordinates.x = zIntersectPixels.x;
 		mousePixelCoordinates.y = zIntersectPixels.y;
 		// See if the modifier is being pressed to show additional guides
-		showGuides = InputState::functions[editor_alt].active;
+		showGuides = InputState::functions[editor_alt]->active;
 		// Check for key input, such as selection movement or deletion
 		checkKeyInput();
 		// Check for mouse input, and return whether the mouse was captured
@@ -458,13 +458,13 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 					}
 				}
 				// Capture mod key
-				if (InputState::functions[selection_add].active && InputState::functions[selection_remove].active)
+				if (InputState::functions[selection_add]->active && InputState::functions[selection_remove]->active)
 					modifier = mod_intersect;
-				else if (InputState::functions[selection_add].active)
+				else if (InputState::functions[selection_add]->active)
 					modifier = mod_add;
-				else if (InputState::functions[selection_remove].active)
+				else if (InputState::functions[selection_remove]->active)
 					modifier = mod_remove;
-				else if (InputState::functions[selection_copy].active)
+				else if (InputState::functions[selection_copy]->active)
 					modifier = mod_copy;
 				else
 				{
@@ -519,7 +519,7 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 					Vector2D topLeftSpriteXY = getTopLeftSpriteInSelection(displaySelection);
 					// Use mod keys to snap to nametable
 
-					if (InputState::functions[selection_add].active && InputState::functions[selection_remove].active)
+					if (InputState::functions[selection_add]->active && InputState::functions[selection_remove]->active)
 					{
 						// Get top-left sprites offset from nearest snap point
 						Vector2D offset = { topLeftSpriteXY.x % 8, topLeftSpriteXY.y % 8 };
@@ -533,7 +533,7 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 						moveX = -offset.x + diffSnapped.x;
 						moveY = -offset.y + diffSnapped.y;
 					}
-					 else if (InputState::functions[selection_add].active)
+					 else if (InputState::functions[selection_add]->active)
 					{
 						// Snap to relative 8
 						dragDestination.snapRelative(dragStart);
@@ -731,29 +731,29 @@ void Scene::pasteSelection(shared_ptr<vector<SceneSprite>> copiedSprites)
 void Scene::checkKeyInput()
 {
 	// If we have selection and user has hit ESC, unselect all
-	if (InputState::functions[selection_deselect].activatedThisFrame)
+	if (InputState::functions[selection_deselect]->activatedThisFrame)
 		selection->selectedIndices.clear();
 	// If we have a selection and user has pressed delete, delete the selected sprites
-	if (InputState::functions[selection_delete].activatedThisFrame)
+	if (InputState::functions[selection_delete]->activatedThisFrame)
 		deleteSelection();
 	// If we have a selection and the user has pressed the move keys, move the sprites
 	if (selection->selectedIndices.size() > 0)
 	{
-		bool shift = InputState::functions[selection_add].active;
+		bool shift = InputState::functions[selection_add]->active;
 		// Branch based on direction, only one direction per frame
-		if (InputState::functions[editor_moveup].activatedThisFrame)
+		if (InputState::functions[editor_moveup]->activatedThisFrame)
 		{
 			moveSelection(0, -1);
 		}
-		else if (InputState::functions[editor_movedown].activatedThisFrame)
+		else if (InputState::functions[editor_movedown]->activatedThisFrame)
 		{
 			moveSelection(0, 1);
 		}
-		else if (InputState::functions[editor_moveleft].activatedThisFrame)
+		else if (InputState::functions[editor_moveleft]->activatedThisFrame)
 		{
 			moveSelection(-1, 0);
 		}
-		else if (InputState::functions[editor_moveright].activatedThisFrame)
+		else if (InputState::functions[editor_moveright]->activatedThisFrame)
 		{
 			moveSelection(1, 0);
 		}
@@ -765,8 +765,8 @@ void Scene::moveSelection(int x, int y)
 {
 	Vector2D amount;
 	Vector2D topLeft = getTopLeftSpriteInSelection(selection);
-	bool shift = InputState::functions[selection_add].active;
-	bool alt = InputState::functions[selection_remove].active;
+	bool shift = InputState::functions[selection_add]->active;
+	bool alt = InputState::functions[selection_remove]->active;
 	if (shift && !alt)
 	{
 		amount = { x * 8, y * 8 };

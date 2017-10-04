@@ -247,6 +247,7 @@
     <ClInclude Include="GameData.hpp" />
     <ClInclude Include="GameView.hpp" />
     <ClInclude Include="Gui.hpp" />
+    <ClInclude Include="InputMapping.hpp" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="libretro.h" />
     <ClInclude Include="N3s3d.hpp" />
