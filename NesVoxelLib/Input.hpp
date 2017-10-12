@@ -161,6 +161,7 @@ public:
 	static map<string, shared_ptr<InputFunction>> functionsByName;
 	static set<string> configurableFunctions;
 	static set<string> bindableInputs;
+	static vector<string> orderedBindableInputs;
 private:
 	static InputConfig inputConfig;
 };

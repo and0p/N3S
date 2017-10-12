@@ -239,6 +239,16 @@ void N3sApp::recieveMouseScroll(int delta)
 	InputState::keyboardMouse->wheelDelta = delta;
 }
 
+InputConfig N3sApp::getInputConfig()
+{
+	return InputState::getInputConfig();
+}
+
+bool N3sApp::applyInputConfig()
+{
+	return false;
+}
+
 XMVECTORF32 N3sApp::getBackgroundColor()
 {
 	Hue hue;

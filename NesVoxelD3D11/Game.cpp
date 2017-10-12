@@ -6,6 +6,7 @@
 #include "Game.h"
 #include <iostream>
 #include "N3sD3DContext.h"
+#include "InputWindow.h"
 
 using namespace DirectX;
 
@@ -262,6 +263,7 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam, HWND hwnd)
 	}
 	}
 }
+
 #pragma endregion
 
 #pragma region Direct3D Resources

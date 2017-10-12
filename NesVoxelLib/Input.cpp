@@ -11,6 +11,7 @@ InputConfig InputState::inputConfig;
 map<string, shared_ptr<InputFunction>> InputState::functionsByName;
 set<string> InputState::configurableFunctions;
 set<string> InputState::bindableInputs;
+vector<string> InputState::orderedBindableInputs;
 map<int, string> InputState::keyNameMap;
 
 void DigitalInput::update()
@@ -391,8 +392,9 @@ void InputState::createBindings()
 			inputsByName[m.name] = keyboardMouse->keys[m.enumNumber];
 			// Give the instance it's name
 			keyboardMouse->keys[m.enumNumber]->setName(m.name);
-			// If this input is bindable (not a critical system key) add to the set
+			// If this input is bindable (not a critical system key) add to the set (and ordered vector)
 			bindableInputs.insert(m.name);
+			orderedBindableInputs.push_back(m.name);
 		}
 		else
 		{
@@ -410,8 +412,9 @@ void InputState::createBindings()
 				// Give the instance it's name
 				gamepads[m.deviceNumber]->buttons[m.enumNumber]->setName(m.name);
 			}
-			// If this input is bindable (not a critical system key) add to the set
+			// If this input is bindable (not a critical system key) add to the set (and ordered vector)
 			bindableInputs.insert(m.name);
+			orderedBindableInputs.push_back(m.name);
 		}
 	}
 
@@ -503,11 +506,13 @@ bool InputConfig::load(json j)
 json InputConfig::toJSON()
 {
 	json j;
-	for (int i; i < FUNCTION_COUNT; i++)
+	for (int i = 0; i < FUNCTION_COUNT; i++)
 	{
+		shared_ptr<InputFunction> f = InputState::functions[i];
 		// See if function is configurable
-
+		
 		// If so, add to JSON output
+
 	}
 	return j;
 }

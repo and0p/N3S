@@ -4,7 +4,7 @@
 
 class InputWindow {
 public:
-	static void initialize();
+	static void initialize(InputConfig ic);
 	static bool CALLBACK InputWndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 	static bool commitChanges();
 };

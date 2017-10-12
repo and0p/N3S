@@ -38,6 +38,8 @@ public:
 	void recieveMouseInput(MouseButtons button, bool down);
 	void recieveMouseMovement(int x, int y);
 	void recieveMouseScroll(int delta);
+	InputConfig getInputConfig();
+	bool applyInputConfig();
 	XMVECTORF32 getBackgroundColor();
 	retro_game_info *info;
 	static shared_ptr<GameData> gameData;
