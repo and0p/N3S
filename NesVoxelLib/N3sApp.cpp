@@ -5,6 +5,7 @@
 #include "Overlay.hpp"
 #include "Editor.hpp"
 #include "N3sPalette.hpp"
+#include "N3sConfig.hpp"
 
 extern SoundDriver *newDirectSound();
 
@@ -12,6 +13,7 @@ shared_ptr<GameData> N3sApp::gameData;
 shared_ptr<PpuSnapshot> N3sApp::snapshot;
 shared_ptr<InputState> N3sApp::inputState;
 shared_ptr<VirtualPatternTable> N3sApp::virtualPatternTable;
+string N3sApp::applicationDirectory;
 
 N3sApp::N3sApp()
 {
@@ -24,6 +26,13 @@ N3sApp::N3sApp()
 	SoundDriver * drv = 0;
 	N3sPalette::init();
 	N3sConsole::init();
+	// Get the application directory
+	wchar_t buffer[MAX_PATH];
+	GetCurrentDirectory(MAX_PATH, buffer);
+	wstring ws(buffer);
+	applicationDirectory = string(ws.begin(), ws.end());
+	// Apply configs from file, if it exists
+	N3sConfig::load();
 }
 
 void N3sApp::assignD3DContext(N3sD3dContext context)

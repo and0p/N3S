@@ -3,6 +3,8 @@
 #include <Input.hpp>
 #include "resource.h"
 #include <unordered_map>
+#include "atlstr.h"
+#include "N3sConfig.hpp"
 
 using namespace std;
 
@@ -11,20 +13,19 @@ struct NameAndBindingNumber {
 	int bindingNumber;
 };
 
-InputConfig config;
+HWND handle;
 unordered_map<int, NameAndBindingNumber > dropdownMap;
 unordered_map<string, int> inputNameOrder;				// Order of items in drop down, for selecting by index
 bool previouslyPopulated;
 
-void InputWindow::initialize(InputConfig ic)
-{
-	config = ic;
-}
-
 void initDialog(HWND hDlg)
 {
+	handle = hDlg;
 	// Get input config from game
-	config = InputState::getInputConfig();
+	InputConfig config = InputState::getInputConfig();
+	// Set the error to be empty
+	//string empty = "";
+	//SendDlgItemMessage(hDlg, IDC_ERRORMSG, WM_SETTEXT, NULL, (LPARAM)empty.c_str());
 	// Init all options for dropdowns, etc, if haven't run yet
 	if (!previouslyPopulated)
 	{
@@ -98,7 +99,7 @@ void initDialog(HWND hDlg)
 
 bool CALLBACK InputWindow::InputWndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	string buttonName = "ABCD";
+	string result = "";
 	switch (message)
 	{
 	case WM_INITDIALOG:
@@ -111,9 +112,16 @@ bool CALLBACK InputWindow::InputWndProc(HWND hDlg, UINT message, WPARAM wParam, 
 		switch (LOWORD(wParam))
 		{
 		case IDOK:
-			commitChanges();
-			EndDialog(hDlg, 0);
-			break;
+			result = commitChanges();
+			if (result == "")
+			{
+				N3sConfig::save();
+				EndDialog(hDlg, 0);
+			}
+			else
+				//const int lol = MessageBox(handle, (LPCWSTR)std::wstring(result.begin(), result.end()).c_str(), NULL, MB_OK | MB_ICONWARNING);
+				SendDlgItemMessage(hDlg, IDC_ERRORMSG, WM_SETTEXT, NULL, (LPARAM)std::wstring(result.begin(), result.end()).c_str());
+;			break;
 		case IDCANCEL:
 			EndDialog(hDlg, 0);
 			break;
@@ -123,7 +131,19 @@ bool CALLBACK InputWindow::InputWndProc(HWND hDlg, UINT message, WPARAM wParam, 
 	return DefWindowProc(hDlg, message, wParam, lParam);
 }
 
-bool InputWindow::commitChanges()
+string InputWindow::commitChanges()
 {
-	return true;
+	// Apply specified bindings to a new InputConfig
+	InputConfig ic;
+	for each (auto kv in dropdownMap)
+	{
+		LPWSTR s;
+		GetDlgItemText(handle, kv.first, s, 256);
+		string converted = CW2A(s);
+		// See if the string is not empty
+		if (converted != "")
+			ic.bindings[kv.second.name][kv.second.bindingNumber - 1] = converted;
+	}
+	// Send this input config to the program
+	return InputState::applyInputConfig(ic);
 }

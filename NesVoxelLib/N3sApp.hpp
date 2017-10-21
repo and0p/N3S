@@ -50,6 +50,7 @@ public:
 	bool save();
 	bool saveAs(string path);
 	n3sMode mode = gameMode;
+	static string applicationDirectory;
 private:
 	string romPath;
 	string n3sPath;

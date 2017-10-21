@@ -300,6 +300,7 @@ InputState::InputState()
 	gamepads[1] = make_shared<GamepadDevice>();
 	createBindings();
 	setDefaultInputConfig();
+	json j = inputConfig.toJSON();
 }
 
 void InputState::checkGamePads()
@@ -469,10 +470,28 @@ void InputState::setDefaultInputConfig()
 	}
 }
 
-bool InputState::applyInputConfig(InputConfig c)
+string InputState::applyInputConfig(InputConfig c)
 {
 	// Make sure input config is not malformed
-	return false;
+	string msg = c.verify();
+	// Apply the config if there is no error message
+	if (msg == "")
+	{
+		for each (auto kv in c.bindings)
+		{
+			// Grab the function and clear any current bindings
+			shared_ptr<InputFunction> f = functionsByName[kv.first];
+			f->bindings.clear();
+			// Push both new bindings
+			if(kv.second[0] != "")
+				f->bindings.push_back(inputsByName[kv.second[0]]);
+			if (kv.second[1] != "")
+				f->bindings.push_back(inputsByName[kv.second[1]]);
+		}
+		// Save the passed config
+		inputConfig = c;
+	}
+	return msg;
 }
 
 bool Binding::activatedThisFrame()
@@ -500,19 +519,52 @@ InputConfig::InputConfig()
 
 bool InputConfig::load(json j)
 {
-	return false;
+
+	return true;
+}
+
+// Make sure nothing is malformed, or bad bindings are specified
+string InputConfig::verify()
+{
+	for each (auto kv in bindings)
+	{
+		// Make sure function exists and is configurable
+		if (InputState::functionsByName.count(kv.first) < 1 || InputState::configurableFunctions.count(kv.first) < 1)
+		{
+			// Return failure
+			string failure = "Function '";
+			failure += kv.first;
+			failure += "' either does not exist or is not configurable.";
+			return failure;
+		}
+		else
+		{
+			// Make sure both inputs are allowed in custom bindings
+			if (InputState::bindableInputs.count(kv.second[0]) < 1 || InputState::bindableInputs.count(kv.second[1]) < 1)
+			{
+				// Return failure
+				string failure = "Function '";
+				failure += kv.first;
+				failure += "' has a malformed input name, or the input is not allowed.";
+				return failure;
+			}
+		}
+	}
+	return "";
 }
 
 json InputConfig::toJSON()
 {
 	json j;
-	for (int i = 0; i < FUNCTION_COUNT; i++)
+	for each(auto kv in bindings)
 	{
-		shared_ptr<InputFunction> f = InputState::functions[i];
 		// See if function is configurable
-		
-		// If so, add to JSON output
-
+		if (InputState::configurableFunctions.count(kv.first) > 0)
+		{
+			// If so, add to JSON output
+			j[kv.first].push_back(kv.second[0]);
+			j[kv.first].push_back(kv.second[1]);
+		}
 	}
 	return j;
 }

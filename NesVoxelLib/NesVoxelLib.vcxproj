@@ -254,6 +254,7 @@
     <ClInclude Include="N3sApp.hpp" />
     <ClInclude Include="Audio.hpp" />
     <ClInclude Include="Input.hpp" />
+    <ClInclude Include="N3sConfig.hpp" />
     <ClInclude Include="N3sConsole.hpp" />
     <ClInclude Include="N3sD3DContext.h" />
     <ClInclude Include="N3sMath.hpp" />
@@ -280,6 +281,7 @@
     <ClCompile Include="N3sApp.cpp" />
     <ClCompile Include="Audio.cpp" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="N3sConfig.cpp" />
     <ClCompile Include="N3sConsole.cpp" />
     <ClCompile Include="N3sMath.cpp" />
     <ClCompile Include="N3sPalette.cpp" />

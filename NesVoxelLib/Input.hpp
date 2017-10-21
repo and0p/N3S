@@ -138,6 +138,7 @@ class InputConfig
 public:
 	InputConfig();
 	bool load(json j);
+	string verify();
 	json toJSON();
 	map<string, string[2]> bindings;
 };
@@ -156,7 +157,7 @@ public:
 	static void createBindings();
 	static InputConfig getInputConfig();
 	static void setDefaultInputConfig();
-	static bool applyInputConfig(InputConfig c);
+	static string applyInputConfig(InputConfig c);
 	static map<string, shared_ptr<Input>> inputsByName;
 	static map<string, shared_ptr<InputFunction>> functionsByName;
 	static set<string> configurableFunctions;

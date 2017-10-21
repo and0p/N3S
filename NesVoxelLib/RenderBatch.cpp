@@ -5,11 +5,11 @@ RenderBatch::RenderBatch(shared_ptr<GameData> gameData, shared_ptr<PpuSnapshot> 
 	:	gameData(gameData), snapshot(snapshot), vPatternTable(vPatternTable)
 {
 	// Check if we're rendering OAM and NT, and batch if so
-	if (snapshot->mask.renderSprites)
+	if (snapshot->mask.renderSprites)		// TODO: add override check
 		renderingOAM = true;
 	else
 		renderingOAM = false;
-	if (snapshot->mask.renderBackground)
+	if (snapshot->mask.renderBackground)	// TODO: add override check
 		renderingNT = true;
 	else
 		renderingNT = false;
@@ -130,7 +130,8 @@ void RenderBatch::processMeshesOAM()
 	// Process meshes (FOR NOW ASSUMING DEFAULT)
 	for(int i = 0; i < computedSprites.size(); i++)
 	{
-		computedSprites[i].mesh = computedSprites[i].virtualSprite->defaultMesh;
+		if(computedSprites[i].virtualSprite != nullptr)
+			computedSprites[i].mesh = computedSprites[i].virtualSprite->defaultMesh;
 	}
 }
 
