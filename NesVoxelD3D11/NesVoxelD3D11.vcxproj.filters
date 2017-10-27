@@ -20,6 +20,7 @@
     </ClInclude>
     <ClInclude Include="resource.h" />
     <ClInclude Include="InputWindow.h" />
+    <ClInclude Include="Menu.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -29,6 +30,7 @@
       <Filter>Common</Filter>
     </ClCompile>
     <ClCompile Include="InputWindow.cpp" />
+    <ClCompile Include="Menu.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc" />

@@ -59,6 +59,19 @@ PpuSnapshot::PpuSnapshot(N3sRawPpu * rawPPU)
 		background.mirrorType = vertical;
 		break;
 	}
+	// Get values of registers for easy menu display
+	registerOptions[mirror_selection] = background.mirrorType;
+	registerOptions[oam_pattern] = (ctrl.spriteNameTable) ? 1 : 0;
+	registerOptions[nt_pattern] = (ctrl.backgroundNameTable) ? 1 : 0;
+	registerOptions[sprite8x16] = (ctrl.spriteSize16x8) ? 1 : 0;
+	registerOptions[render_oam] = (mask.renderSprites) ? 1 : 0;
+	registerOptions[render_nt] = (mask.renderBackground) ? 1 : 0;
+	registerOptions[render_oam_left] = (mask.renderSpritesLeft8) ? 1 : 0;
+	registerOptions[render_nt_left] = (mask.renderBackgroundLeft8) ? 1 : 0;
+	registerOptions[greyscale] = (mask.greyscale) ? 1 : 0;
+	registerOptions[emphasize_red] = (mask.emphasizeRed) ? 1 : 0;
+	registerOptions[emphasize_green] = (mask.emphasizeGreen) ? 1 : 0;
+	registerOptions[emphasize_blue] = (mask.emphasizeBlue) ? 1 : 0;
 	// Copy background color
 	palette.backgroundColorIndex = (int)rawPPU->palette[0];
 	// Copy palette

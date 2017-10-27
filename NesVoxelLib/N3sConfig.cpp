@@ -3,7 +3,33 @@
 #include "N3sApp.hpp"
 #include "N3sConsole.hpp"
 
-#define CONFIG_NAME "\\config.json";
+#define CONFIG_NAME		"\\config.json";
+#define NO_OVERRIDE		-1
+#define OVERRIDE_FALSE	0
+#define OVERRIDE_TRUE	1
+
+bool N3sConfig::options[N3S_OPTION_SIZE];
+int N3sConfig::registers[REGISTER_OPTION_SIZE];
+UINT N3sConfig::nesRegisters[REGISTER_OPTION_SIZE];
+
+void N3sConfig::init()
+{
+	// Set default options
+	options[mute_audio] = false;
+	// Set all registers to not override NES
+	for (int i = 0; i < REGISTER_OPTION_SIZE; i++)
+	{
+		registers[i] = NO_OVERRIDE;
+	}
+}
+
+bool N3sConfig::anyRegistersOveridden()
+{
+	for (int i = 0; i < REGISTER_OPTION_SIZE; i++)
+		if (registers[i] != NO_OVERRIDE)
+			return true;
+	return false;
+}
 
 void N3sConfig::load()
 {
@@ -55,4 +81,57 @@ void N3sConfig::save()
 	myfile.open(configPath.c_str());
 	myfile << output;
 	myfile.close();
+}
+
+void N3sConfig::update(shared_ptr<PpuSnapshot> snapshot)
+{
+	// Snag NES registers, if the game is running, otherwise assume off
+	if (snapshot != nullptr)
+	{
+		for (int i = 0; i < REGISTER_OPTION_SIZE; i++)
+		{
+			nesRegisters[i] = snapshot->registerOptions[i];
+		}
+	}
+	else
+	{
+		for (int i = 0; i < REGISTER_OPTION_SIZE; i++)
+		{
+			nesRegisters[i] = 0;
+		}
+	}
+}
+
+bool N3sConfig::getOption(N3sOption o)
+{
+	return options[o];
+}
+
+void N3sConfig::setOption(N3sOption o, bool val)
+{
+	options[0] = val;
+}
+
+void N3sConfig::toggleOption(N3sOption o)
+{
+	options[0] = (options[0]) ? false : true;
+}
+
+UINT N3sConfig::getRegisterOverride(RegisterOption o)
+{
+	return registers[o];
+}
+
+bool N3sConfig::isRegisterActive(RegisterOption o)
+{
+	// See if we're overriding, otherwise see if NES has it active
+	if (registers[o] > OVERRIDE_FALSE || nesRegisters[o] > 0)
+		return true;
+	else
+		return false;
+}
+
+void N3sConfig::setRegisterOverride(RegisterOption o, UINT val)
+{
+	registers[o] = val;
 }

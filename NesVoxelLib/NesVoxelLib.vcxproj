@@ -243,6 +243,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.hpp" />
+    <ClInclude Include="Common.hpp" />
     <ClInclude Include="Editor.hpp" />
     <ClInclude Include="GameData.hpp" />
     <ClInclude Include="GameView.hpp" />

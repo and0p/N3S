@@ -165,7 +165,14 @@ void N3sApp::update(bool runThisNesFrame)
 			Editor::update();
 			break;
 		}
-	}	
+		// Update the current configuration
+		N3sConfig::update(snapshot);
+	}
+	else
+	{
+		N3sConfig::update(nullptr);
+	}
+
 }
 
 void N3sApp::render()

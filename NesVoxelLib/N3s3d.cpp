@@ -1,10 +1,12 @@
 // Obviously thanks to http://www.directxtutorial.com/ for a bunch of this
 // As well as http://www.braynzarsoft.net/viewtutorial/q16390-4-begin-drawing
 
+#pragma once
 #include "stdafx.h"
 #include <iostream>
 #include <fstream>
 #include "N3s3d.hpp"
+
 
 using namespace std;
 

@@ -7,6 +7,7 @@
 #include <iostream>
 #include "N3sD3DContext.h"
 #include "InputWindow.h"
+#include "Menu.h"
 
 using namespace DirectX;
 
@@ -167,6 +168,10 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam, HWND hwnd)
 {
 	switch (message)
 	{
+	case WM_ENTERMENULOOP:
+		// Update the menu in the window
+		updateMenu(GetMenu(hwnd), app.loaded);
+		break;
 	case WM_COMMAND:
 	{
 		switch (LOWORD(wParam))

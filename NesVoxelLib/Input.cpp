@@ -519,8 +519,32 @@ InputConfig::InputConfig()
 
 bool InputConfig::load(json j)
 {
-
-	return true;
+	for (auto kv = j.begin(); kv != j.end(); ++kv)
+	{
+		// See if this function exists and is configurable
+		if (InputState::functionsByName.count(kv.key()) > 0 && InputState::configurableFunctions.count(kv.key()) > 0)
+		{
+			// Make sure that there are two bindings specified
+			json value = (json)kv.value();	// who knows how to do this right
+			if (value.size() == 2)
+			{
+				bindings[kv.key()][0] = value[0];
+				bindings[kv.key()][1] = value[1];
+				shared_ptr<InputFunction> f = InputState::functionsByName[kv.key()];
+				// Clear the default function bindings
+				//f->bindings.clear();
+				//// Add specified (non-empty) bindings that are not disallowed
+				//if (value[0].is_string() && InputState::bindableInputs.count(value[0]) > 0)
+				//	f->bindings.push_back(InputState::inputsByName[value[0]]);
+				//if (value[1].is_string() && InputState::bindableInputs.count(value[1]) > 0)
+				//	f->bindings.push_back(InputState::inputsByName[value[1]]);
+			}
+		}
+	}
+	if (verify() == "")
+		return true;
+	else
+		return false;
 }
 
 // Make sure nothing is malformed, or bad bindings are specified
