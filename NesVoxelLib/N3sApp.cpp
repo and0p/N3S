@@ -32,6 +32,7 @@ N3sApp::N3sApp()
 	wstring ws(buffer);
 	applicationDirectory = string(ws.begin(), ws.end());
 	// Apply configs from file, if it exists
+	N3sConfig::init();
 	N3sConfig::load();
 }
 
@@ -219,6 +220,12 @@ void N3sApp::setMute(bool mute)
 		audioEngine->pause();
 	else
 		audioEngine->resume();
+	N3sConfig::setOption(mute_audio, muted);
+}
+
+void N3sApp::toggleMute()
+{
+	muted ? setMute(false) : setMute(true);
 }
 
 void N3sApp::updateCameraViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)

@@ -1,18 +1,27 @@
 #include "stdafx.h"
 #include "RenderBatch.hpp"
+#include "N3sConfig.hpp"
+
+bool sprite8x16 = false;
+bool oamSelectOverridden = false;
+bool ntSelectOverridden = false;
+bool oamOverride = 0;
+bool ntOverride = 0;
 
 RenderBatch::RenderBatch(shared_ptr<GameData> gameData, shared_ptr<PpuSnapshot> snapshot, shared_ptr<VirtualPatternTable> vPatternTable)
 	:	gameData(gameData), snapshot(snapshot), vPatternTable(vPatternTable)
 {
 	// Check if we're rendering OAM and NT, and batch if so
-	if (snapshot->mask.renderSprites)		// TODO: add override check
-		renderingOAM = true;
+	if (N3sConfig::getRegisterOverride(render_oam) == NO_OVERRIDE)
+		renderingOAM = snapshot->mask.renderSprites;
 	else
-		renderingOAM = false;
-	if (snapshot->mask.renderBackground)	// TODO: add override check
-		renderingNT = true;
+		renderingOAM = (N3sConfig::getRegisterOverride(render_oam) == OVERRIDE_TRUE) ? true : false;
+	if (N3sConfig::getRegisterOverride(render_nt) == NO_OVERRIDE)
+		renderingNT = snapshot->mask.renderBackground;
 	else
-		renderingNT = false;
+		renderingNT = (N3sConfig::getRegisterOverride(render_nt) == OVERRIDE_TRUE) ? true : false;
+	// Check pattern table overrides
+
 	if (renderingOAM)
 	{
 		computeSpritesOAM();

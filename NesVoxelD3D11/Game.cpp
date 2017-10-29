@@ -37,6 +37,7 @@ void Game::Initialize(HWND window, int width, int height)
 
     app.assignD3DContext(c);
 	app.initDirectAudio(window);
+	initMenu();
 	//app.load(' ');
 
     // TODO: Change the timer settings if you want something other than the default variable timestep mode.
@@ -171,6 +172,7 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam, HWND hwnd)
 	case WM_ENTERMENULOOP:
 		// Update the menu in the window
 		updateMenu(GetMenu(hwnd), app.loaded);
+		//app.setMute(true);
 		break;
 	case WM_COMMAND:
 	{
@@ -207,6 +209,16 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam, HWND hwnd)
 				app.loadGameData(path, false);
 			break;
 		}
+		case ID_CONFIG_MUTEAUDIO:
+			app.toggleMute();
+			break;
+		case ID_NES_RESETREGISTEROVERRIDES:
+			N3sConfig::resetRegisterOverrides();
+			break;
+		default:
+			// Assume this is a registry thing, then
+			updateNesRegistry(LOWORD(wParam));
+			break;
 		}
 		case WM_KEYDOWN:
 		{

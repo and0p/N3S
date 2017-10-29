@@ -9,6 +9,10 @@
 
 using json = nlohmann::json;
 
+#define NO_OVERRIDE		-1
+#define OVERRIDE_FALSE	0
+#define OVERRIDE_TRUE	1
+
 class N3sConfig
 {
 public:
@@ -25,5 +29,7 @@ public:
 	static void toggleOption(N3sOption o);
 	static UINT getRegisterOverride(RegisterOption o);
 	static bool isRegisterActive(RegisterOption o);
-	static void setRegisterOverride(RegisterOption o, UINT val);
+	static void setRegisterOverride(RegisterOption o, int val);
+	static void resetRegisterOverrides();
+	static bool anyRegisterOverridden();
 };

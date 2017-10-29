@@ -4,9 +4,6 @@
 #include "N3sConsole.hpp"
 
 #define CONFIG_NAME		"\\config.json";
-#define NO_OVERRIDE		-1
-#define OVERRIDE_FALSE	0
-#define OVERRIDE_TRUE	1
 
 bool N3sConfig::options[N3S_OPTION_SIZE];
 int N3sConfig::registers[REGISTER_OPTION_SIZE];
@@ -17,10 +14,7 @@ void N3sConfig::init()
 	// Set default options
 	options[mute_audio] = false;
 	// Set all registers to not override NES
-	for (int i = 0; i < REGISTER_OPTION_SIZE; i++)
-	{
-		registers[i] = NO_OVERRIDE;
-	}
+	resetRegisterOverrides();
 }
 
 bool N3sConfig::anyRegistersOveridden()
@@ -125,13 +119,29 @@ UINT N3sConfig::getRegisterOverride(RegisterOption o)
 bool N3sConfig::isRegisterActive(RegisterOption o)
 {
 	// See if we're overriding, otherwise see if NES has it active
-	if (registers[o] > OVERRIDE_FALSE || nesRegisters[o] > 0)
+	if (registers[o] >= OVERRIDE_TRUE || (nesRegisters[o] > 0 && registers[o] == NO_OVERRIDE))
 		return true;
 	else
 		return false;
 }
 
-void N3sConfig::setRegisterOverride(RegisterOption o, UINT val)
+void N3sConfig::setRegisterOverride(RegisterOption o, int val)
 {
 	registers[o] = val;
+}
+
+void N3sConfig::resetRegisterOverrides()
+{
+	for (int i = 0; i < REGISTER_OPTION_SIZE; i++)
+	{
+		registers[i] = NO_OVERRIDE;
+	}
+}
+
+bool N3sConfig::anyRegisterOverridden()
+{
+	for (int i = 0; i < REGISTER_OPTION_SIZE; i++)
+		if (registers[i] > NO_OVERRIDE)
+			return true;
+	return false;
 }

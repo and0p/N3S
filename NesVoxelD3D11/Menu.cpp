@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Menu.h"
+#include <unordered_map>
 
 #define NES_SUBMENU_NO 1
 #define CONFIG_SUBMENU_NO 2
@@ -7,10 +8,17 @@
 
 #define OVERRIDE_OPTION_COUNT 6
 
+#define MUTE_AUDIO_INDEX 0
+
 struct RegisterBinding {
 	RegisterOption option;
 	UINT groupID;
 	UINT menuID[OVERRIDE_OPTION_COUNT];
+};
+
+struct ButtonBinding {
+	RegisterOption option;
+	int value;
 };
 
 RegisterBinding registerMenuItems[REGISTER_OPTION_SIZE] = {
@@ -28,10 +36,30 @@ RegisterBinding registerMenuItems[REGISTER_OPTION_SIZE] = {
 	emphasize_blue, 11, { ID_EMPHASIZEBLUE_NOO, ID_EMPHASIZEBLUE_DISABLED, ID_EMPHASIZEBLUE_ENABLED, 0, 0, 0 }
 };
 
+unordered_map<UINT, ButtonBinding> buttonBindings;
+
+// Map all buttons to their registers and values
+void initMenu() {
+	for (int r = 0; r < REGISTER_OPTION_SIZE; r++)
+	{
+		for (int i = 0; i < OVERRIDE_OPTION_COUNT; i++)
+		{
+			RegisterBinding binding = registerMenuItems[r];
+			// See if this option has a button
+			if (binding.menuID[i] > 0)
+			{
+				// Add to the map of buttons, with the register option -1 (so that "no override" is -1, rather than 0)
+				buttonBindings[binding.menuID[i]] = { binding.option, i - 1 };
+			}
+		}
+	}
+}
+
 void updateMenu(HMENU hmenu, bool gameLoaded)
 {
 	// Get the submenus
 	HMENU nesSubmenu = GetSubMenu(hmenu, NES_SUBMENU_NO);
+	HMENU configSubmenu = GetSubMenu(hmenu, CONFIG_SUBMENU_NO);
 	// Enable and disable relevant controls if game has not yet loaded
 	if (gameLoaded)
 	{
@@ -59,7 +87,20 @@ void updateMenu(HMENU hmenu, bool gameLoaded)
 		// Check the correct submenu item, indicating override status
 		HMENU registerSubmenu = GetSubMenu(nesSubmenu, REGISTER_OFFSET + registerMenuItems[i].groupID);
 		for (int r = 0; r < OVERRIDE_OPTION_COUNT; r++)
-			CheckMenuItem(registerSubmenu, r, ((N3sConfig::registers[o] == r) ? MF_CHECKED : MF_UNCHECKED) | MF_BYPOSITION);
+			CheckMenuItem(registerSubmenu, r, ((N3sConfig::registers[o] == r - 1) ? MF_CHECKED : MF_UNCHECKED) | MF_BYPOSITION);
 		// Set group label bold (or asterisk?) to indicate override status
+	}
+	// See if anything is overridden and enable override reset button
+	EnableMenuItem(nesSubmenu, ID_NES_RESETREGISTEROVERRIDES, (N3sConfig::anyRegistersOveridden() ? MF_ENABLED : MF_DISABLED));
+	// Update mute button
+	CheckMenuItem(configSubmenu, MUTE_AUDIO_INDEX, (N3sConfig::options[mute_audio] ? MF_CHECKED : MF_UNCHECKED) | MF_BYPOSITION);
+}
+
+void updateNesRegistry(UINT button)
+{
+	// See if this button actually binds to anything
+	if (buttonBindings.count(button) > 0)
+	{
+		N3sConfig::setRegisterOverride(buttonBindings[button].option, buttonBindings[button].value);
 	}
 }
