@@ -2,7 +2,7 @@
 #include "RenderBatch.hpp"
 #include "N3sConfig.hpp"
 
-bool sprite8x16 = false;
+bool sprite8x16Override = false;
 bool oamSelectOverridden = false;
 bool ntSelectOverridden = false;
 bool oamOverride = 0;
