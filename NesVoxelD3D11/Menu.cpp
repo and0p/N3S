@@ -1,3 +1,4 @@
+#pragma once
 #include "pch.h"
 #include "Menu.h"
 #include <unordered_map>
@@ -55,13 +56,13 @@ void initMenu() {
 	}
 }
 
-void updateMenu(HMENU hmenu, bool gameLoaded)
+void updateMenu(HMENU hmenu, N3sApp * app)
 {
 	// Get the submenus
 	HMENU nesSubmenu = GetSubMenu(hmenu, NES_SUBMENU_NO);
 	HMENU configSubmenu = GetSubMenu(hmenu, CONFIG_SUBMENU_NO);
 	// Enable and disable relevant controls if game has not yet loaded
-	if (gameLoaded)
+	if (app->loaded)
 	{
 		EnableMenuItem(nesSubmenu, ID_NES_POWER, MF_ENABLED);
 		EnableMenuItem(nesSubmenu, ID_NES_RESET, MF_ENABLED);
@@ -71,6 +72,8 @@ void updateMenu(HMENU hmenu, bool gameLoaded)
 		EnableMenuItem(nesSubmenu, ID_NES_POWER, MF_DISABLED);
 		EnableMenuItem(nesSubmenu, ID_NES_RESET, MF_DISABLED);
 	}
+	// Update pause status
+	CheckMenuItem(nesSubmenu, ID_NES_PAUSE, (app->emulationPaused ? MF_CHECKED : MF_UNCHECKED));
 	// Update register display
 	for (UINT i = 0; i < REGISTER_OPTION_SIZE; i++)
 	{

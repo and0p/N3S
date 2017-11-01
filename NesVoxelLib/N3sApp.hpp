@@ -31,6 +31,7 @@ public:
 	void render();
 	void pause();
 	void unpause();
+	void togglePause();
 	void setMute(bool mute);
 	void toggleMute();
 	void updateCameraViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection);
@@ -52,13 +53,12 @@ public:
 	bool saveAs(string path);
 	n3sMode mode = gameMode;
 	static string applicationDirectory;
+	bool emulationPaused;
 private:
 	string romPath;
 	string n3sPath;
 	SoundDriver *audioEngine;
 	shared_ptr<RenderBatch> renderBatch;
 	HWND hwnd;
-	bool emulationPaused;
 	bool muted;
-
 };

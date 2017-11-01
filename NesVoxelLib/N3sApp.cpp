@@ -213,6 +213,14 @@ void N3sApp::unpause()
 	audioEngine->resume();
 }
 
+void N3sApp::togglePause()
+{
+	if (emulationPaused)
+		unpause();
+	else
+		pause();
+}
+
 void N3sApp::setMute(bool mute)
 {
 	muted = mute;

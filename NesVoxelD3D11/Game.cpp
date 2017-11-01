@@ -171,7 +171,7 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam, HWND hwnd)
 	{
 	case WM_ENTERMENULOOP:
 		// Update the menu in the window
-		updateMenu(GetMenu(hwnd), app.loaded);
+		updateMenu(GetMenu(hwnd), &app);
 		//app.setMute(true);
 		break;
 	case WM_COMMAND:
@@ -188,6 +188,16 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam, HWND hwnd)
 		case ID_FILE_UNLOAD:
 		{
 			app.unload();
+		}
+		case ID_NES_RESET:
+		{
+			app.reset();
+			break;
+		}
+		case ID_NES_PAUSE:
+		{
+			app.togglePause();
+			break;
 		}
 		case ID_3D_SAVE:
 		{
