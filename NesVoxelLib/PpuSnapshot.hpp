@@ -4,6 +4,7 @@
 #include "N3sRawPpu.h"
 #include "N3sPalette.hpp"
 #include "N3sMath.hpp"
+#include "Common.hpp"
 
 struct Ctrl {
 	bool spriteNameTable;
@@ -101,6 +102,7 @@ public:
 	bool getOAMSelectAtScanline(int scanline);
 	int getTrueOamTile(int s);
 	int getTrueNTTile(int i);
+	UINT registerOptions[REGISTER_OPTION_SIZE];
 private:
 	OamSprite buildSprite(unsigned char *ptr);
 	static int getTileAddress(unsigned char byte);

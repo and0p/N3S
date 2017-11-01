@@ -103,6 +103,15 @@
     <ClInclude Include="RenderBatch.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="InputMapping.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="N3sConfig.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Common.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -163,6 +172,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RenderBatch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="N3sConfig.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

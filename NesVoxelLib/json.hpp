@@ -56,6 +56,8 @@ SOFTWARE.
 #include <utility>
 #include <vector>
 
+#pragma once
+
 // exclude unsupported compilers
 #if defined(__clang__)
     #define CLANG_VERSION (__clang_major__ * 10000 + __clang_minor__ * 100 + __clang_patchlevel__)

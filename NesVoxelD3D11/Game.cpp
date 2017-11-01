@@ -6,6 +6,8 @@
 #include "Game.h"
 #include <iostream>
 #include "N3sD3DContext.h"
+#include "InputWindow.h"
+#include "Menu.h"
 
 using namespace DirectX;
 
@@ -35,6 +37,7 @@ void Game::Initialize(HWND window, int width, int height)
 
     app.assignD3DContext(c);
 	app.initDirectAudio(window);
+	initMenu();
 	//app.load(' ');
 
     // TODO: Change the timer settings if you want something other than the default variable timestep mode.
@@ -166,6 +169,11 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam, HWND hwnd)
 {
 	switch (message)
 	{
+	case WM_ENTERMENULOOP:
+		// Update the menu in the window
+		updateMenu(GetMenu(hwnd), &app);
+		//app.setMute(true);
+		break;
 	case WM_COMMAND:
 	{
 		switch (LOWORD(wParam))
@@ -180,6 +188,16 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam, HWND hwnd)
 		case ID_FILE_UNLOAD:
 		{
 			app.unload();
+		}
+		case ID_NES_RESET:
+		{
+			app.reset();
+			break;
+		}
+		case ID_NES_PAUSE:
+		{
+			app.togglePause();
+			break;
 		}
 		case ID_3D_SAVE:
 		{
@@ -201,6 +219,16 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam, HWND hwnd)
 				app.loadGameData(path, false);
 			break;
 		}
+		case ID_CONFIG_MUTEAUDIO:
+			app.toggleMute();
+			break;
+		case ID_NES_RESETREGISTEROVERRIDES:
+			N3sConfig::resetRegisterOverrides();
+			break;
+		default:
+			// Assume this is a registry thing, then
+			updateNesRegistry(LOWORD(wParam));
+			break;
 		}
 		case WM_KEYDOWN:
 		{
@@ -262,6 +290,7 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam, HWND hwnd)
 	}
 	}
 }
+
 #pragma endregion
 
 #pragma region Direct3D Resources

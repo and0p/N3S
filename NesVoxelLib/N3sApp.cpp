@@ -5,6 +5,7 @@
 #include "Overlay.hpp"
 #include "Editor.hpp"
 #include "N3sPalette.hpp"
+#include "N3sConfig.hpp"
 
 extern SoundDriver *newDirectSound();
 
@@ -12,6 +13,7 @@ shared_ptr<GameData> N3sApp::gameData;
 shared_ptr<PpuSnapshot> N3sApp::snapshot;
 shared_ptr<InputState> N3sApp::inputState;
 shared_ptr<VirtualPatternTable> N3sApp::virtualPatternTable;
+string N3sApp::applicationDirectory;
 
 N3sApp::N3sApp()
 {
@@ -24,6 +26,14 @@ N3sApp::N3sApp()
 	SoundDriver * drv = 0;
 	N3sPalette::init();
 	N3sConsole::init();
+	// Get the application directory
+	wchar_t buffer[MAX_PATH];
+	GetCurrentDirectory(MAX_PATH, buffer);
+	wstring ws(buffer);
+	applicationDirectory = string(ws.begin(), ws.end());
+	// Apply configs from file, if it exists
+	N3sConfig::init();
+	N3sConfig::load();
 }
 
 void N3sApp::assignD3DContext(N3sD3dContext context)
@@ -123,12 +133,12 @@ void N3sApp::update(bool runThisNesFrame)
 	// Update console
 	N3sConsole::update();
 	// See if we're switching modes due to user input
-	if (N3sApp::inputState->functions[tog_game].activatedThisFrame)
+	if (N3sApp::inputState->functions[tog_game]->activatedThisFrame)
 	{
 		mode = gameMode;
 		audioEngine->resume();
 	}
-	else if (N3sApp::inputState->functions[tog_editor].activatedThisFrame)
+	else if (N3sApp::inputState->functions[tog_editor]->activatedThisFrame)
 	{
 		if(mode != editorMode)
 			Editor::updateTempScene(snapshot);
@@ -156,7 +166,14 @@ void N3sApp::update(bool runThisNesFrame)
 			Editor::update();
 			break;
 		}
-	}	
+		// Update the current configuration
+		N3sConfig::update(snapshot);
+	}
+	else
+	{
+		N3sConfig::update(nullptr);
+	}
+
 }
 
 void N3sApp::render()
@@ -196,6 +213,14 @@ void N3sApp::unpause()
 	audioEngine->resume();
 }
 
+void N3sApp::togglePause()
+{
+	if (emulationPaused)
+		unpause();
+	else
+		pause();
+}
+
 void N3sApp::setMute(bool mute)
 {
 	muted = mute;
@@ -203,6 +228,12 @@ void N3sApp::setMute(bool mute)
 		audioEngine->pause();
 	else
 		audioEngine->resume();
+	N3sConfig::setOption(mute_audio, muted);
+}
+
+void N3sApp::toggleMute()
+{
+	muted ? setMute(false) : setMute(true);
 }
 
 void N3sApp::updateCameraViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
@@ -237,6 +268,16 @@ void N3sApp::recieveMouseMovement(int x, int y)
 void N3sApp::recieveMouseScroll(int delta)
 {
 	InputState::keyboardMouse->wheelDelta = delta;
+}
+
+InputConfig N3sApp::getInputConfig()
+{
+	return InputState::getInputConfig();
+}
+
+bool N3sApp::applyInputConfig()
+{
+	return false;
 }
 
 XMVECTORF32 N3sApp::getBackgroundColor()

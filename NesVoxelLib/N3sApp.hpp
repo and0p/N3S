@@ -31,13 +31,17 @@ public:
 	void render();
 	void pause();
 	void unpause();
+	void togglePause();
 	void setMute(bool mute);
+	void toggleMute();
 	void updateCameraViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection);
 	void updateGameOriginPosition(float x, float y, float z);
 	void recieveKeyInput(int key, bool down);
 	void recieveMouseInput(MouseButtons button, bool down);
 	void recieveMouseMovement(int x, int y);
 	void recieveMouseScroll(int delta);
+	InputConfig getInputConfig();
+	bool applyInputConfig();
 	XMVECTORF32 getBackgroundColor();
 	retro_game_info *info;
 	static shared_ptr<GameData> gameData;
@@ -48,13 +52,13 @@ public:
 	bool save();
 	bool saveAs(string path);
 	n3sMode mode = gameMode;
+	static string applicationDirectory;
+	bool emulationPaused;
 private:
 	string romPath;
 	string n3sPath;
 	SoundDriver *audioEngine;
 	shared_ptr<RenderBatch> renderBatch;
 	HWND hwnd;
-	bool emulationPaused;
 	bool muted;
-
 };

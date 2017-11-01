@@ -5,7 +5,7 @@
 #include "pch.h"
 #include "Game.h"
 #include "resource.h"
-
+#include "InputWindow.h"
 
 using namespace DirectX;
 
@@ -18,6 +18,7 @@ LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 bool readyToExit = false;
 HMENU menu;
 bool menuShown = true;
+HINSTANCE cachedHInstance;
 
 // Entry point
 int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
@@ -30,6 +31,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         return 1;
 
     g_game = std::make_unique<Game>();
+	cachedHInstance = hInstance;
 
     // Register class and create window
     {
@@ -303,17 +305,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_MOUSEMOVE:
 		g_game->getAppMessage(message, wParam, lParam, hWnd);
 		break;
-
 	case WM_MOUSEWHEEL:
 		g_game->getAppMessage(message, wParam, lParam, hWnd);
 		break;
-
+	case WM_ENTERMENULOOP:
+		g_game->getAppMessage(message, wParam, lParam, hWnd);
+		break;
 	case WM_COMMAND:
 	{
 		switch (LOWORD(wParam))
 		{
 		case ID_FILE_EXIT:
 			readyToExit = true;
+			break;
+		case ID_CONFIG_INPUT:
+			DialogBox(cachedHInstance, MAKEINTRESOURCE(IDD_INPUT), hWnd, (DLGPROC)InputWindow::InputWndProc);
 			break;
 		default:
 			g_game->getAppMessage(message, wParam, lParam, hWnd);

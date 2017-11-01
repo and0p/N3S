@@ -4,6 +4,7 @@
 #include <malloc.h>
 #include "N3sMath.hpp"
 
+
 enum ViewSide { v_front, v_back, v_left, v_right, v_top, v_facing, v_bottom };
 struct ViewingAngle { 
 	ViewSide x; 

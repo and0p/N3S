@@ -6,11 +6,11 @@ shared_ptr<OrbitCamera> gameCamera = make_shared<OrbitCamera>(OrbitCamera());
 
 void GameView::update()
 {
-	float camXRotation = InputState::functions[cam_left].value + InputState::functions[cam_right].value * -1;
-	float camYRotation = InputState::functions[cam_up].value - InputState::functions[cam_down].value;
-	float camXMove = (InputState::functions[cam_move_left].value * -0.03f) + (InputState::functions[cam_move_right].value * 0.03f);
-	float camYMove = InputState::functions[cam_move_up].value * 0.03f - InputState::functions[cam_move_down].value * 0.03f;
-	float camZoom = InputState::functions[cam_pan_in].value * 0.05f - InputState::functions[cam_pan_out].value * 0.05f;
+	float camXRotation = InputState::functions[cam_left]->value + InputState::functions[cam_right]->value * -1;
+	float camYRotation = InputState::functions[cam_up]->value - InputState::functions[cam_down]->value;
+	float camXMove = (InputState::functions[cam_move_left]->value * -0.03f) + (InputState::functions[cam_move_right]->value * 0.03f);
+	float camYMove = InputState::functions[cam_move_up]->value * 0.03f - InputState::functions[cam_move_down]->value * 0.03f;
+	float camZoom = InputState::functions[cam_pan_in]->value * 0.05f - InputState::functions[cam_pan_out]->value * 0.05f;
 	gameCamera->AdjustPosition(camXMove, camYMove, 0.0f);
 	gameCamera->AdjustRotation(camXRotation, camYRotation, 0.0f);
 	gameCamera->adjustZoom(camZoom);
@@ -31,7 +31,7 @@ void GameView::update()
 	// Update camera zoom
 	gameCamera->adjustZoom((float)InputState::keyboardMouse->calculatedWheelDelta / 10);
 
-	//if (inputState->gamePads[0].buttonStates[brb])
+	//if (inputState->gamePads[0].buttonStates[BTN_R_BUMPER])
 	//{
 	//	//gameCamera->SetPosition(0, 0, 0);
 	//	//gameCamera->SetRotation(0, 0, 0);

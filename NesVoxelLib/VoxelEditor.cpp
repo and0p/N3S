@@ -48,8 +48,8 @@ bool VoxelEditor::update(bool mouseAvailable)
 		adjustWorkingPositionAnalog(-xPan, -yPan, 0);
 	}
 	// Select point on editor plane using mouse or buttons
-	adjustWorkingPositionAnalog(InputState::functions[editor_moveright].value, InputState::functions[editor_movedown].value, 0);
-	adjustWorkingPositionAnalog(-InputState::functions[editor_moveleft].value, -InputState::functions[editor_moveup].value, 0);
+	adjustWorkingPositionAnalog(InputState::functions[editor_moveright]->value, InputState::functions[editor_movedown]->value, 0);
+	adjustWorkingPositionAnalog(-InputState::functions[editor_moveleft]->value, -InputState::functions[editor_moveup]->value, 0);
 
 	if (InputState::keyboardMouse->calculatedWheelDelta != 0)
 		adjustWorkingPosition(0, 0, InputState::keyboardMouse->calculatedWheelDelta);
@@ -64,12 +64,12 @@ bool VoxelEditor::update(bool mouseAvailable)
 			mesh->updateVoxel(mirroredMouseHighlight.mirror(ss->mirrorH, ss->mirrorV), selectedColor);
 	}
 
-	if (InputState::functions[voxeleditor_movein].activatedThisFrame)
+	if (InputState::functions[voxeleditor_movein]->activatedThisFrame)
 	{
 		adjustWorkingPosition(0, 0, 1);
 	}
 
-	else if (InputState::functions[voxeleditor_moveout].activatedThisFrame)
+	else if (InputState::functions[voxeleditor_moveout]->activatedThisFrame)
 		adjustWorkingPosition(0, 0, -1);
 
 	// Update camera position after selections may be changed
@@ -78,7 +78,7 @@ bool VoxelEditor::update(bool mouseAvailable)
 	selection = { xSelect, ySelect, zSelect };
 	
 	// Check for mirroring change
-	if (InputState::functions[voxeleditor_mirror].activatedThisFrame)
+	if (InputState::functions[voxeleditor_mirror]->activatedThisFrame)
 		setMirroring();
 
 	// If mirroring is active, update mirrored mouse highlight and selection
@@ -86,19 +86,19 @@ bool VoxelEditor::update(bool mouseAvailable)
 	mirroredMouseHighlight = mouseHighlight.mirrorMesh(mirrorPoint, mirrorDirection, mirrorStyle);
 
 	// See if we're holding alt, and update sprite cropping if so
-	if (InputState::functions[selection_remove].active)
+	if (InputState::functions[selection_remove]->active)
 		updateCroping();
 	else
 		crop = { 0, 0, 0, 0 };
 
 	// Add or remove voxels
-	if (InputState::functions[voxeleditor_setvoxel].active)
+	if (InputState::functions[voxeleditor_setvoxel]->active)
 	{
 		mesh->updateVoxel(selection.mirror(ss->mirrorH, ss->mirrorV), selectedColor);
 		if(mirrorStyle > no_mirroring)
 			mesh->updateVoxel(mirroredSelection.mirror(ss->mirrorH, ss->mirrorV), selectedColor);
 	}
-	else if (InputState::functions[voxeleditor_deletevoxel].active)
+	else if (InputState::functions[voxeleditor_deletevoxel]->active)
 	{
 		mesh->updateVoxel(selection.mirror(ss->mirrorH, ss->mirrorV), 0);
 		if (mirrorStyle > no_mirroring)
@@ -324,11 +324,11 @@ void VoxelEditor::adjustWorkingPosition(int x, int y, int z)
 	zSelect = floor(workingZ);
 
 	// See if we should copy/move the old layer as well
-	if (InputState::functions[selection_copy].active)
+	if (InputState::functions[selection_copy]->active)
 	{
 		mesh->moveLayer(oldX, oldY, oldZ, workingX, workingY, workingZ, true);
 	}
-	else if (InputState::functions[selection_add].active)
+	else if (InputState::functions[selection_add]->active)
 	{
 		mesh->moveLayer(oldX, oldY, oldZ, workingX, workingY, workingZ, false);
 	}
@@ -339,11 +339,11 @@ void VoxelEditor::adjustWorkingPosition(int x, int y, int z)
 		Vector3D newC = { workingX, workingY, workingZ };
 		oldC = oldC.mirrorMesh(mirrorPoint, mirrorDirection, mirrorStyle);
 		newC = newC.mirrorMesh(mirrorPoint, mirrorDirection, mirrorStyle);
-		if (InputState::functions[selection_copy].active)
+		if (InputState::functions[selection_copy]->active)
 		{
 			mesh->moveLayer(oldC.x, oldC.y, oldC.z, newC.x, newC.y, newC.z, true);
 		}
-		else if (InputState::functions[selection_add].active)
+		else if (InputState::functions[selection_add]->active)
 		{
 			mesh->moveLayer(oldC.x, oldC.y, oldC.z, newC.x, newC.y, newC.z, false);
 		}
