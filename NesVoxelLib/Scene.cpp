@@ -3,13 +3,12 @@
 #include "Camera.hpp"
 #include "Editor.hpp"
 #include "N3sConsole.hpp"
+#include "N3sApp.hpp"
 
 XMVECTOR mouseVector;
 XMFLOAT3 zIntersect;
 
 Vector2D mousePixelCoordinates;
-
-shared_ptr<OrbitCamera> mainCamera;
 
 bool mouseCaptured = false;
 
@@ -53,6 +52,7 @@ Scene::Scene()
 
 Scene::Scene(shared_ptr<PpuSnapshot> snapshot)
 {
+	mainCamera = make_shared<OrbitCamera>(OrbitCamera());
 	// Set camera to default position
 	mainCamera->SetPosition(0, 0, 0);
 	selection = make_shared<Selection>();

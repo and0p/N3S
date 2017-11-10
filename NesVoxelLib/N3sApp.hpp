@@ -13,8 +13,8 @@
 #include <memory>
 #include <iostream>
 #include <fstream>
-#include "Windows.h"
 #include "RenderBatch.hpp"
+#include "Windows.h"
 
 enum n3sMode { gameMode, editorMode };
 

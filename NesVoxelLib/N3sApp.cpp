@@ -186,7 +186,6 @@ void N3sApp::render()
 		{
 		case (gameMode):
 			renderBatch->render(GameView::getCamera());
-			//GameView::render();
 			break;
 		case (editorMode):
 			Editor::render();

@@ -1,7 +1,6 @@
 #pragma once
-#include "stdafx.h"
+
 #include <vector>
-#include "N3sApp.hpp"
 #include "N3sPalette.hpp"
 #include "VoxelEditor.hpp"
 #include "N3sMath.hpp"
@@ -76,6 +75,7 @@ public:
 	Vector2D dragDestination;
 	shared_ptr<vector<SceneSprite>> copySelection();
 	void pasteSelection(shared_ptr<vector<SceneSprite>> copiedSprites);
+	shared_ptr<OrbitCamera> mainCamera;
 private:
 	void checkKeyInput();
 	void moveSelection(int x, int y);

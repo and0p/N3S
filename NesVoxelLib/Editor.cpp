@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "Editor.hpp"
 #include "Gui.hpp"
+#include "N3sApp.hpp"
+#include "Input.hpp"
 
 shared_ptr<Scene> scenes[sceneCount];
 shared_ptr<Scene> tempScene;
