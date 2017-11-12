@@ -32,6 +32,8 @@ public:
 	static void updateTempScene(shared_ptr<PpuSnapshot> snapshot);
 	static void createCHRSheet(int pageNumber);
 	static int selectedScene;
+	static shared_ptr<Scene> getSelectedScene();
+	static shared_ptr<Camera> getCamera();
 private:
 	static N3sPalette copiedPalette;
 	static shared_ptr<vector<SceneSprite>> copiedSprites;

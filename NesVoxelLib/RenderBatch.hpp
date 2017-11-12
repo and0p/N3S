@@ -94,4 +94,5 @@ private:
 	unordered_map<int, shared_ptr<OutlineBatch>> outlineBatches;
 	bool renderingOAM = true;
 	bool renderingNT = true;
+	N3sPalette palette;
 };

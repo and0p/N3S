@@ -164,6 +164,7 @@ void N3sApp::update(bool runThisNesFrame)
 			break;
 		case (editorMode):
 			Editor::update();
+			renderBatch.reset(new RenderBatch(gameData, Editor::getSelectedScene()));	// TODO make this partial update when possible
 			break;
 		}
 		// Update the current configuration
@@ -188,7 +189,8 @@ void N3sApp::render()
 			renderBatch->render(GameView::getCamera());
 			break;
 		case (editorMode):
-			Editor::render();
+			renderBatch->render(Editor::getCamera());
+			//Editor::render();
 			break;
 		}
 	}

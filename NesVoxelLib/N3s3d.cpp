@@ -1245,6 +1245,8 @@ bool N3s3d::initDepthStencils()
 
 	// Set up the description of the stencil state.
 	depthEnabledWriteEnabledDesc.DepthEnable = true;
+	depthEnabledWriteEnabledDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthEnabledWriteEnabledDesc.DepthFunc = D3D11_COMPARISON_LESS;
 
 	depthEnabledWriteEnabledDesc.StencilEnable = true;
 	depthEnabledWriteEnabledDesc.StencilReadMask = 0xFF;

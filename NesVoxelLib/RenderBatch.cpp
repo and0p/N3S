@@ -11,6 +11,8 @@ bool ntOverride = 0;
 RenderBatch::RenderBatch(shared_ptr<GameData> gameData, shared_ptr<PpuSnapshot> snapshot, shared_ptr<VirtualPatternTable> vPatternTable)
 	:	gameData(gameData), snapshot(snapshot), vPatternTable(vPatternTable)
 {
+	// Grab palette
+	palette = snapshot->palette;
 	// Check if we're rendering OAM and NT, and batch if so
 	if (N3sConfig::getRegisterOverride(render_oam) == NO_OVERRIDE)
 		renderingOAM = snapshot->mask.renderSprites;
@@ -21,7 +23,6 @@ RenderBatch::RenderBatch(shared_ptr<GameData> gameData, shared_ptr<PpuSnapshot> 
 	else
 		renderingNT = (N3sConfig::getRegisterOverride(render_nt) == OVERRIDE_TRUE) ? true : false;
 	// Check pattern table overrides
-
 	if (renderingOAM)
 	{
 		computeSpritesOAM();
@@ -40,17 +41,18 @@ RenderBatch::RenderBatch(shared_ptr<GameData> gameData, shared_ptr<PpuSnapshot> 
 
 RenderBatch::RenderBatch(shared_ptr<GameData> gameData, shared_ptr<Scene> scene)
 {
+	// Grab the palette from the scene
+	palette = *scene->getSelectedPalette();
 	// Grab all sprites in the scene, as computed sprites with meshes pre-determined
 	for (int i = 0; i < scene->sprites.size(); i++)
 	{
 		// Get the sprite
 		ComputedSprite cs = ComputedSprite(scene->sprites[i]);
-		if(scene->sprites[i].mesh->meshExists)
-			computedSprites.push_back(cs);
-		// Set highlights
-		for each(int i in scene->displaySelection->selectedIndices)
-			computedSprites[i].highlight = true;
+		computedSprites.push_back(cs);
 	}
+	// Set highlights
+	for each(int i in scene->displaySelection->selectedIndices)
+		computedSprites[i].highlight = true;
 	// Create draw calls
 	for each (ComputedSprite s in computedSprites)
 	{
@@ -567,7 +569,7 @@ void RenderBatch::render(shared_ptr<Camera> camera)
 	camera->Render();
 	N3s3d::updateMatricesWithCamera(camera);
 	// Update palette in shader
-	snapshot->palette.updateShaderPalette();
+	palette.updateShaderPalette();
 	// Reset the rendering state
 	N3s3d::setStencilingState(stencil_nowrite, 1);
 	// Draw all palette meshes, which are grouped by palette for optimized rendering
