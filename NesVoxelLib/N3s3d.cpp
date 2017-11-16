@@ -39,11 +39,13 @@ ID3D11DepthStencilState* m_depthStencilWriteState;
 ID3D11DepthStencilState* m_depthDisabledStencilState;
 ID3D11DepthStencilState* m_depthDisabledStencilOnlyState;
 ID3D11DepthStencilState* m_depthStencilMaskRefState;
-ID3D11DepthStencilState* m_depthEnabledWriteEnabledState;
+ID3D11DepthStencilState* m_depthDisabledMaskState;
 ID3D11DepthStencilView* m_depthStencilView;
 ID3D11RasterizerState* fillRasterState;
 ID3D11RasterizerState* reverseRasterState;
 ID3D11RasterizerState* wireframeRasterState;
+ID3D11RenderTargetView* renderTarget;
+ID3D11DepthStencilView* stencilView;
 int selectedPalette;
 int mirrorBufferNumber;
 int paletteBufferNumber;
@@ -732,12 +734,29 @@ void N3s3d::stopStencilingForOutline()
 
 void N3s3d::setStencilingState(StencilMode mode, int referenceNumber)
 {
-	if (mode == stencil_nowrite)
-		setStencilingState(m_depthStencilNoWriteState, referenceNumber);
-	else if (mode == stencil_write)
-		setStencilingState(m_depthStencilWriteState, referenceNumber);
-	else if (mode == stencil_mask)
-		setStencilingState(m_depthStencilMaskRefState, referenceNumber);
+	ID3D11DepthStencilState* state;
+	switch (mode)
+	{
+		case stencil_nowrite:
+			state = m_depthStencilNoWriteState;
+			break;
+		case stencil_write:
+			state = m_depthStencilWriteState;
+			break;
+		case stencil_mask:
+			state = m_depthDisabledStencilOnlyState;
+			break;
+		case stencil_mask_unequal:
+			state = m_depthStencilMaskRefState;
+			break;
+		case stencil_highlight_write:
+			state = m_depthDisabledMaskState;
+			break;
+		default:
+			state = m_depthStencilNoWriteState;
+			break;
+	}
+	setStencilingState(state, referenceNumber);
 }
 
 void N3s3d::setStencilingState(ID3D11DepthStencilState * state, int value)
@@ -829,11 +848,27 @@ void N3s3d::clear()
 	selectedOutlineColor = -1;
 	selectedOutlinePalette = -1;
 	cachedOutlines.clear();
+	attachRenderTarget(true);
 }
 
 void N3s3d::updateViewport(D3D11_VIEWPORT v)
 {
 	viewport = v;
+}
+
+void N3s3d::updateViews(D3D11_VIEWPORT v, ID3D11RenderTargetView * r, ID3D11DepthStencilView * s)
+{
+	viewport = v;
+	renderTarget = r;
+	stencilView = s;
+}
+
+void N3s3d::attachRenderTarget(bool attach)
+{
+	if(attach)
+		context->OMSetRenderTargets(1, &renderTarget, stencilView);
+	else
+		context->OMSetRenderTargets(0, nullptr, stencilView);
 }
 
 XMVECTOR N3s3d::getMouseVector(Camera * camera, int mouseX, int mouseY)
@@ -1065,7 +1100,7 @@ bool N3s3d::initDepthStencils()
 	D3D11_DEPTH_STENCIL_DESC depthStencilWriteDesc;
 	D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc;
 	D3D11_DEPTH_STENCIL_DESC depthDisabledStencilOnlyDesc;
-	D3D11_DEPTH_STENCIL_DESC depthEnabledWriteEnabledDesc;
+	D3D11_DEPTH_STENCIL_DESC depthDisabledMaskDesc;
 
 #pragma region Standard depth stencil, dont write stencil
 
@@ -1217,7 +1252,41 @@ bool N3s3d::initDepthStencils()
 
 #pragma endregion
 
-#pragma region Z-buffer enabled
+
+#pragma region Z-disabled stencil only
+
+	// Clear the second depth stencil state before setting the parameters.
+	ZeroMemory(&depthDisabledMaskDesc, sizeof(depthDisabledMaskDesc));
+
+	// Set up the description of the stencil state.
+	depthDisabledMaskDesc.DepthEnable = false;
+	depthDisabledMaskDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthDisabledMaskDesc.DepthFunc = D3D11_COMPARISON_LESS;
+
+	depthDisabledMaskDesc.StencilEnable = true;
+	depthDisabledMaskDesc.StencilReadMask = 0xFF;
+	depthDisabledMaskDesc.StencilWriteMask = 0xFF;
+
+	// Stencil operations if pixel is front-facing.
+	depthDisabledMaskDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledMaskDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledMaskDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+	depthDisabledMaskDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+	// Stencil operations if pixel is back-facing.
+	depthDisabledMaskDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledMaskDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledMaskDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+	depthDisabledMaskDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+	// Create the state using the device.
+	result = device->CreateDepthStencilState(&depthDisabledMaskDesc, &m_depthDisabledMaskState);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+#pragma endregion
 
 	// Enable alpha blending in output merger
 	ID3D11BlendState1* g_pBlendStateNoBlend = NULL;
@@ -1235,43 +1304,6 @@ bool N3s3d::initDepthStencils()
 	BlendState.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 	BlendState.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 	device1->CreateBlendState1(&BlendState, &g_pBlendStateNoBlend);
-
-#pragma endregion
-
-#pragma region Z-enabled stencil only
-
-	// Clear the second depth stencil state before setting the parameters.
-	ZeroMemory(&depthEnabledWriteEnabledDesc, sizeof(depthEnabledWriteEnabledDesc));
-
-	// Set up the description of the stencil state.
-	depthEnabledWriteEnabledDesc.DepthEnable = true;
-	depthEnabledWriteEnabledDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	depthEnabledWriteEnabledDesc.DepthFunc = D3D11_COMPARISON_LESS;
-
-	depthEnabledWriteEnabledDesc.StencilEnable = true;
-	depthEnabledWriteEnabledDesc.StencilReadMask = 0xFF;
-	depthEnabledWriteEnabledDesc.StencilWriteMask = 0xFF;
-
-	// Stencil operations if pixel is front-facing.
-	depthEnabledWriteEnabledDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	depthEnabledWriteEnabledDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
-	depthEnabledWriteEnabledDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	depthEnabledWriteEnabledDesc.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
-
-	// Stencil operations if pixel is back-facing.
-	depthEnabledWriteEnabledDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	depthEnabledWriteEnabledDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
-	depthEnabledWriteEnabledDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	depthEnabledWriteEnabledDesc.BackFace.StencilFunc = D3D11_COMPARISON_EQUAL;
-
-	// Create the state using the device.
-	result = device->CreateDepthStencilState(&depthEnabledWriteEnabledDesc, &m_depthEnabledWriteEnabledState);
-	if (FAILED(result))
-	{
-		return false;
-	}
-
-#pragma endregion
 
 	float blendFactor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	UINT sampleMask = 0xffffffff;

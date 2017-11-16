@@ -30,6 +30,10 @@ void N3sConsole::update()
 
 void N3sConsole::render()
 {
+	N3s3d::setDepthBufferState(false);
+	N3s3d::setShader(overlay);
+	N3s3d::setOverlayColor(255, 255, 255, 255);
+	N3s3d::setGuiProjection();
 	for (int i = 0; i < lines->size(); i++)
 	{
 		Overlay::drawString(0, i * 8 * consoleScale, consoleScale, (*lines)[i].line);

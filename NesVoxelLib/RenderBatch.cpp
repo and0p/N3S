@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "RenderBatch.hpp"
 #include "N3sConfig.hpp"
+#include "Overlay.hpp"
 
 bool sprite8x16Override = false;
 bool oamSelectOverridden = false;
@@ -605,7 +606,7 @@ void RenderBatch::render(shared_ptr<Camera> camera)
 			int stencilNumber = kv.first;
 			shared_ptr<OutlineBatch> batch = kv.second;
 			N3s3d::selectOutlinePalette(batch->palette, batch->color);
-			N3s3d::setStencilingState(stencil_mask, batch->stencilGroup);
+			N3s3d::setStencilingState(stencil_mask_unequal, batch->stencilGroup);
 			for each(StencilDrawCall oDC in batch->outlines)
 			{
 				N3s3d::updateWorldMatrix(oDC.position.x, oDC.position.y, 0.0f);
@@ -618,9 +619,22 @@ void RenderBatch::render(shared_ptr<Camera> camera)
 	if (highlights.size() > 0)
 	{
 		// Draw to stencil buffer only
-
-		// Render a fullscreen quad only where stencil has the highlight value
-
+		N3s3d::attachRenderTarget(false);
+		N3s3d::setShader(color);
+		N3s3d::setStencilingState(stencil_highlight_write, STENCIL_HIGHLIGHT);
+		for each(StencilDrawCall drawCall in highlights)
+		{
+			N3s3d::updateWorldMatrix(drawCall.position.x, drawCall.position.y, 0.0f);
+			N3s3d::updateMirroring(drawCall.mirrorH, drawCall.mirrorV);
+			N3s3d::renderMesh(&drawCall.mesh);
+		}
+		// Render a fullscreen quad where highlights are visible
+		N3s3d::attachRenderTarget(true);
+		N3s3d::setShader(overlay);
+		N3s3d::setStencilingState(stencil_mask, STENCIL_HIGHLIGHT);
+		N3s3d::setGuiProjection();
+		Overlay::setColor(1.0f, 1.0f, 1.0f, 0.3f);
+		Overlay::drawRectangle(0, 0, N3s3d::viewport.Width, N3s3d::viewport.Height);
 	}
 }
 

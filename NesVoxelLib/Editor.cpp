@@ -129,9 +129,9 @@ void Editor::render()
 	shared_ptr<Scene> scene = activeScene;
 
 	// Render the scene
-	scene->render(true, true);
+	//scene->render(true, true);
 	// Render overlays
-	scene->renderOverlays(true, true);
+	//scene->renderOverlays(true, true);
 	// Render GUI
 	N3s3d::setDepthBufferState(false);
 	N3s3d::setGuiProjection();

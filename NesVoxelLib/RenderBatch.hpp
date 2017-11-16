@@ -69,6 +69,7 @@ public:
 	RenderBatch(shared_ptr<GameData> gameData, shared_ptr<PpuSnapshot> snapshot, shared_ptr<VirtualPatternTable> vPatternTable);
 	RenderBatch(shared_ptr<GameData> gameData, shared_ptr<Scene> scene);
 	void render(shared_ptr<Camera> camera);
+	bool highlightsToRender = false;
 private:
 	void computeSpritesOAM();
 	void computeSpritesNametable();

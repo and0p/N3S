@@ -92,7 +92,9 @@ enum StencilMode
 {
 	stencil_nowrite,
 	stencil_write,
-	stencil_mask
+	stencil_mask,
+	stencil_mask_unequal,
+	stencil_highlight_write
 };
 
 class N3s3d {
@@ -130,6 +132,8 @@ public:
 	static void clear();
 	static D3D11_VIEWPORT viewport;
 	static void updateViewport(D3D11_VIEWPORT viewport);
+	static void updateViews(D3D11_VIEWPORT v, ID3D11RenderTargetView* r, ID3D11DepthStencilView* s);
+	static void attachRenderTarget(bool attach);
 	static XMVECTOR getMouseVector(Camera * camera, int mouseX, int mouseY);
 	static XMFLOAT3 getPlaneIntersection(PlaneAxis axis, int pixel, Camera * camera, int mouseX, int mouseY);
 	static Vector3D getPixelCoordsFromFloat3(XMFLOAT3 pos);

@@ -137,6 +137,7 @@ void N3sApp::update(bool runThisNesFrame)
 	{
 		mode = gameMode;
 		audioEngine->resume();
+		N3sConsole::writeLine("SWITCHED TO GAME MODE");
 	}
 	else if (N3sApp::inputState->functions[tog_editor]->activatedThisFrame)
 	{
@@ -144,6 +145,7 @@ void N3sApp::update(bool runThisNesFrame)
 			Editor::updateTempScene(snapshot);
 		mode = editorMode;
 		audioEngine->pause();
+		N3sConsole::writeLine("SWITCHED TO EDITOR MODE");
 	}
 	// See if a game is loaded
 	if (loaded)
@@ -190,15 +192,11 @@ void N3sApp::render()
 			break;
 		case (editorMode):
 			renderBatch->render(Editor::getCamera());
-			//Editor::render();
+			Editor::render();
 			break;
 		}
 	}
-	N3s3d::setDepthBufferState(false);
-	N3s3d::setShader(overlay);
-	N3s3d::setOverlayColor(255, 255, 255, 255);
-	N3s3d::setGuiProjection();
-	
+	// Render the console
 	N3sConsole::render();
 }
 
