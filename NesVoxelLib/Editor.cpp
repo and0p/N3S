@@ -128,10 +128,8 @@ void Editor::render()
 {
 	shared_ptr<Scene> scene = activeScene;
 
-	// Render the scene
-	//scene->render(true, true);
 	// Render overlays
-	//scene->renderOverlays(true, true);
+	scene->renderOverlays(false, false);
 	// Render GUI
 	N3s3d::setDepthBufferState(false);
 	N3s3d::setGuiProjection();
@@ -241,5 +239,8 @@ shared_ptr<Scene> Editor::getSelectedScene()
 
 shared_ptr<Camera> Editor::getCamera()
 {
-	return camera;
+	if (activeScene->voxelEditor == nullptr)
+		return camera;
+	else
+		return activeScene->voxelEditor->camera;
 }

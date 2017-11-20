@@ -320,7 +320,7 @@ void Scene::render(bool renderBackground, bool renderOAM)
 		N3s3d::setDepthStencilState(false, false, true);
 		N3s3d::setGuiProjection();
 		Overlay::setColor(1.0f, 1.0f, 1.0f, 0.3f);
-		Overlay::drawRectangle(0, 0, N3s3d::viewport.Width, N3s3d::viewport.Height); // TODO: How do I get actual screen size again..?
+		Overlay::drawRectangle(0, 0, N3s3d::viewport.Width, N3s3d::viewport.Height);
 		// Draw selection box, if currently dragging selection
 		if (draggingSelection)
 		{
@@ -357,7 +357,7 @@ void Scene::renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights)
 	N3s3d::setDepthBufferState(false);
 	N3s3d::setRasterFillState(false);
 	// Update camera math (was probably left at GUI projection after scene rendering)
-	N3s3d::updateMatricesWithCamera(mainCamera);
+	//N3s3d::updateMatricesWithCamera(mainCamera);
 	// Render background grid, if enabled
 	if (drawBackgroundGrid && showGuides)
 	{
@@ -377,6 +377,45 @@ void Scene::renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights)
 		}
 	}
 	N3s3d::setRasterFillState(true);
+	if (voxelEditor != nullptr)
+	{
+		voxelEditor->render();
+	}
+	else
+	{
+		// Render highlight selections / mouse hover
+		N3s3d::setDepthStencilState(false, false, true);
+		N3s3d::setGuiProjection();
+		Overlay::setColor(1.0f, 1.0f, 1.0f, 0.3f);
+		Overlay::drawRectangle(0, 0, N3s3d::viewport.Width, N3s3d::viewport.Height);
+		// Draw selection box, if currently dragging selection
+		if (draggingSelection)
+		{
+			N3s3d::setDepthBufferState(false);
+			Overlay::setColor(1.0f, 1.0f, 1.0f, 0.3f);
+			// Draw differently based on 2D or 3D editing mode
+			if (edittingIn3d)
+			{
+				Overlay::drawRectangle(sel_left, sel_top, sel_right - sel_left, sel_bottom - sel_top);
+			}
+			else
+			{
+				// Draw onto z-axis in pixel-space
+				N3s3d::updateMatricesWithCamera(mainCamera);
+				Overlay::drawRectangleInScene(sel_left, sel_top, 15, sel_right - sel_left, sel_bottom - sel_top);
+			}
+		}
+		// Render selection boxes around OAM and NT
+		N3s3d::setDepthBufferState(false);
+		N3s3d::updateMatricesWithCamera(mainCamera);
+		N3s3d::setRasterFillState(false);
+		displaySelection->render(&sprites, moveX, moveY);
+		N3s3d::setRasterFillState(true);
+
+		// Render 3-axis mouse guide
+		if (showGuides)
+			Overlay::drawAxisLine(zIntersect);
+	}
 }
 
 void Scene::changeSelectionPalette(int p)
@@ -471,7 +510,7 @@ bool Scene::updateMouseActions(bool mouseAvailable)
 					modifier = no_mod;
 				}
 				// Capture Z-intersect at click
-				originMousePixelCoordinates = mousePixelCoordinates; //N3s3d::getPixelCoordsFromFloat3(zIntersect);
+				originMousePixelCoordinates = mousePixelCoordinates; // N3s3d::getPixelCoordsFromFloat3(zIntersect);
 			}
 			else if (state == pressed)
 			{
