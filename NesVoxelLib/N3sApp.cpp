@@ -103,7 +103,7 @@ void N3sApp::loadGameData(string path, bool init)
 			if(loaded)
 				gameData->unload();
 			// Load the file into json
-			json input(n3sFile);
+			json input = json::parse(n3sFile);
 			// Close file
 			n3sFile.close();
 			// Make GameData from json

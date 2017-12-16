@@ -34,7 +34,7 @@ void N3sConfig::load()
 	ifstream configFile(configPath.c_str());
 	if (configFile.good())
 	{
-		json j(configFile);
+		json j = json::parse(configFile);
 		if (j.count("input") > 0)
 		{
 			InputConfig ic;

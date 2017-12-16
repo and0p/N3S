@@ -595,7 +595,7 @@ void N3s3d::updateMatricesWithCamera(shared_ptr<Camera> camera) {
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	MatrixBuffer* dataPtr;
 
-	//worldMatrix = XMMatrixIdentity();
+	worldMatrix = XMMatrixIdentity();
 	projectionMatrix = getProjectionMatrix(0.1f, 30.0f, 1, 1); // TODO use screen resolution
 	viewMatrix = camera->GetViewMatrix();
 
