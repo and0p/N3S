@@ -245,6 +245,7 @@
     <ClInclude Include="Camera.hpp" />
     <ClInclude Include="Common.hpp" />
     <ClInclude Include="Editor.hpp" />
+    <ClInclude Include="FileUtil.hpp" />
     <ClInclude Include="GameData.hpp" />
     <ClInclude Include="GameView.hpp" />
     <ClInclude Include="Gui.hpp" />
@@ -267,6 +268,7 @@
     <ClInclude Include="PpuSnapshot.hpp" />
     <ClInclude Include="RenderBatch.hpp" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="SaveState.hpp" />
     <ClInclude Include="Scene.hpp" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -275,6 +277,7 @@
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Editor.cpp" />
+    <ClCompile Include="FileUtil.cpp" />
     <ClCompile Include="GameData.cpp" />
     <ClCompile Include="GameView.cpp" />
     <ClCompile Include="Gui.cpp" />
@@ -291,6 +294,7 @@
     <ClCompile Include="Overlay.cpp" />
     <ClCompile Include="PpuSnapshot.cpp" />
     <ClCompile Include="RenderBatch.cpp" />
+    <ClCompile Include="SaveState.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

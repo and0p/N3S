@@ -6,6 +6,10 @@
 #include "Editor.hpp"
 #include "N3sPalette.hpp"
 #include "N3sConfig.hpp"
+#include "FileUtil.hpp"
+#include "SaveState.hpp"
+#include <iostream>
+#include <fstream>
 
 extern SoundDriver *newDirectSound();
 
@@ -14,6 +18,7 @@ shared_ptr<PpuSnapshot> N3sApp::snapshot;
 shared_ptr<InputState> N3sApp::inputState;
 shared_ptr<VirtualPatternTable> N3sApp::virtualPatternTable;
 string N3sApp::applicationDirectory;
+N3sRomConnection conn;
 
 N3sApp::N3sApp()
 {
@@ -34,6 +39,7 @@ N3sApp::N3sApp()
 	// Apply configs from file, if it exists
 	N3sConfig::init();
 	N3sConfig::load();
+	State::clear();
 }
 
 void N3sApp::assignD3DContext(N3sD3dContext context)
@@ -54,34 +60,34 @@ void N3sApp::load(string path)
 {
 	if (loaded)
 		unload();
-	// Convert string to char * for libretro loading function
-	const char* cPath = path.c_str(); // TODO leak?
-	NesEmulator::Initialize(cPath);
-	romPath = path;
-	info = NesEmulator::getGameInfo();
-	// See if a matching N3S file exists with same name as ROM
-	// TODO: Doing it in a really dumb way at the moment, stripping nes and replacing with n3s
-	string s = path;
-	int length = s.length();
-	s[length - 2] = '3';
-	ifstream n3sFile(s.c_str());
-	if (n3sFile.good())
+	conn = N3sRomConnection(path);
+	if (conn.isValid())
 	{
-		n3sPath = s;
-		loadGameData(n3sPath, true);
+		NesEmulator::Initialize(conn.getRomCStr());
+		info = NesEmulator::getGameInfo();
+		if (conn.n3sFileExists)
+		{
+			loadGameData(conn.getN3sString(), true);
+		}
+		else
+		{
+			// TODO: Ask if user wants to find N3S file, generate data, or cancel
+			gameData = make_shared<GameData>((char*)info->data);
+			n3sPath = replaceExt(romPath, "n3s");
+			Editor::init();
+		}
+		virtualPatternTable = shared_ptr<VirtualPatternTable>(new VirtualPatternTable(gameData));
+		// Get the size of the save state buffer
+		State::init(conn.getRomN3sPath(), NesEmulator::getStateBufferSize());
+		// gameData->grabBitmapSprites(info->data);
+		// gameData->createSpritesFromBitmaps();
+		loaded = true;
+		unpause();
 	}
 	else
 	{
-		// TODO: Ask if user wants to find N3S file, generate data, or cancel
-		gameData = make_shared<GameData>((char*)info->data);
-		n3sPath = replaceExt(romPath, "n3s");
-		Editor::init();
+		// TODO error if file is not good
 	}
-	virtualPatternTable = shared_ptr<VirtualPatternTable>(new VirtualPatternTable(gameData));
-	// gameData->grabBitmapSprites(info->data);
-	// gameData->createSpritesFromBitmaps();
-	loaded = true;
-	unpause();
 }
 
 void N3sApp::loadGameData(string path, bool init)
@@ -155,12 +161,21 @@ void N3sApp::update(bool runThisNesFrame)
 		{
 		case (gameMode):
 			// If we are loaded and emulating, run the game and update PPU data
-			if (!runThisNesFrame && !emulationPaused)
+			if (inputState->functions[emu_savestate]->activatedThisFrame)
+				State::save();
+			if (inputState->functions[emu_loadstate]->activatedThisFrame)
 			{
-				NesEmulator::ExecuteFrame();
+				if (State::load())
+					loadedStateThisFrame = true;
+			}
+			if ((!runThisNesFrame && !emulationPaused) || loadedStateThisFrame)
+			{
+				if(!loadedStateThisFrame)
+					NesEmulator::ExecuteFrame();
 				snapshot.reset(new PpuSnapshot((N3sRawPpu*)NesEmulator::getVRam()));
 				virtualPatternTable->update(snapshot->patternTable);
 				renderBatch.reset(new RenderBatch(gameData, snapshot, virtualPatternTable));
+				loadedStateThisFrame = false;
 			}
 			GameView::update();
 			break;

@@ -116,7 +116,7 @@ void Editor::update()
 	// Update camera math
 	camera->Render();
 
-	activeScene->update(mouseAvailable);
+	activeScene->update(mouseAvailable, camera);
 }
 
 void Editor::parseInputForScene(bool mouseAvailable)

@@ -1,5 +1,5 @@
-#include "libretro.h"
 #include "stdafx.h"
+#include "libretro.h"
 
 #include <stdio.h>
 #include <windows.h>
@@ -32,9 +32,9 @@ static struct {
 	void(*retro_run)(void);
 	void*(*retro_get_memory_data)(unsigned id);
 	//void *(retro_get_memory_data)(unsigned id);
-	//	size_t retro_serialize_size(void);
-	//	bool retro_serialize(void *data, size_t size);
-	//	bool retro_unserialize(const void *data, size_t size);
+	size_t(*retro_serialize_size)(void);
+	bool(*retro_serialize)(void *data, size_t size);
+	bool(*retro_unserialize)(const void *data, size_t size);
 	//	void retro_cheat_reset(void);
 	//	void retro_cheat_set(unsigned index, bool enabled, const char *code);
 	bool(*retro_load_game)(const struct retro_game_info *game);
@@ -249,6 +249,9 @@ static void core_load() {
 	load_retro_sym(retro_load_game);
 	load_retro_sym(retro_unload_game);
 	load_retro_sym(retro_get_memory_data);
+	load_retro_sym(retro_serialize_size);
+	load_retro_sym(retro_serialize);
+	load_retro_sym(retro_unserialize);
 	//g_retro.retro_get_memory_data = GetProcAddress(g_retro.handle, (LPCSTR)retro_get_memory_data);
 
 	load_sym(set_environment, retro_set_environment);
@@ -340,6 +343,21 @@ const void* NesEmulator::getVRam() {
 retro_game_info *NesEmulator::getGameInfo()
 {
 	return info;
+}
+
+size_t NesEmulator::getStateBufferSize()
+{
+	return g_retro.retro_serialize_size();
+}
+
+bool NesEmulator::saveState(void * output, size_t size)
+{
+	return g_retro.retro_serialize(output, size);
+}
+
+bool NesEmulator::loadState(const void * input, size_t size)
+{
+	return g_retro.retro_unserialize(input, size);
 }
 
 //int main()

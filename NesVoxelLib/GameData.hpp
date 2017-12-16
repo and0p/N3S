@@ -107,11 +107,16 @@ class GameData
 public:
 	GameData(char* data);
 	GameData(char* data, json j);
+	RomInfo romInfo;
+	string gameName;
+	string romFileName;
+	string romDirectory;
+	string romFullPath;	// includes rom filename
+	string extrasDirectory;
 	map<int, shared_ptr<VirtualSprite>> sprites;
 	map<string, shared_ptr<VirtualSprite>> spritesByChrData;
 	map<int, shared_ptr<SpriteMesh>> meshes;
 	shared_ptr<VirtualSprite> getSpriteByChrData(char* data);
-	RomInfo romInfo;
 	int totalSprites;
 	static VoxelMesh getSharedMesh(int zArray[32], ShaderType type);
 	static void releaseSharedMesh(string hash, ShaderType type);

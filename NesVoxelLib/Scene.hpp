@@ -52,7 +52,7 @@ public:
 	Scene(shared_ptr<PpuSnapshot> snapshot);
 	Scene(json j);
 	json getJSON();
-	bool update(bool mouseAvailable);
+	bool update(bool mouseAvailable, shared_ptr<OrbitCamera> cam);
 	void render(bool renderBackground, bool renderOAM);
 	void renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights);
 	void changeSelectionPalette(int p);
@@ -75,7 +75,6 @@ public:
 	Vector2D dragDestination;
 	shared_ptr<vector<SceneSprite>> copySelection();
 	void pasteSelection(shared_ptr<vector<SceneSprite>> copiedSprites);
-	shared_ptr<OrbitCamera> mainCamera;
 private:
 	void checkKeyInput();
 	void moveSelection(int x, int y);
