@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "Editor.hpp"
 #include "Gui.hpp"
+#include "N3sApp.hpp"
+#include "Input.hpp"
 
 shared_ptr<Scene> scenes[sceneCount];
 shared_ptr<Scene> tempScene;
@@ -19,6 +21,8 @@ bool Editor::mouseAvailable = true;
 N3sPalette Editor::copiedPalette;
 
 bool chrSheetsCreated = false;
+
+shared_ptr<OrbitCamera> camera = make_shared<OrbitCamera>();
 
 void Editor::init()
 {
@@ -93,7 +97,26 @@ void Editor::update()
 		VoxelEditorInfo::clear();
 	}
 
-	activeScene->update(mouseAvailable);
+	// Update editor camera
+	// Update camera position
+	if (InputState::keyboardMouse->mouseButtons[right_mouse].state > 0)
+	{
+		float xRot = InputState::keyboardMouse->mouseDeltaX / 5;
+		float yRot = InputState::keyboardMouse->mouseDeltaY / 5;
+		camera->AdjustRotation(xRot, yRot, 0.0f);
+	}
+	if (InputState::keyboardMouse->mouseButtons[middle_mouse].state > 0)
+	{
+		float xPos = InputState::keyboardMouse->mouseDeltaX / 400;
+		float yPos = InputState::keyboardMouse->mouseDeltaY / 400;
+		camera->AdjustPosition(-xPos, yPos, 0.0f);
+	}
+	// Update camera zoom
+	camera->adjustZoom((float)InputState::keyboardMouse->calculatedWheelDelta / 10);
+	// Update camera math
+	camera->Render();
+
+	activeScene->update(mouseAvailable, camera);
 }
 
 void Editor::parseInputForScene(bool mouseAvailable)
@@ -105,10 +128,8 @@ void Editor::render()
 {
 	shared_ptr<Scene> scene = activeScene;
 
-	// Render the scene
-	scene->render(true, true);
 	// Render overlays
-	scene->renderOverlays(true, true);
+	scene->renderOverlays(false, false);
 	// Render GUI
 	N3s3d::setDepthBufferState(false);
 	N3s3d::setGuiProjection();
@@ -209,4 +230,17 @@ void Editor::createCHRSheet(int pageNumber)
 	}
 	activeScene = sheetScene;
 	chrSheetsCreated = true;
+}
+
+shared_ptr<Scene> Editor::getSelectedScene()
+{
+	return activeScene;
+}
+
+shared_ptr<Camera> Editor::getCamera()
+{
+	if (activeScene->voxelEditor == nullptr)
+		return camera;
+	else
+		return activeScene->voxelEditor->camera;
 }

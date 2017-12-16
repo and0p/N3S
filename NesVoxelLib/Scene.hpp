@@ -1,7 +1,6 @@
 #pragma once
-#include "stdafx.h"
+
 #include <vector>
-#include "N3sApp.hpp"
 #include "N3sPalette.hpp"
 #include "VoxelEditor.hpp"
 #include "N3sMath.hpp"
@@ -53,7 +52,7 @@ public:
 	Scene(shared_ptr<PpuSnapshot> snapshot);
 	Scene(json j);
 	json getJSON();
-	bool update(bool mouseAvailable);
+	bool update(bool mouseAvailable, shared_ptr<OrbitCamera> cam);
 	void render(bool renderBackground, bool renderOAM);
 	void renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights);
 	void changeSelectionPalette(int p);

@@ -6,9 +6,17 @@
 #include "N3sPatternTable.hpp"
 #include "Camera.hpp"
 #include "N3sMath.hpp"
+#include "Scene.hpp"
 
-struct ComputedSprite
+#define STENCIL_START 2
+#define STENCIL_MAX 255
+#define STENCIL_HIGHLIGHT 1
+
+class ComputedSprite
 {
+public:
+	inline ComputedSprite() {}
+	ComputedSprite(SceneSprite s);
 	shared_ptr<VirtualSprite> virtualSprite;
 	shared_ptr<SpriteMesh> mesh;
 	Vector2D position;
@@ -16,8 +24,8 @@ struct ComputedSprite
 	bool mirrorH = false;
 	bool mirrorV = false;
 	int stencilGroup = -1;
+	bool highlight = false;
 };
-
 
 class ComputedNametable
 {
@@ -27,8 +35,11 @@ public:
 	ComputedSprite tiles[64][60];
 };
 
-struct PaletteDrawCall
+class PaletteDrawCall
 {
+public:
+	inline PaletteDrawCall() {}
+	PaletteDrawCall(ComputedSprite s);
 	VoxelMesh mesh;
 	Vector2F position;
 	int palette;
@@ -37,7 +48,7 @@ struct PaletteDrawCall
 	int stencilGroup = -1;
 };
 
-struct OutlineDrawCall
+struct StencilDrawCall
 {
 	VoxelMesh mesh;
 	Vector2F position;
@@ -47,7 +58,7 @@ struct OutlineDrawCall
 
 struct OutlineBatch
 {
-	vector<OutlineDrawCall> outlines;
+	vector<StencilDrawCall> outlines;
 	int palette;
 	int color;
 	int stencilGroup;
@@ -56,28 +67,33 @@ struct OutlineBatch
 class RenderBatch {
 public:
 	RenderBatch(shared_ptr<GameData> gameData, shared_ptr<PpuSnapshot> snapshot, shared_ptr<VirtualPatternTable> vPatternTable);
+	RenderBatch(shared_ptr<GameData> gameData, shared_ptr<Scene> scene);
 	void render(shared_ptr<Camera> camera);
+	bool highlightsToRender = false;
 private:
 	void computeSpritesOAM();
 	void computeSpritesNametable();
 	void processMeshesOAM();
 	void processMeshesNT();
 	void processStencilsOAM();
-	void processStencilsNT();
+	//void processStencilsNT();
 	void processNTSameColorAdjacentStencilling(int startingGroupNum);
 	void setAdjacentStencilGroups(int x, int y, int colorIndex, int groupNumber);
 	void batchDrawCallsOAM();
 	void batchDrawCallsNT();
 	void batchRow(int y, int height, int xOffset, int yOffset, int nametableX, int nametableY, int nameTable, bool patternSelect);
 	void batchMeshCropped(ComputedSprite s, Crop crop);
-	int currentStencilNumber = 1;
+	int incrementStencilNumber();
+	int currentStencilNumber = STENCIL_START;
 	shared_ptr<GameData> gameData;
 	shared_ptr<PpuSnapshot> snapshot;
 	shared_ptr<VirtualPatternTable> vPatternTable;
 	vector<ComputedSprite> computedSprites;
 	ComputedNametable nametable;
 	vector<PaletteDrawCall> paletteDrawCalls[8];
+	vector<StencilDrawCall> highlights;
 	unordered_map<int, shared_ptr<OutlineBatch>> outlineBatches;
 	bool renderingOAM = true;
 	bool renderingNT = true;
+	N3sPalette palette;
 };

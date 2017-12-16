@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "RenderBatch.hpp"
 #include "N3sConfig.hpp"
+#include "Overlay.hpp"
 
 bool sprite8x16Override = false;
 bool oamSelectOverridden = false;
@@ -11,6 +12,8 @@ bool ntOverride = 0;
 RenderBatch::RenderBatch(shared_ptr<GameData> gameData, shared_ptr<PpuSnapshot> snapshot, shared_ptr<VirtualPatternTable> vPatternTable)
 	:	gameData(gameData), snapshot(snapshot), vPatternTable(vPatternTable)
 {
+	// Grab palette
+	palette = snapshot->palette;
 	// Check if we're rendering OAM and NT, and batch if so
 	if (N3sConfig::getRegisterOverride(render_oam) == NO_OVERRIDE)
 		renderingOAM = snapshot->mask.renderSprites;
@@ -21,7 +24,6 @@ RenderBatch::RenderBatch(shared_ptr<GameData> gameData, shared_ptr<PpuSnapshot> 
 	else
 		renderingNT = (N3sConfig::getRegisterOverride(render_nt) == OVERRIDE_TRUE) ? true : false;
 	// Check pattern table overrides
-
 	if (renderingOAM)
 	{
 		computeSpritesOAM();
@@ -33,8 +35,54 @@ RenderBatch::RenderBatch(shared_ptr<GameData> gameData, shared_ptr<PpuSnapshot> 
 	{
 		computeSpritesNametable();
 		processMeshesNT();
-		processNTSameColorAdjacentStencilling(currentStencilNumber + 1);
+		processNTSameColorAdjacentStencilling(incrementStencilNumber());
 		batchDrawCallsNT();
+	}
+}
+
+RenderBatch::RenderBatch(shared_ptr<GameData> gameData, shared_ptr<Scene> scene)
+{
+	// Grab the palette from the scene
+	palette = *scene->getSelectedPalette();
+	// Grab all sprites in the scene, as computed sprites with meshes pre-determined
+	for (int i = 0; i < scene->sprites.size(); i++)
+	{
+		// Get the sprite
+		ComputedSprite cs = ComputedSprite(scene->sprites[i]);
+		computedSprites.push_back(cs);
+	}
+	// Set highlights
+	for each(int i in scene->displaySelection->selectedIndices)
+		computedSprites[i].highlight = true;
+	// Create draw calls
+	for each (ComputedSprite s in computedSprites)
+	{
+		// Assume stencil is shared same palettes for now
+		if(s.mesh->outlineColor > 0)
+			s.stencilGroup = s.palette + STENCIL_START;
+		// Create palette draw call, specifying that we're not changing the position based on mirroring
+		PaletteDrawCall p = PaletteDrawCall(s);
+		paletteDrawCalls[s.palette].push_back(p);
+		// Create stencil draw call, if needed
+		if (s.stencilGroup >= 0)
+		{
+			// See if batch already exists, create if needed
+			if (outlineBatches.count(s.stencilGroup) == 0)
+			{
+				shared_ptr<OutlineBatch> batch = make_shared<OutlineBatch>();
+				batch->palette = s.palette;
+				batch->color = s.mesh->outlineColor;
+				batch->stencilGroup = s.stencilGroup;
+				outlineBatches[s.stencilGroup] = batch;
+			}
+			// Push outline to appropriate batch
+			outlineBatches[s.stencilGroup]->outlines.push_back({ s.mesh->outlineMesh, p.position, s.mirrorH, s.mirrorV });
+		}
+		// Create highlight, if needed
+		if (s.highlight)
+		{
+			highlights.push_back({ s.mesh->mesh, p.position, s.mirrorH, s.mirrorV });
+		}
 	}
 }
 
@@ -177,7 +225,7 @@ void RenderBatch::processStencilsOAM()
 			}
 			// If grouping is not the same, increment stencil number
 			if (!sameGroup)
-				currentStencilNumber++;
+				incrementStencilNumber();
 			computedSprites[i].stencilGroup = currentStencilNumber;
 		}
 		else	// If this has no outline, 
@@ -494,7 +542,7 @@ void RenderBatch::batchMeshCropped(ComputedSprite s, Crop crop)
 							batch->stencilGroup = s.stencilGroup;
 							outlineBatches[s.stencilGroup] = batch;
 						}
-						OutlineDrawCall oDraw;
+						StencilDrawCall oDraw;
 						oDraw.position = { initialPosition.x + (posX * pixelSizeW), initialPosition.y - (posY * pixelSizeW) };
 						oDraw.mirrorH = s.mirrorH;
 						oDraw.mirrorV = s.mirrorV;
@@ -507,6 +555,14 @@ void RenderBatch::batchMeshCropped(ComputedSprite s, Crop crop)
 	}
 }
 
+int RenderBatch::incrementStencilNumber()
+{
+	currentStencilNumber++;
+	if (currentStencilNumber > STENCIL_MAX)
+		currentStencilNumber = STENCIL_START;
+	return currentStencilNumber;
+}
+
 void RenderBatch::render(shared_ptr<Camera> camera)
 {
 	// Prep scene
@@ -514,7 +570,7 @@ void RenderBatch::render(shared_ptr<Camera> camera)
 	camera->Render();
 	N3s3d::updateMatricesWithCamera(camera);
 	// Update palette in shader
-	snapshot->palette.updateShaderPalette();
+	palette.updateShaderPalette();
 	// Reset the rendering state
 	N3s3d::setStencilingState(stencil_nowrite, 1);
 	// Draw all palette meshes, which are grouped by palette for optimized rendering
@@ -550,14 +606,35 @@ void RenderBatch::render(shared_ptr<Camera> camera)
 			int stencilNumber = kv.first;
 			shared_ptr<OutlineBatch> batch = kv.second;
 			N3s3d::selectOutlinePalette(batch->palette, batch->color);
-			N3s3d::setStencilingState(stencil_mask, batch->stencilGroup);
-			for each(OutlineDrawCall oDC in batch->outlines)
+			N3s3d::setStencilingState(stencil_mask_unequal, batch->stencilGroup);
+			for each(StencilDrawCall oDC in batch->outlines)
 			{
 				N3s3d::updateWorldMatrix(oDC.position.x, oDC.position.y, 0.0f);
 				N3s3d::updateMirroring(oDC.mirrorH, oDC.mirrorV);
 				N3s3d::renderMesh(&oDC.mesh);
 			}
 		}
+	}
+	// Draw highlights, if any exist
+	if (highlights.size() > 0)
+	{
+		// Draw to stencil buffer only
+		N3s3d::attachRenderTarget(false);
+		N3s3d::setShader(color);
+		N3s3d::setStencilingState(stencil_highlight_write, STENCIL_HIGHLIGHT);
+		for each(StencilDrawCall drawCall in highlights)
+		{
+			N3s3d::updateWorldMatrix(drawCall.position.x, drawCall.position.y, 0.0f);
+			N3s3d::updateMirroring(drawCall.mirrorH, drawCall.mirrorV);
+			N3s3d::renderMesh(&drawCall.mesh);
+		}
+		// Render a fullscreen quad where highlights are visible
+		N3s3d::attachRenderTarget(true);
+		N3s3d::setShader(overlay);
+		N3s3d::setStencilingState(stencil_mask, STENCIL_HIGHLIGHT);
+		N3s3d::setGuiProjection();
+		Overlay::setColor(1.0f, 1.0f, 1.0f, 0.3f);
+		Overlay::drawRectangle(0, 0, N3s3d::viewport.Width, N3s3d::viewport.Height);
 	}
 }
 
@@ -576,4 +653,28 @@ ComputedSprite ComputedNametable::getTile(int x, int y)
 	else if (y > 60)
 		y = y % 60;
 	return tiles[x][y];
+}
+
+ComputedSprite::ComputedSprite(SceneSprite s)
+{
+	position = { s.x, s.y };
+	palette = s.palette;
+	mesh = s.mesh;
+	mirrorH = s.mirrorH;
+	mirrorV = s.mirrorV;
+}
+
+PaletteDrawCall::PaletteDrawCall(ComputedSprite s)
+{
+	palette = s.palette;
+	mirrorH = s.mirrorH;
+	mirrorV = s.mirrorV;
+	mesh = s.mesh->mesh;
+	stencilGroup = s.stencilGroup;
+	// Adjust position based on mirroring
+	position = s.position.convertToWorldSpace();
+	if (s.mirrorH)
+		position.x += 8 * pixelSizeW;
+	if (s.mirrorV)
+		position.y -= 8 * pixelSizeW;
 }

@@ -13,4 +13,7 @@ public:
 	static const void* getVRam();
 	static struct retro_game_info* getGameInfo();
 	static SoundDriver* audioEngine;
+	static size_t getStateBufferSize();
+	static bool saveState(void *output, size_t size);
+	static bool loadState(const void *input, size_t size);
 };

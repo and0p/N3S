@@ -11,10 +11,8 @@
 #include "Overlay.hpp"
 #include "GameView.hpp"
 #include <memory>
-#include <iostream>
-#include <fstream>
-#include "Windows.h"
 #include "RenderBatch.hpp"
+#include "Windows.h"
 
 enum n3sMode { gameMode, editorMode };
 
@@ -55,6 +53,7 @@ public:
 	static string applicationDirectory;
 	bool emulationPaused;
 private:
+	bool loadedStateThisFrame = false;
 	string romPath;
 	string n3sPath;
 	SoundDriver *audioEngine;

@@ -89,7 +89,7 @@ void Game::Render()
 	// Let the app render
 	app.render();
 
-	context;
+	//context;
 
     m_deviceResources->PIXEndEvent();
 
@@ -118,7 +118,7 @@ void Game::Clear()
     // Set the viewport.
     auto viewport = m_deviceResources->GetScreenViewport();
     context->RSSetViewports(1, &viewport);
-	N3s3d::updateViewport(viewport);
+	N3s3d::updateViews(viewport, renderTarget, depthStencil);
 
     m_deviceResources->PIXEndEvent();
 }
