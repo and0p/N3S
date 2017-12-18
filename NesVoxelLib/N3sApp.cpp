@@ -161,6 +161,10 @@ void N3sApp::update(bool runThisNesFrame)
 		{
 		case (gameMode):
 			// If we are loaded and emulating, run the game and update PPU data
+			if (inputState->functions[emu_nextstate]->activatedThisFrame)
+				State::incrementSlot();
+			if (inputState->functions[emu_prevstate]->activatedThisFrame)
+				State::decrementSlot();
 			if (inputState->functions[emu_savestate]->activatedThisFrame)
 				State::save();
 			if (inputState->functions[emu_loadstate]->activatedThisFrame)

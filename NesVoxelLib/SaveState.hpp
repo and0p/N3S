@@ -21,9 +21,9 @@ namespace State {
 	void init(string path, size_t size);		// Load all states from a folder
 	void clear();								// Clear all states
 	extern unique_ptr<SaveState> states[MAX_STATES];	// Stored states
-	extern int selectedSlot;	// Currently selected slot
-	void incrementSlot();		// Increment selected slot
-	void decrementSlot();		// Decrement selected slot
+	extern int selectedSlot;					// Currently selected slot
+	void incrementSlot();						// Increment selected slot
+	void decrementSlot();						// Decrement selected slot
 	// screenshot set
 	extern path stateDirectory;		// Where states are saved and loaded
 	extern bool canSaveToDisk;		// Whether or not we can save to disk
