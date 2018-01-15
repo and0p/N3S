@@ -21,6 +21,20 @@ enum VoxelSide { left, right, top, bottom, front, back };
 
 enum StencilGrouping { no_grouping, sameColor, continous, continous_samecolor, adjacent_samecolor };
 
+enum DynamicParameter { 
+	color_id,				// id (0-63) of color in slot	[slot, color]
+	all_color_ids,			// id (0-63) of all colors, -1 if should ignore [color, color, color, bg_color]
+	palette_num,			// Palette number of sprite 0-8
+	screen_coordinates,		// X / Y of coordinates on screen, OAM by pixels and NT by grid position
+	absolute_nametable,		// Absolute coordinates of NT
+	relative_nametable,		// Sprite ID of nametable that is X/Y  [x distance, y distance, id]
+	is_oam,					// Is OAM	[1 = true 0 = false]
+	
+};
+
+enum DynamicComparison { equal, not_equal, greater, less, greater_or_equal, less_or_equal, comparison_size };
+//enum AdjacentDirection { direction_up, direction_up_right, direction_right, direction_down_right, direction_down, direction_down_left, direction_left, direction_up_left, direction_size};
+
 struct SharedMesh {
 	VoxelMesh mesh;
 	int referenceCount;
@@ -71,6 +85,29 @@ private:
 	void rebuildZMesh(int x, int y);
 };
 
+class Condition {
+public:
+	Condition() {}
+	Condition(json j) {}
+	bool compareAll(int result[4]);
+	bool compare(int expected, int result);
+	int variables[4];
+	DynamicParameter parameter;
+	DynamicComparison comparison;
+};
+
+struct ConditionSet {
+	vector<Condition> conditions;
+};
+
+class DynamicMesh {
+	DynamicMesh() {}
+	DynamicMesh(json j);
+	json getJSON();
+	vector<ConditionSet> conditionSets;
+	shared_ptr<SpriteMesh> mesh;
+};
+
 class VirtualSprite
 {
 public:
@@ -84,7 +121,9 @@ public:
 	int id;
 	vector<int> appearancesInRomChr;	// Where does this sprite appear in CHR data? For reference.
 	string chrData;
-	shared_ptr<SpriteMesh> defaultMesh;
+	shared_ptr<SpriteMesh> defaultMesh;	// Default mesh
+	vector<DynamicMesh> dynamicMeshes;
+	bool hasDynamicMesh = false;
 	VoxelMesh previewMeshFront;
 private:
 	string description = "";

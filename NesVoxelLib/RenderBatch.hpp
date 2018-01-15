@@ -30,7 +30,7 @@ public:
 class ComputedNametable
 {
 public:
-	ComputedNametable();
+	ComputedNametable() {}
 	ComputedSprite getTile(int x, int y);
 	ComputedSprite tiles[64][60];
 };
@@ -83,6 +83,7 @@ private:
 	void batchDrawCallsNT();
 	void batchRow(int y, int height, int xOffset, int yOffset, int nametableX, int nametableY, int nameTable, bool patternSelect);
 	void batchMeshCropped(ComputedSprite s, Crop crop);
+	void processMesh(ComputedSprite * s, bool isOam);
 	int incrementStencilNumber();
 	int currentStencilNumber = STENCIL_START;
 	shared_ptr<GameData> gameData;

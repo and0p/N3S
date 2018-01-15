@@ -22,7 +22,7 @@ enum DeviceType { KEYBOARD, GAMEPAD };
 enum JoyButton { DPAD_UP, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, BTN_A, BTN_B, BTN_X, BTN_Y, BTN_L_BUMPER, BTN_R_BUMPER, BTN_SELECT, BTN_START, BTN_L_CLICK, BTN_R_CLICK, BUTTONCOUNT };
 enum JoyAxis { AX_L_STICK_RIGHT, AX_L_STICK_LEFT, AX_L_STICK_UP, AX_L_STICK_DOWN, AX_R_STICK_RIGHT, AX_R_STICK_LEFT, AX_R_STICK_UP, AX_R_STICK_DOWN, AX_L_TRIGGER, AX_R_TRIGGER, AXISCOUNT };
 
-const int inputCount = 238;
+const int inputCount = 241;
 
 struct InputMapping {
 	DeviceType type;
@@ -231,6 +231,9 @@ const InputMapping inputMap[inputCount] = {
 	{ KEYBOARD, 0, false, VK_VOLUME_UP, "VOLUME UP", true },
 	{ KEYBOARD, 0, false, VK_XBUTTON1, "MOUSE BACK", true },
 	{ KEYBOARD, 0, false, VK_XBUTTON2, "MOUSE FORWARD", true },
+	{ KEYBOARD, 0, false, VK_MENU, "ALT", false },
+	{ KEYBOARD, 0, false, VK_CONTROL, "CTRL", false },
+	{ KEYBOARD, 0, false, VK_SHIFT, "SHIFT", false },
 	{ GAMEPAD, 0, true, AX_L_STICK_UP, "JOY1_L_UP", true },
 	{ GAMEPAD, 0, true, AX_L_STICK_DOWN, "JOY1_L_DOWN", true },
 	{ GAMEPAD, 0, true, AX_L_STICK_LEFT, "JOY1_L_LEFT", true },
@@ -263,7 +266,7 @@ const InputMapping inputMap[inputCount] = {
 	{ GAMEPAD, 1, true, AX_R_STICK_DOWN, "JOY2_R_DOWN", true },
 	{ GAMEPAD, 1, true, AX_R_STICK_LEFT, "JOY2_R_LEFT", true },
 	{ GAMEPAD, 1, true, AX_R_STICK_RIGHT, "JOY2_R_RIGHT", true },
-	{ GAMEPAD, 1, false,BTN_L_CLICK, "JOY2_L_CLICK", true },
+	{ GAMEPAD, 1, false, BTN_L_CLICK, "JOY2_L_CLICK", true },
 	{ GAMEPAD, 1, false, BTN_R_CLICK, "JOY2_R_CLICK", true },
 	{ GAMEPAD, 1, true, AX_L_TRIGGER, "JOY2_L_TRIGGER", true },
 	{ GAMEPAD, 1, true, AX_R_TRIGGER, "JOY2_R_TRIGGER", true },
@@ -306,7 +309,7 @@ const FunctionMapping functionMap[FUNCTION_COUNT] = {
 	{ emu_prevstate, "PREVIOUS SAVESTATE", true, "F6", "" },
 	{ tog_game, "GAME MODE", true, "F1", "" },
 	{ tog_editor, "EDITOR MODE", true, "F2", "" },
-	{ editor_alt, "EDITOR ALT", false, "", "" },
+	{ editor_alt, "EDITOR ALT", false, "ALT", "" },
 	{ cam_left, "LOOK LEFT", true, "LEFT ARROW", "" },
 	{ cam_right, "LOOK RIGHT", true, "RIGHT ARROW", "" },
 	{ cam_up, "LOOK UP", true, "UP ARROW", "" },
@@ -318,9 +321,9 @@ const FunctionMapping functionMap[FUNCTION_COUNT] = {
 	{ cam_move_up, "MOVE CAMERA UP", true, "M", "" },
 	{ cam_move_down, "MOVE CAMERA DOWN", true, "V", "" },
 	{ cam_reset, "RESET CAMERA", true, "C", "JOY1_L_BUMPER" },
-	{ selection_add, "SELECTION ADD", false, "LEFT SHIFT", "RIGHT SHIFT" },
-	{ selection_remove, "SELECTION REMOVE", false, "LEFT ALT", "RIGHT ALT" },
-	{ selection_copy, "SELECTION COPY", false, "LEFT CTRL", "RIGHT CTRL" },
+	{ selection_add, "SELECTION ADD", false, "SHIFT", "" },
+	{ selection_remove, "SELECTION REMOVE", false, "ALT", "" },
+	{ selection_copy, "SELECTION COPY", false, "CTRL", "" },
 	{ selection_delete, "SELECTION DELETE", false, "DELETE", "" },
 	{ selection_deselect, "SELECTION DESELECT", false, "ESCAPE", "" },
 	{ editor_moveleft, "EDITOR MOVE LEFT", false, "LEFT ARROW", "" },
@@ -331,12 +334,12 @@ const FunctionMapping functionMap[FUNCTION_COUNT] = {
 	{ voxeleditor_moveout, "VEDITOR MOVE OUT", false, "", "" },
 	{ voxeleditor_setvoxel, "VEDITOR SET VOXEL", false, "", "" },
 	{ voxeleditor_deletevoxel, "VEDITOR DELETE VOXEL", false, "", "" },
-	{ voxeleditor_color0, "VEDITOR COLOR ZERO", false, "", "" },
-	{ voxeleditor_color1, "VEDITOR COLOR ONE", false, "", "" },
-	{ voxeleditor_color2, "VEDITOR COLOR TWO", false, "", "" },
-	{ voxeleditor_color3, "VEDITOR COLOR THREE", false, "", "" },
+	{ voxeleditor_color0, "VEDITOR COLOR ZERO", false, "4", "" },
+	{ voxeleditor_color1, "VEDITOR COLOR ONE", false, "1", "" },
+	{ voxeleditor_color2, "VEDITOR COLOR TWO", false, "2", "" },
+	{ voxeleditor_color3, "VEDITOR COLOR THREE", false, "3", "" },
 	{ voxeleditor_exit, "VEDITOR EXIT", false, "ESCAPE", "" },
-	{ voxeleditor_mirror, "VEDITOR SET MIRROR", false, "", "" },
+	{ voxeleditor_mirror, "VEDITOR SET MIRROR", false, "M", "" },
 	{ editor_copy, "EDITOR COPY", false, "C", "" },
 	{ editor_paste, "EDITOR PASTE", false, "V", "" },
 	{ palette_copy, "PALETTE COPY", false, "O", "" },

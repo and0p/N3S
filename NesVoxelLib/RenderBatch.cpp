@@ -176,6 +176,7 @@ void RenderBatch::computeSpritesNametable()
 			NameTableTile n = snapshot->background.getTile(x, y, 0);
 			if (snapshot->scrollSections[0].patternSelect)
 				n.tile += 256;
+			nametable.tiles[x][y].position = { x, y };
 			nametable.tiles[x][y].virtualSprite = vPatternTable->getSprite(n.tile);
 			nametable.tiles[x][y].palette = n.palette;
 		}
@@ -184,11 +185,10 @@ void RenderBatch::computeSpritesNametable()
 
 void RenderBatch::processMeshesOAM()
 {
-	// Process meshes (FOR NOW ASSUMING DEFAULT)
-	for(int i = 0; i < computedSprites.size(); i++)
+	// Process meshes
+	for(ComputedSprite &s : computedSprites)
 	{
-		if(computedSprites[i].virtualSprite != nullptr)
-			computedSprites[i].mesh = computedSprites[i].virtualSprite->defaultMesh;
+		processMesh(&s, true);
 	}
 }
 
@@ -196,12 +196,8 @@ void RenderBatch::processMeshesNT()
 {
 	// Process meshes (FOR NOW ASSUMING DEFAULT)
 	for (int x = 0; x < 64; x++)
-	{
 		for (int y = 0; y < 60; y++)
-		{
-			nametable.tiles[x][y].mesh = nametable.tiles[x][y].virtualSprite->defaultMesh;
-		}
-	}
+			processMesh(&nametable.tiles[x][y], false);
 }
 
 void RenderBatch::processStencilsOAM()
@@ -210,10 +206,10 @@ void RenderBatch::processStencilsOAM()
 	for (int i = 0; i < computedSprites.size(); i++)	// Assuming this maintains insertion order...
 	{
 		ComputedSprite s = computedSprites[i];
-		int newColorIndex = s.palette + s.mesh->outlineColor;
 		// See if this mesh exists and has any outlines
-		if (s.mesh->meshExists && s.mesh->outlineColor >= 0)
+		if (s.mesh != nullptr && s.mesh->meshExists && s.mesh->outlineColor >= 0)
 		{
+			int newColorIndex = s.palette + s.mesh->outlineColor;
 			// Create bool, assuming same group
 			bool sameGroup = true;
 			// Check all grouping restraints
@@ -555,6 +551,78 @@ void RenderBatch::batchMeshCropped(ComputedSprite s, Crop crop)
 	}
 }
 
+void RenderBatch::processMesh(ComputedSprite * s, bool isOam)
+{
+	if (s->virtualSprite != nullptr)
+	{
+		shared_ptr<VirtualSprite> vS = s->virtualSprite;
+		// See if there are any dynamic meshes, otherwise use default
+		if (vS->hasDynamicMesh)
+		{
+			bool dynamicMeshUsed = false;
+			int dynamicMeshCount = vS->dynamicMeshes.size();
+			for (int dynamicMeshNumber = 0; dynamicMeshNumber < dynamicMeshCount; dynamicMeshNumber++)
+			{
+				DynamicMesh * dM = &vS->dynamicMeshes[dynamicMeshNumber];
+				// Loop through each set of conditions
+				int conditionSetCount = dM->conditionSets.size();
+				for(int i = 0; i < conditionSetCount; i++)
+				{
+					ConditionSet * set = &dM->conditionSets[i];
+					bool conditionMet = false;
+					int conditionCount = set->conditions.size();
+					if (conditionCount > 0)
+					{
+						conditionMet = true;
+						bool validParameter = true;
+						// Check each condition
+						for(int c = 0; conditionMet && c < conditionCount; c++)
+						{
+							// Get whatever values it is asking for
+							int observedValues[4];
+							switch (set->conditions[c].parameter)
+							{
+							case palette_num:
+								observedValues[0] = s->palette;
+								break;
+							case screen_coordinates:
+								observedValues[0] = s->position.x;
+								observedValues[1] = s->position.y;
+								break;
+							case relative_nametable:
+								observedValues[0] = nametable.getTile(s->position.x + set->conditions[c].variables[0], s->position.y + set->conditions[c].variables[1]).virtualSprite->id;
+								break;
+							default:	// This should never happen
+								validParameter = false;
+							}
+							// Compare to the condition
+							if (validParameter)
+								conditionMet = set->conditions[c].compareAll(observedValues);
+							else
+								conditionMet = false;
+						}
+					}
+					// See if all conditions in this set were met
+					if (conditionMet)
+					{
+						s->mesh = dM->mesh;
+						dynamicMeshUsed = true;
+						break;	// Break the for loop, since we've met a condition
+					}
+				}
+			}
+			if (!dynamicMeshUsed)
+			{
+				s->mesh = s->virtualSprite->defaultMesh;
+			}
+		}
+		else
+		{
+			s->mesh = s->virtualSprite->defaultMesh;
+		}
+	}
+}
+
 int RenderBatch::incrementStencilNumber()
 {
 	currentStencilNumber++;
@@ -636,10 +704,6 @@ void RenderBatch::render(shared_ptr<Camera> camera)
 		Overlay::setColor(1.0f, 1.0f, 1.0f, 0.3f);
 		Overlay::drawRectangle(0, 0, N3s3d::viewport.Width, N3s3d::viewport.Height);
 	}
-}
-
-ComputedNametable::ComputedNametable()
-{
 }
 
 ComputedSprite ComputedNametable::getTile(int x, int y)

@@ -8,6 +8,9 @@ unordered_map<string, SharedMesh> GameData::sharedOutlineMeshes;
 StencilGrouping GameData::oamGrouping = continous_samecolor;
 StencilGrouping GameData::ntGrouping = adjacent_samecolor;
 
+string comparisonNames[comparison_size] = { "equal", "not_equal", "greater", "less", "greater_or_equal", "less_or_equal" };
+//string directionNames[direction_size] = { "direction_up", "direction_up_right", "direction_right", "direction_down_right", "direction_down", "direction_down_left", "direction_left", "direction_up_left" };
+
 RomInfo getRomInfo(char * data)
 {
 	RomInfo r;
@@ -484,6 +487,26 @@ GameData::GameData(char* data, json j)
 		sprites[sprite->id] = sprite;
 		spritesByChrData[sprite->chrData] = sprite;
 	}
+	// TEST TEST TEST!!!
+	DynamicMesh dM;
+	dM.mesh = meshes[507];
+	ConditionSet cS;
+	Condition c;
+	c.parameter = palette_num;
+	c.comparison = DynamicComparison::equal;
+	c.variables[0] = 0;
+	cS.conditions.push_back(c);
+	c.parameter = relative_nametable;
+	c.variables[0] = -1;
+	c.variables[1] = 0;
+	c.variables[2] = 359;
+	cS.conditions.push_back(c);
+	c.variables[0] = 1;
+	c.variables[2] = 360;
+	cS.conditions.push_back(c);
+	dM.conditionSets.push_back(cS);
+	sprites[292]->dynamicMeshes.push_back(dM);
+	sprites[292]->hasDynamicMesh = true;
 }
 
 shared_ptr<VirtualSprite> GameData::getSpriteByChrData(char * data)
@@ -836,6 +859,11 @@ json VirtualSprite::getJSON()
 	j["appearancesInRomChr"] = appearancesInRomChr;
 	j["description"] = description;
 	j["defaultMesh"] = defaultMesh->id;
+	for each (DynamicMesh d in dynamicMeshes)
+	{
+		j["dynamicMeshes"].push_back(d.getJSON());
+	}
+
 	return j;
 }
 
@@ -1013,4 +1041,50 @@ void SpriteMesh::setOutline(int o)
 		{
 			outlineColor = o;
 		}
+}
+
+bool Condition::compareAll(int result[4])
+{
+	switch (parameter)
+	{
+	case color_id:
+		return(compare(variables[1], result[0]));
+	case palette_num:
+		return(compare(variables[0], result[0]));
+	case relative_nametable:
+		return(compare(variables[2], result[0]));
+	default:
+		return false;
+	}
+}
+
+bool Condition::compare(int expected, int result)
+{
+	switch (comparison)
+	{
+	case DynamicComparison::equal:
+		if (expected == result) return true; else return false;
+		break;
+	case DynamicComparison::not_equal:
+		if (expected != result) return true; else return false;
+		break;
+	case DynamicComparison::less:
+		if (expected < result) return true; else return false;
+		break;
+	case DynamicComparison::less_or_equal:
+		if (expected <= result) return true; else return false;
+		break;
+	case DynamicComparison::greater:
+		if (expected > result) return true; else return false;
+		break;
+	case DynamicComparison::greater_or_equal:
+		if (expected > result) return true; else return false;
+		break;
+	}
+	return false;
+}
+
+json DynamicMesh::getJSON()
+{
+	json j;
 }

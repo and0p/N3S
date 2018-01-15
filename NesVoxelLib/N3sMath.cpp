@@ -56,12 +56,12 @@ Vector3D Vector3D::mirror(bool h, bool v)
 {
 	int newX, newY;
 	if (h)
-		newX = abs(x - 8);
+		newX = abs(x - 7);
 	else
 		newX = x;
 	if (v)
 	{
-		newY = abs(y - 8);
+		newY = abs(y - 7);
 	}
 	else
 		newY = y;

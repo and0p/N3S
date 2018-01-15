@@ -112,7 +112,8 @@ void Editor::update()
 		camera->AdjustPosition(-xPos, yPos, 0.0f);
 	}
 	// Update camera zoom
-	camera->adjustZoom((float)InputState::keyboardMouse->calculatedWheelDelta / 10);
+	if(activeScene->voxelEditor == nullptr)
+		camera->adjustZoom((float)InputState::keyboardMouse->calculatedWheelDelta / 10);
 	// Update camera math
 	camera->Render();
 
@@ -129,7 +130,7 @@ void Editor::render()
 	shared_ptr<Scene> scene = activeScene;
 
 	// Render overlays
-	scene->renderOverlays(false, false);
+	scene->renderOverlays(true, false);
 	// Render GUI
 	N3s3d::setDepthBufferState(false);
 	N3s3d::setGuiProjection();

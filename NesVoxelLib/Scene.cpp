@@ -339,15 +339,15 @@ void Scene::render(bool renderBackground, bool renderOAM)
 		displaySelection->render(&sprites, moveX, moveY);
 		N3s3d::setRasterFillState(true);
 		
-		// Render 3-axis mouse guide
-		if(showGuides)
-			Overlay::drawAxisLine(zIntersect);
 	}
 }
 
 void Scene::renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights)
 {
 	N3s3d::setShader(overlay);
+	// Render 3-axis mouse guide
+	if (showGuides)
+		Overlay::drawAxisLine(zIntersect);
 	N3s3d::setDepthBufferState(false);
 	N3s3d::setRasterFillState(false);
 	// Update camera math (was probably left at GUI projection after scene rendering)
@@ -404,11 +404,12 @@ void Scene::renderOverlays(bool drawBackgroundGrid, bool drawOamHighlights)
 		N3s3d::updateMatricesWithCamera(cameraRef);
 		N3s3d::setRasterFillState(false);
 		displaySelection->render(&sprites, moveX, moveY);
-		N3s3d::setRasterFillState(true);
 
 		// Render 3-axis mouse guide
 		if (showGuides)
 			Overlay::drawAxisLine(zIntersect);
+
+		N3s3d::setRasterFillState(true);
 	}
 }
 

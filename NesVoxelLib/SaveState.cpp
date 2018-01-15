@@ -116,13 +116,21 @@ namespace State {
 
 	bool load()
 	{
-		if (NesEmulator::loadState(states[selectedSlot]->_data, stateSize))
+		if (states[selectedSlot]->initialized)
 		{
-			N3sConsole::writeLine("LOADED SLOT " + to_string(selectedSlot));
+			if (NesEmulator::loadState(states[selectedSlot]->_data, stateSize))
+			{
+				N3sConsole::writeLine("LOADED SLOT " + to_string(selectedSlot));
+			}
+			else
+			{
+				N3sConsole::writeLine("LOAD FAILED!");
+				return false;
+			}
 		}
 		else
 		{
-			N3sConsole::writeLine("LOAD FAILED!");
+			N3sConsole::writeLine("NOTHING SAVED IN SLOT " + to_string(selectedSlot));
 			return false;
 		}
 	}
