@@ -29,7 +29,7 @@ enum DynamicParameter {
 	absolute_nametable,		// Absolute coordinates of NT
 	relative_nametable,		// Sprite ID of nametable that is X/Y  [x distance, y distance, id]
 	is_oam,					// Is OAM	[1 = true 0 = false]
-	
+	parameter_size
 };
 
 enum DynamicComparison { equal, not_equal, greater, less, greater_or_equal, less_or_equal, comparison_size };
@@ -88,7 +88,8 @@ private:
 class Condition {
 public:
 	Condition() {}
-	Condition(json j) {}
+	Condition(json j, int spriteID);
+	json getJSON();
 	bool compareAll(int result[4]);
 	bool compare(int expected, int result);
 	int variables[4];
@@ -101,10 +102,12 @@ struct ConditionSet {
 };
 
 class DynamicMesh {
+public:
 	DynamicMesh() {}
-	DynamicMesh(json j);
-	json getJSON();
+	DynamicMesh(json j, int spriteNumber, map<int, shared_ptr<SpriteMesh>> meshes);
+	json getJSON();;
 	vector<ConditionSet> conditionSets;
+	int specifiedMesh;
 	shared_ptr<SpriteMesh> mesh;
 };
 
@@ -163,6 +166,8 @@ public:
 	json getJSON();
 	static StencilGrouping oamGrouping;
 	static StencilGrouping ntGrouping;
+	static void initMaps();	// initialize sets / maps for loading
+	bool loadingError = false;
 private:
 	static unordered_map<string, SharedMesh> sharedPaletteMeshes;
 	static unordered_map<string, SharedMesh> sharedOutlineMeshes;

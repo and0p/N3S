@@ -204,7 +204,7 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam, HWND hwnd)
 			app.save();
 			break;
 		}
-		case ID_3D_SAVE40015:
+		case ID__SAVE_AS:
 		{
 			string path = getSavePathWithDialog();
 			if (path != "")

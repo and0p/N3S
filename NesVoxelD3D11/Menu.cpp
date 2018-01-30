@@ -5,6 +5,7 @@
 
 #define NES_SUBMENU_NO 1
 #define CONFIG_SUBMENU_NO 2
+#define THREED_SUBMENU_NO 3	// Can't start a definition with a number either cmon
 #define REGISTER_OFFSET 3	// Gotta include the divider!!!
 
 #define OVERRIDE_OPTION_COUNT 6
@@ -39,6 +40,8 @@ RegisterBinding registerMenuItems[REGISTER_OPTION_SIZE] = {
 
 unordered_map<UINT, ButtonBinding> buttonBindings;
 
+bool gameLoadedLastFrame = false;
+
 // Map all buttons to their registers and values
 void initMenu() {
 	for (int r = 0; r < REGISTER_OPTION_SIZE; r++)
@@ -58,6 +61,27 @@ void initMenu() {
 
 void updateMenu(HMENU hmenu, N3sApp * app)
 {
+	HMENU threedSubmenu = GetSubMenu(hmenu, THREED_SUBMENU_NO);
+	// See if NES is running / game loaded compared to last frame, and update menu items accordingly
+	bool gameLoaded = app->loaded;
+	if (gameLoaded != gameLoadedLastFrame)
+	{
+		// Update menu items
+		if (gameLoaded)
+		{
+			EnableMenuItem(threedSubmenu, ID_3D_LOAD, MF_ENABLED);
+			EnableMenuItem(threedSubmenu, ID_3D_SAVE, MF_ENABLED);
+			EnableMenuItem(threedSubmenu, ID__SAVE_AS, MF_ENABLED);
+		}
+		else
+		{
+			EnableMenuItem(threedSubmenu, ID_3D_LOAD, MF_DISABLED);
+			EnableMenuItem(threedSubmenu, ID_3D_SAVE, MF_DISABLED);
+			EnableMenuItem(threedSubmenu, ID__SAVE_AS, MF_DISABLED);
+		}
+	}
+	gameLoadedLastFrame = gameLoaded;	// Set for next frame
+	#pragma region Register updates
 	// Get the submenus
 	HMENU nesSubmenu = GetSubMenu(hmenu, NES_SUBMENU_NO);
 	HMENU configSubmenu = GetSubMenu(hmenu, CONFIG_SUBMENU_NO);
@@ -97,6 +121,7 @@ void updateMenu(HMENU hmenu, N3sApp * app)
 	EnableMenuItem(nesSubmenu, ID_NES_RESETREGISTEROVERRIDES, (N3sConfig::anyRegistersOveridden() ? MF_ENABLED : MF_DISABLED));
 	// Update mute button
 	CheckMenuItem(configSubmenu, MUTE_AUDIO_INDEX, (N3sConfig::options[mute_audio] ? MF_CHECKED : MF_UNCHECKED) | MF_BYPOSITION);
+	#pragma endregion
 }
 
 void updateNesRegistry(UINT button)

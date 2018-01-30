@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "GameData.hpp"
+#include "N3sConsole.hpp"
 
 char digits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 unordered_map<string, SharedMesh> GameData::sharedPaletteMeshes;
@@ -8,8 +9,10 @@ unordered_map<string, SharedMesh> GameData::sharedOutlineMeshes;
 StencilGrouping GameData::oamGrouping = continous_samecolor;
 StencilGrouping GameData::ntGrouping = adjacent_samecolor;
 
+unordered_map<string, DynamicComparison> comparisonNameMap;
+unordered_map<string, DynamicParameter> parameterNameMap;
 string comparisonNames[comparison_size] = { "equal", "not_equal", "greater", "less", "greater_or_equal", "less_or_equal" };
-//string directionNames[direction_size] = { "direction_up", "direction_up_right", "direction_right", "direction_down_right", "direction_down", "direction_down_left", "direction_left", "direction_up_left" };
+string parameterNames[parameter_size] = { "color_id", "all_color_ids", "palette_num", "screen_coordinates", "absolute_nametable", "relative_nametable", "is_oam" };
 
 RomInfo getRomInfo(char * data)
 {
@@ -487,26 +490,27 @@ GameData::GameData(char* data, json j)
 		sprites[sprite->id] = sprite;
 		spritesByChrData[sprite->chrData] = sprite;
 	}
-	// TEST TEST TEST!!!
-	DynamicMesh dM;
-	dM.mesh = meshes[507];
-	ConditionSet cS;
-	Condition c;
-	c.parameter = palette_num;
-	c.comparison = DynamicComparison::equal;
-	c.variables[0] = 0;
-	cS.conditions.push_back(c);
-	c.parameter = relative_nametable;
-	c.variables[0] = -1;
-	c.variables[1] = 0;
-	c.variables[2] = 359;
-	cS.conditions.push_back(c);
-	c.variables[0] = 1;
-	c.variables[2] = 360;
-	cS.conditions.push_back(c);
-	dM.conditionSets.push_back(cS);
-	sprites[292]->dynamicMeshes.push_back(dM);
-	sprites[292]->hasDynamicMesh = true;
+	int test = 0;
+	// TEST TEST TEST!!!f
+	//DynamicMesh dM;
+	//dM.mesh = meshes[507];
+	//ConditionSet cS;
+	//Condition c;
+	//c.parameter = palette_num;
+	//c.comparison = DynamicComparison::equal;
+	//c.variables[0] = 0;
+	//cS.conditions.push_back(c);
+	//c.parameter = relative_nametable;
+	//c.variables[0] = -1;
+	//c.variables[1] = 0;
+	//c.variables[2] = 359;
+	//cS.conditions.push_back(c);
+	//c.variables[0] = 1;
+	//c.variables[2] = 360;
+	//cS.conditions.push_back(c);
+	//dM.conditionSets.push_back(cS);
+	//sprites[292]->dynamicMeshes.push_back(dM);
+	//sprites[292]->hasDynamicMesh = true;
 }
 
 shared_ptr<VirtualSprite> GameData::getSpriteByChrData(char * data)
@@ -652,6 +656,14 @@ json GameData::getJSON()
 		j["sprites"].push_back(kvp.second->getJSON());
 	}
 	return j;
+}
+
+void GameData::initMaps()
+{
+	for (int i = 0; i < parameter_size; i++)
+		parameterNameMap[parameterNames[i]] = (DynamicParameter)i;
+	for (int i = 0; i < comparison_size; i++)
+		comparisonNameMap[comparisonNames[i]] = (DynamicComparison)i;
 }
 
 bool SpriteMesh::buildMesh()
@@ -826,6 +838,20 @@ VirtualSprite::VirtualSprite(json j, map<int, shared_ptr<SpriteMesh>> meshes)
 	// Snag default mesh from passed map
 	int mesh = j["defaultMesh"];
 	defaultMesh = meshes[mesh];
+	// Get dynamic meshes, if specified
+	if (j.count("dynamicMeshes") > 0)
+	{
+		for each(json dJ in j["dynamicMeshes"])
+		{
+			DynamicMesh dynamicMesh = DynamicMesh(dJ, id, meshes);
+			if (dynamicMesh.mesh != nullptr && dynamicMesh.specifiedMesh > 0)
+			{
+				dynamicMeshes.push_back(dynamicMesh);
+			}
+		}
+		if(!dynamicMeshes.empty())
+			hasDynamicMesh = true;
+	}
 	// Get other values
 	for each (int i in j["appearancesInRomChr"])
 	{
@@ -863,7 +889,6 @@ json VirtualSprite::getJSON()
 	{
 		j["dynamicMeshes"].push_back(d.getJSON());
 	}
-
 	return j;
 }
 
@@ -1043,6 +1068,70 @@ void SpriteMesh::setOutline(int o)
 		}
 }
 
+Condition::Condition(json j, int spriteID)
+{
+	// See if the parameter is valid, return bad condition if not
+	if (j.count("parameter") > 0 && parameterNameMap.find(j["parameter"]) != parameterNameMap.end())
+		parameter = parameterNameMap[j["parameter"]];
+	else
+	{
+		N3sConsole::writeLine(debug_editor, "Bad dynamic parameter in JSON, sprite ID: " + to_string(spriteID));
+		variables[0] = -9999;
+		return;
+	}
+	// See if the comparison is valid, return bad condition if not
+	if (j.count("comparison") > 0 && comparisonNameMap.find(j["comparison"]) != comparisonNameMap.end())
+		comparison = comparisonNameMap[j["comparison"]];
+	else
+	{
+		N3sConsole::writeLine(debug_editor, "Bad dynamic comparison in JSON, sprite ID: " + to_string(spriteID));
+		variables[0] = -9999;
+		return;
+	}
+	// Grab 
+	int variablesGiven = j["variables"].size();
+	if (variablesGiven > 0)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			if (i < variablesGiven)
+			{
+				if (j["variables"][i].is_number_integer())
+				{
+					variables[i] = j["variables"][i];
+				}
+				else
+				{
+					variables[0] = -9999;
+					N3sConsole::writeLine(debug_editor, "Variable #" + to_string(i) + " is bad in sprite #" + to_string(spriteID));
+				}
+			}
+			else
+			{
+				variables[i] = 0;
+			}
+		}
+	}
+	else
+	{
+		N3sConsole::writeLine(debug_editor, "Bad dynamic comparison in JSON, sprite ID: " + to_string(spriteID));
+		variables[0] = -9999;
+		return;
+	}
+}
+
+json Condition::getJSON()
+{
+	json j;
+	j["parameter"] = parameterNames[(int)parameter];
+	j["comparison"] = comparisonNames[(int)comparison];
+	for (int i = 0; i < 4; i++)
+	{
+		j["variables"][i] = variables[i];
+	}
+	return j;
+}
+
 bool Condition::compareAll(int result[4])
 {
 	switch (parameter)
@@ -1084,7 +1173,71 @@ bool Condition::compare(int expected, int result)
 	return false;
 }
 
+DynamicMesh::DynamicMesh(json j, int spriteNumber, map<int, shared_ptr<SpriteMesh>> meshes)
+{
+	// Make sure a mesh is specified, and that it exists
+	if (j.count("mesh") > 0 && j["mesh"].is_number_integer())
+	{
+		specifiedMesh = j["mesh"];
+		if (specifiedMesh >= 0 && specifiedMesh < meshes.size())
+		{
+			mesh = meshes[specifiedMesh];
+		}
+		else {
+			N3sConsole::writeLine(debug_editor, "One of the dynamic meshes for sprite #" + to_string(spriteNumber) + " points to a non-existant mesh.");
+			specifiedMesh = -1;
+			return;
+		}
+	}
+	else
+	{	
+		// Return error mesh 
+		N3sConsole::writeLine(debug_editor, "One of the dynamic meshes for sprite #" + to_string(spriteNumber) + " had no conditions.");
+		specifiedMesh = -1;
+		return;
+	}
+	// Check that conditionSets are specified
+	if (j.count("conditionSets") > 0)
+	{
+		int setCount = j["conditionSets"].size();
+		if (setCount > 0)
+		{
+			for (int i = 0; i < setCount; i++)
+			{
+				ConditionSet set;
+				int conditionCount = j["conditionSets"][i].size();
+				for (int c = 0; c < conditionCount; c++)
+				{
+					Condition condition = Condition(j["conditionSets"][i][c], 0);
+					// If the condition works, add it
+					if (condition.variables[0] != -9999)
+					{
+						set.conditions.push_back(condition);
+					}
+				}
+				conditionSets.push_back(set);
+			}
+		}
+	}
+	else
+	{
+		// Nothing to load
+		N3sConsole::writeLine(debug_editor, "One of the dynamic meshes specified had no conditions.");
+		specifiedMesh = -1;
+		return;
+	}
+}
+
 json DynamicMesh::getJSON()
 {
 	json j;
+	j["mesh"] = mesh->id;
+	for each(ConditionSet set in conditionSets)
+	{
+		json setJson;
+		for each(Condition c in set.conditions)
+			setJson.push_back(c.getJSON());
+		j["conditionSets"].push_back(setJson);
+	}
+	return j;
 }

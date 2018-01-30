@@ -36,6 +36,7 @@ N3sApp::N3sApp()
 	GetCurrentDirectory(MAX_PATH, buffer);
 	wstring ws(buffer);
 	applicationDirectory = string(ws.begin(), ws.end());
+	GameData::initMaps();
 	// Apply configs from file, if it exists
 	N3sConfig::init();
 	N3sConfig::load();

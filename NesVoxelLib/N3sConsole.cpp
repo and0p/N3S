@@ -8,6 +8,11 @@ void N3sConsole::init()
 	lines = make_unique<vector<ConsoleLine>>();
 }
 
+void N3sConsole::writeLine(DebugLevel debugLevel, string line)
+{
+	writeLine(line);
+}
+
 void N3sConsole::writeLine(string line)
 {
 	lines->push_back(ConsoleLine(line));
