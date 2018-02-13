@@ -38,6 +38,8 @@ public:
 	void recieveMouseInput(MouseButtons button, bool down);
 	void recieveMouseMovement(int x, int y);
 	void recieveMouseScroll(int delta);
+	void setAlertFunction(void(*f)(string message, string caption));
+	static void showAlert(string message, string caption);
 	InputConfig getInputConfig();
 	bool applyInputConfig();
 	XMVECTORF32 getBackgroundColor();

@@ -14,6 +14,18 @@ unordered_map<string, DynamicParameter> parameterNameMap;
 string comparisonNames[comparison_size] = { "equal", "not_equal", "greater", "less", "greater_or_equal", "less_or_equal" };
 string parameterNames[parameter_size] = { "color_id", "all_color_ids", "palette_num", "screen_coordinates", "absolute_nametable", "relative_nametable", "is_oam" };
 
+// Normals for different sides
+// left, right, top, bottom, front, back
+XMFLOAT4 sideNormals[6] =
+{
+	{ -1.0f, 0.0f, 0.0f, 0.0f },
+	{ 1.0f, 0.0f, 0.0f, 0.0f },
+	{ 0.0f, 1.0f, 0.0f, 0.0f },
+	{ 0.0f, -1.0f, 0.0f, 0.0f },
+	{ 0.0f, 0.0f, -1.0f, 0.0f },
+	{ 0.0f, 0.0f, 1.0f, 0.0f }
+};
+
 RomInfo getRomInfo(char * data)
 {
 	RomInfo r;
@@ -315,12 +327,16 @@ void buildSide(vector<ColorVertex> * vertices, int x, int y, int z, int color, V
 	v2.Color = color - 1;
 	v3.Color = color - 1;
 	v4.Color = color - 1;
-
 	// Add UV coordinates
 	v1.Uv = { 0.0f, 1.0f };
 	v2.Uv = { 1.0f, 1.0f };
 	v3.Uv = { 1.0f, 0.0f };
 	v4.Uv = { 0.0f, 0.0f };
+	// Set normal
+	v1.Normal = sideNormals[side];
+	v2.Normal = sideNormals[side];
+	v3.Normal = sideNormals[side];
+	v4.Normal = sideNormals[side];
 
 	// Switch based on side
 	switch (side) {

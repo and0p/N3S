@@ -13,6 +13,17 @@ using namespace DirectX;
 
 using Microsoft::WRL::ComPtr;
 
+HWND windowHwnd;
+
+void showDialogBox(string message, string caption)
+{
+	std::wstring stemp = std::wstring(message.begin(), message.end());
+	LPCWSTR sw = stemp.c_str();
+	std::wstring ctemp = std::wstring(caption.begin(), caption.end());
+	LPCWSTR cw = ctemp.c_str();
+	MessageBox(windowHwnd, sw, cw, MB_OK);
+}
+
 Game::Game()
 {
     m_deviceResources = std::make_unique<DX::DeviceResources>();
@@ -22,6 +33,8 @@ Game::Game()
 // Initialize the Direct3D resources required to run.
 void Game::Initialize(HWND window, int width, int height)
 {
+	windowHwnd = window;
+
     m_deviceResources->SetWindow(window, width, height);
 
     m_deviceResources->CreateDeviceResources();
@@ -37,6 +50,7 @@ void Game::Initialize(HWND window, int width, int height)
 
     app.assignD3DContext(c);
 	app.initDirectAudio(window);
+	app.setAlertFunction(*showDialogBox);
 	initMenu();
 	//app.load(' ');
 

@@ -300,7 +300,7 @@ static void core_load_game(const char *filename) {
 	}
 
 	if (!g_retro.retro_load_game(info))
-		exit(0);
+		throw exception();
 
 	g_retro.retro_get_system_av_info(&av);
 

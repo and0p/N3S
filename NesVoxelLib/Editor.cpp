@@ -26,6 +26,7 @@ shared_ptr<OrbitCamera> camera = make_shared<OrbitCamera>();
 
 void Editor::init()
 {
+	camera->SetPosition(0.0f, 0.0f, pixelSizeW * 16);
 	for (int i = 0; i < sceneCount; i++)
 	{
 		scenes[i] = make_shared<Scene>();
@@ -34,6 +35,7 @@ void Editor::init()
 
 void Editor::loadJSON(json j)
 {
+	camera->SetPosition(0.0f, 0.0f, pixelSizeW * 16);
 	// Load all scenes
 	for (int i = 0; i < 16; i++)
 	{

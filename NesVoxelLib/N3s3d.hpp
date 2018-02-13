@@ -23,6 +23,7 @@ enum PlaneAxis { x_axis, y_axis, z_axis };
 struct ColorVertex {
 	XMFLOAT4 Pos;
 	XMFLOAT2 Uv;
+	XMFLOAT4 Normal;
 	UINT32 Color;
 };
 

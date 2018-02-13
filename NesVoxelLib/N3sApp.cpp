@@ -20,6 +20,8 @@ shared_ptr<VirtualPatternTable> N3sApp::virtualPatternTable;
 string N3sApp::applicationDirectory;
 N3sRomConnection conn;
 
+void (*throwAlert)(string message, string caption) = NULL;
+
 N3sApp::N3sApp()
 {
 	this->hwnd = hwnd;
@@ -64,8 +66,17 @@ void N3sApp::load(string path)
 	conn = N3sRomConnection(path);
 	if (conn.isValid())
 	{
-		NesEmulator::Initialize(conn.getRomCStr());
-		info = NesEmulator::getGameInfo();
+		try
+		{
+			NesEmulator::Initialize(conn.getRomCStr());
+			info = NesEmulator::getGameInfo();
+		}
+		catch (...)
+		{
+			showAlert("Error loading NES rom.", "Error");
+			conn.n3sFileExists = false;
+			return;
+		}
 		if (conn.n3sFileExists)
 		{
 			loadGameData(conn.getN3sString(), true);
@@ -135,6 +146,7 @@ void N3sApp::reset()
 
 void N3sApp::update(bool runThisNesFrame)
 {
+	
 	// Update input
 	inputState->refreshInput();
 	// Update console
@@ -287,6 +299,16 @@ void N3sApp::recieveMouseMovement(int x, int y)
 void N3sApp::recieveMouseScroll(int delta)
 {
 	InputState::keyboardMouse->wheelDelta = delta;
+}
+
+void N3sApp::setAlertFunction(void (*f)(string message, string caption))
+{
+	throwAlert = f;
+}
+
+void N3sApp::showAlert(string message, string caption)
+{
+	throwAlert(message, caption);
 }
 
 InputConfig N3sApp::getInputConfig()

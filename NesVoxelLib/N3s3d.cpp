@@ -144,12 +144,13 @@ void N3s3d::initShaders() {
 
 	D3D11_INPUT_ELEMENT_DESC colorLayout[] =
 	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD",    0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR",    0, DXGI_FORMAT_R32_UINT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "POSITION",	0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD",   0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL",		0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR",		0, DXGI_FORMAT_R32_UINT, 0, 40, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
-	device1->CreateInputLayout(colorLayout, 3, &s_data[color], s_size, &shaders[color].inputLayout);
+	device1->CreateInputLayout(colorLayout, 4, &s_data[color], s_size, &shaders[color].inputLayout);
 
 	s_stream.open(L"color_pixel.cso", ifstream::in | ifstream::binary);
 	s_stream.seekg(0, ios::end);
