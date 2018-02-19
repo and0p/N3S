@@ -76,11 +76,11 @@ public:
 	void setZoom(float z);
 	ViewingAngle getViewingAngle();
 	MirrorDirection getMirrorDirection();
+	float zoom;
 private:
 	float targetX, targetY, targetZ;
 	float rotationX, rotationY;
 	XMMATRIX* m_viewMatrix;
 	bool overhead = false;
-	float zoom = 2.0f;
 	XMFLOAT3 cameraPosition;
 };

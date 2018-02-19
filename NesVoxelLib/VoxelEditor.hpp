@@ -20,6 +20,7 @@ public:
 	float workingX, workingY, workingZ;
 	Vector3D mouseHighlight;
 	bool mouseInEditor = false;
+	void changeSprite(SceneSprite *newSprite);
 private:
 	Crop crop;
 	void updateCamera();

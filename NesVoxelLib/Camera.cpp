@@ -112,6 +112,7 @@ OrbitCamera::OrbitCamera()
 	rotationX = 0.0f;
 	rotationY = 0.0f;
 	SetPosition(0, 0, 0);
+	zoom = 2.5f;
 }
 
 void OrbitCamera::SetPosition(float x, float y, float z)
@@ -170,6 +171,7 @@ void OrbitCamera::Render()
 	targetPos = { targetX, targetY, targetZ };
 	XMStoreFloat3(&cameraPosition, targetPos + v); // Store for picking later
 	*m_viewMatrix = XMMatrixLookAtLH(targetPos + v, targetPos, up);
+	
 }
 
 XMMATRIX OrbitCamera::GetViewMatrix()

@@ -666,24 +666,25 @@ void N3s3d::updateViewMatrices(XMFLOAT4X4 view, XMFLOAT4X4 projection)
 
 XMMATRIX N3s3d::getProjectionMatrix(const float near_plane, const float far_plane, const float fov_horiz, const float fov_vert)
 {
-	float    h, w, Q;
+	return 	XMMatrixPerspectiveFovLH(XMConvertToRadians(55.0f), (viewport.Width / viewport.Height) * 0.75f, 0.1f, 20.0f);
+	//float    h, w, Q;
 
-	w = (float)1 / tan(fov_horiz*0.5);  // 1/tan(x) == cot(x)
-	h = (float)1 / tan(fov_vert*0.5);   // 1/tan(x) == cot(x)
-	Q = far_plane / (far_plane - near_plane);
+	//w = (float)1 / tan(fov_horiz*0.5);  // 1/tan(x) == cot(x)
+	//h = (float)1 / tan(fov_vert*0.5);   // 1/tan(x) == cot(x)
+	//Q = far_plane / (far_plane - near_plane);
 
-	XMMATRIX ret;
-	ZeroMemory(&ret, sizeof(ret));
+	//XMMATRIX ret;
+	//ZeroMemory(&ret, sizeof(ret));
 
-	XMFLOAT4X4 tmp;
-	XMStoreFloat4x4(&tmp, ret);
-	
-	tmp(0, 0) = w;
-	tmp(1, 1) = h;
-	tmp(2, 2) = Q;
-	tmp(3, 2) = -Q*near_plane;
-	tmp(2, 3) = 1;
-	return XMLoadFloat4x4(&tmp);
+	//XMFLOAT4X4 tmp;
+	//XMStoreFloat4x4(&tmp, ret);
+	//
+	//tmp(0, 0) = w;
+	//tmp(1, 1) = h;
+	//tmp(2, 2) = Q;
+	//tmp(3, 2) = -Q*near_plane;
+	//tmp(2, 3) = 1;
+	//return XMLoadFloat4x4(&tmp);
 }
 
 void N3s3d::setIndexBuffer()
@@ -1015,7 +1016,7 @@ void N3s3d::initRasterDesc()
 	rasterDesc.DepthClipEnable = true;
 	rasterDesc.FillMode = D3D11_FILL_SOLID;
 	rasterDesc.FrontCounterClockwise = false;
-	rasterDesc.MultisampleEnable = false;
+	rasterDesc.MultisampleEnable = true;
 	rasterDesc.ScissorEnable = false;
 	rasterDesc.SlopeScaledDepthBias = 0.0f;
 
@@ -1027,7 +1028,7 @@ void N3s3d::initRasterDesc()
 	reverseRasterDesc.DepthClipEnable = true;
 	reverseRasterDesc.FillMode = D3D11_FILL_SOLID;
 	reverseRasterDesc.FrontCounterClockwise = false;
-	reverseRasterDesc.MultisampleEnable = false;
+	reverseRasterDesc.MultisampleEnable = true;
 	reverseRasterDesc.ScissorEnable = false;
 	reverseRasterDesc.SlopeScaledDepthBias = 0.0f;
 
@@ -1039,7 +1040,7 @@ void N3s3d::initRasterDesc()
 	wireRasterDesc.DepthClipEnable = true;
 	wireRasterDesc.FillMode = D3D11_FILL_WIREFRAME;
 	wireRasterDesc.FrontCounterClockwise = false;
-	wireRasterDesc.MultisampleEnable = false;
+	wireRasterDesc.MultisampleEnable = true;
 	wireRasterDesc.ScissorEnable = false;
 	wireRasterDesc.SlopeScaledDepthBias = 0.0f;
 

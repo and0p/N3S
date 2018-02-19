@@ -450,6 +450,15 @@ void VoxelEditor::changeLayers(int amount)
 
 }
 
+void VoxelEditor::changeSprite(SceneSprite * newSprite)
+{
+	editorX = -1.0f + newSprite->x * pixelSizeW;
+	editorY = 1.0f - (newSprite->y + 4) * pixelSizeW;
+	editorZ = 0.0f;
+	ss = newSprite;
+	mesh = newSprite->mesh;
+}
+
 void VoxelEditor::updateCamera()
 {
 	camera->SetPosition(

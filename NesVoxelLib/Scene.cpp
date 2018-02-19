@@ -5,6 +5,9 @@
 #include "N3sConsole.hpp"
 #include "N3sApp.hpp"
 
+const float MAX_DELTA = 38;
+const float SEEK_RADIUS_PIXELS = 30;
+
 XMVECTOR mouseVector;
 XMFLOAT3 zIntersect;
 
@@ -758,6 +761,97 @@ void Scene::pasteSelection(shared_ptr<vector<SceneSprite>> copiedSprites)
 		for (int i = newSpriteStart; i < sprites.size(); i++)
 		{
 			selection->selectedIndices.insert(i);
+		}
+	}
+}
+
+int Scene::findNearestSprite(int selected, SelectionDirection direction)
+{
+	if(selected >= sprites.size())
+		return -1;
+	else
+	{
+		// Get the selected sprites coordinates
+		SceneSprite s = sprites[selected];
+		int seekX = s.x;
+		int seekY = s.y;
+		bool seekingX;
+		// Get the window to seek within, along whichever axis
+		int seekMin, seekMax;
+		switch (direction)
+		{
+		case select_up:
+			seekMin = s.y - SEEK_RADIUS_PIXELS;
+			seekMax = s.y - 1;
+			seekingX = false;
+			break;
+		case select_down:
+			seekMin = s.y + 1;
+			seekMax = s.y + SEEK_RADIUS_PIXELS + 8;	// include height of sprite itself
+			seekingX = false;
+			break;
+		case select_left:
+			seekMin = s.x - SEEK_RADIUS_PIXELS;
+			seekMax = s.x - 1;
+			seekingX = true;
+			break;
+		case select_right:
+			seekMin = s.x + 1;
+			seekMax = s.x + SEEK_RADIUS_PIXELS + 8;	// include width of sprite itself
+			seekingX = true;
+			break;
+		}
+		// Create list of all sprites in that direction, within 20px of either edge of the sprite
+		unordered_set<int> closeSprites = unordered_set<int>();
+		for (int i = 0; i < sprites.size(); i++)
+		{
+			// Ignore current sprite
+			if (i != selected)
+			{
+				int seekResultValue;
+				// Grab value we're seeking based on
+				if (seekingX)
+					seekResultValue = sprites[i].x;
+				else
+					seekResultValue = sprites[i].y;
+				// See if it's within the range we're looking for
+				if (seekResultValue >= seekMin && seekResultValue <= seekMax)
+					closeSprites.insert(i);
+			}
+		}
+		// Loop through list to find most appropriate sprite to jump to
+		if (closeSprites.size() > 0)
+		{
+			float closestDelta = (float)MAX_DELTA;
+			int bestSelection = -1;
+			for each(int i in closeSprites)
+			{
+				// Get combined delta for x & y axis, multiply the off-axis delta for more predictable snapping
+				float combinedDelta;
+				if (seekingX)
+				{
+					float deltaX = abs(seekX - sprites[i].x);
+					float deltaY = abs((seekY - sprites[i].y) * 1.5f);
+					combinedDelta = deltaX + deltaY;
+				}
+				else
+				{
+					float deltaX = abs((seekX - sprites[i].x) * 1.5f);
+					float deltaY = abs(seekY - sprites[i].y);
+					combinedDelta = deltaX + deltaY;
+				}
+				if (combinedDelta < closestDelta)
+				{
+					bestSelection = i;
+					closestDelta = combinedDelta;
+				}
+			}
+			return bestSelection;
+		}
+		else
+		{
+			// Return a bad #, meaning don't bother reselecting
+			return -1;
 		}
 	}
 }

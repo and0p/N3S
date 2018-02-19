@@ -202,6 +202,7 @@ void Game::getAppMessage(UINT message, WPARAM wParam, LPARAM lParam, HWND hwnd)
 		case ID_FILE_UNLOAD:
 		{
 			app.unload();
+			break;
 		}
 		case ID_NES_RESET:
 		{

@@ -265,6 +265,9 @@ void DX::DeviceResources::CreateWindowSizeDependentResources()
     {
         // Otherwise, create a new one using the same adapter as the existing Direct3D device.
 
+		// Check if we can do MSAA
+
+
         // This sequence obtains the DXGI factory that was used to create the Direct3D device above.
         ComPtr<IDXGIDevice1> dxgiDevice;
         DX::ThrowIfFailed(m_d3dDevice.As(&dxgiDevice));
@@ -285,7 +288,7 @@ void DX::DeviceResources::CreateWindowSizeDependentResources()
             swapChainDesc.Format = m_backBufferFormat;
             swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
             swapChainDesc.BufferCount = m_backBufferCount;
-            swapChainDesc.SampleDesc.Count = 1;
+            swapChainDesc.SampleDesc.Count = 4;
             swapChainDesc.SampleDesc.Quality = 0;
             swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
             swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
@@ -312,7 +315,7 @@ void DX::DeviceResources::CreateWindowSizeDependentResources()
             swapChainDesc.BufferDesc.Width = backBufferWidth;
             swapChainDesc.BufferDesc.Height = backBufferHeight;
             swapChainDesc.BufferDesc.Format = m_backBufferFormat;
-            swapChainDesc.SampleDesc.Count = 1;
+            swapChainDesc.SampleDesc.Count = 4;
             swapChainDesc.SampleDesc.Quality = 0;
             swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
             swapChainDesc.BufferCount = m_backBufferCount;
@@ -334,7 +337,6 @@ void DX::DeviceResources::CreateWindowSizeDependentResources()
     // Create a render target view of the swap chain back buffer.
     ComPtr<ID3D11Texture2D> backBuffer;
     DX::ThrowIfFailed(m_swapChain->GetBuffer(0, IID_PPV_ARGS(backBuffer.GetAddressOf())));
-
     DX::ThrowIfFailed(m_d3dDevice->CreateRenderTargetView(
         backBuffer.Get(),
         nullptr,
@@ -352,7 +354,8 @@ void DX::DeviceResources::CreateWindowSizeDependentResources()
             1, // Use a single mipmap level.
             D3D11_BIND_DEPTH_STENCIL
             );
-
+		depthStencilDesc.SampleDesc.Count = 4;
+		depthStencilDesc.SampleDesc.Quality = 0;
         ComPtr<ID3D11Texture2D> depthStencil;
         DX::ThrowIfFailed(m_d3dDevice->CreateTexture2D(
             &depthStencilDesc,
@@ -360,8 +363,8 @@ void DX::DeviceResources::CreateWindowSizeDependentResources()
             depthStencil.GetAddressOf()
             ));
 
-        CD3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc(D3D11_DSV_DIMENSION_TEXTURE2D);
-        DX::ThrowIfFailed(m_d3dDevice->CreateDepthStencilView(
+        CD3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc(D3D11_DSV_DIMENSION_TEXTURE2DMS); // was: D3D11_DSV_DIMENSION_TEXTURE2D now trying D3D11_DSV_DIMENSION_TEXTURE2DMS
+		DX::ThrowIfFailed(m_d3dDevice->CreateDepthStencilView(
             depthStencil.Get(),
             &depthStencilViewDesc,
             m_d3dDepthStencilView.ReleaseAndGetAddressOf()

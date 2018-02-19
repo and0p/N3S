@@ -42,18 +42,37 @@ RenderBatch::RenderBatch(shared_ptr<GameData> gameData, shared_ptr<PpuSnapshot> 
 
 RenderBatch::RenderBatch(shared_ptr<GameData> gameData, shared_ptr<Scene> scene)
 {
+	// See if scene has voxel editor open
+	bool voxelEditing = (scene->voxelEditor == nullptr) ? false : true;
 	// Grab the palette from the scene
 	palette = *scene->getSelectedPalette();
 	// Grab all sprites in the scene, as computed sprites with meshes pre-determined
 	for (int i = 0; i < scene->sprites.size(); i++)
 	{
-		// Get the sprite
-		ComputedSprite cs = ComputedSprite(scene->sprites[i]);
-		computedSprites.push_back(cs);
+		if (!voxelEditing || i != scene->spriteBeingEdited)
+		{
+			// Get the sprite
+			ComputedSprite cs = ComputedSprite(scene->sprites[i]);
+			computedSprites.push_back(cs);
+		}
 	}
 	// Set highlights
 	for each(int i in scene->displaySelection->selectedIndices)
-		computedSprites[i].highlight = true;
+	{
+		if (voxelEditing)
+		{
+			if (i != scene->spriteBeingEdited)
+				if(i < scene->spriteBeingEdited)
+					computedSprites[i].highlight = true;
+				else if (i > scene->spriteBeingEdited)
+					computedSprites[i - 1].highlight = true;
+		}
+		else
+		{
+			computedSprites[i].highlight = true;
+		}
+	}
+
 	// Create draw calls
 	for each (ComputedSprite s in computedSprites)
 	{

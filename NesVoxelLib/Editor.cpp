@@ -68,11 +68,29 @@ void Editor::update()
 		activeScene = scenes[0];
 	mouseAvailable = sceneSelector.update(mouseAvailable);
 	mouseAvailable = paletteSelector.update(mouseAvailable, activeScene, activeScene->voxelEditor);
-	shared_ptr<VoxelEditor> editor = activeScene->voxelEditor;
-	if (editor != nullptr)
+	shared_ptr<VoxelEditor> voxelEditor = activeScene->voxelEditor;
+	if (voxelEditor != nullptr)
 	{
-		mouseAvailable = MeshInfo::update(mouseAvailable, editor->mesh);
-		mouseAvailable = VoxelEditorInfo::update(mouseAvailable, editor);
+		mouseAvailable = MeshInfo::update(mouseAvailable, voxelEditor->mesh);
+		mouseAvailable = VoxelEditorInfo::update(mouseAvailable, voxelEditor);
+		// See if user wants to select adjacent sprite
+		int selectedSprite = -1;
+		if (InputState::functions[voxeleditor_select_up]->activatedThisFrame)
+			selectedSprite = activeScene->findNearestSprite(activeScene->spriteBeingEdited, select_up);
+		else if (InputState::functions[voxeleditor_select_down]->activatedThisFrame)
+			selectedSprite = activeScene->findNearestSprite(activeScene->spriteBeingEdited, select_down);
+		else if (InputState::functions[voxeleditor_select_left]->activatedThisFrame)
+			selectedSprite = activeScene->findNearestSprite(activeScene->spriteBeingEdited, select_left);
+		else if (InputState::functions[voxeleditor_select_right]->activatedThisFrame)
+			selectedSprite = activeScene->findNearestSprite(activeScene->spriteBeingEdited, select_right);
+		// If so, and sprite found, change sprite in voxel editor + selection in scene
+		if (selectedSprite >= 0)
+		{
+			voxelEditor->changeSprite(&activeScene->sprites[selectedSprite]);
+			activeScene->selection->clear();
+			activeScene->selection->selectedIndices.insert(selectedSprite);
+			activeScene->spriteBeingEdited = selectedSprite;
+		}
 	}
 	else
 	{
@@ -88,12 +106,29 @@ void Editor::update()
 			copiedPalette = *activeScene->getSelectedPalette();
 		if (InputState::functions[palette_paste]->activatedThisFrame)
 			activeScene->palettes[activeScene->selectedPalette] = copiedPalette;
+		if (activeScene->selection->selectedIndices.size() > 0 &&
+		   (InputState::functions[editor_flip_sprite_h]->activatedThisFrame || 
+			InputState::functions[editor_flip_sprite_v]->activatedThisFrame))
+		{
+			bool hFlip = InputState::functions[editor_flip_sprite_h]->activatedThisFrame;
+			bool vFlip = InputState::functions[editor_flip_sprite_v]->activatedThisFrame;
+			for each(int i in activeScene->selection->selectedIndices)
+			{
+				activeScene->sprites[i].flip(hFlip, vFlip);
+			}
+		}
+		// Move camera
+		float camXMove = (InputState::functions[cam_move_right]->value * 0.01f) - (InputState::functions[cam_move_left]->value * 0.01f);
+		float camYMove = (InputState::functions[cam_move_up]->value * 0.01f) - (InputState::functions[cam_move_down]->value * 0.01f);
+		camXMove *= camera->zoom;
+		camYMove *= camera->zoom;
+		camera->AdjustPosition(camXMove, camYMove, 0.0f);
 	}
 
 	// See if close button was pressed, when voxel editing
-	if (editor != nullptr && VoxelEditorInfo::e == nullptr)
+	if (voxelEditor != nullptr && VoxelEditorInfo::e == nullptr)
 	{
-		editor = nullptr;
+		voxelEditor = nullptr;
 		activeScene->voxelEditor = nullptr;
 		MeshInfo::clear();
 		VoxelEditorInfo::clear();
@@ -207,9 +242,11 @@ void Editor::createCHRSheet(int pageNumber)
 		p.colorIndices[22] = 26;
 		p.colorIndices[23] = 56;
 		sheetScene->palettes[0] = p;
+		chrSheetsCreated = true;
 	}
 	sheetScene->sprites.clear();
 	sheetScene->selection->clear();
+	sheetScene->highlight.clear();
 	// Add 256 sprites to scene
 	int startingSprite = pageNumber * 256;
 	selectedScene = -1;
@@ -220,7 +257,9 @@ void Editor::createCHRSheet(int pageNumber)
 			SceneSprite s;
 			s.x = x * 16;
 			s.y = y * 16;
-			s.palette = 0;
+			s.mirrorH = false;
+			s.mirrorV = false;
+			s.palette = 0;	// anything more there
 			// Make sure mesh exists
 			int index = startingSprite + getArrayIndexFromXY(x, y, 16);
 			if (N3sApp::gameData->meshes.size() > index)
@@ -232,7 +271,6 @@ void Editor::createCHRSheet(int pageNumber)
 		}
 	}
 	activeScene = sheetScene;
-	chrSheetsCreated = true;
 }
 
 shared_ptr<Scene> Editor::getSelectedScene()

@@ -182,7 +182,10 @@ bool getBitLeftSide(char byte, int position);
 string getPaddedStringFromInt(int i, int length);
 int charToInt(char c);
 
-struct SceneSprite {
+class SceneSprite {
+public:
+	SceneSprite() {}
+	void flip(bool h, bool v);
 	shared_ptr<SpriteMesh> mesh;
 	int palette;
 	int x;

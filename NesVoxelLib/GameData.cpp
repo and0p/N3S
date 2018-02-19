@@ -1257,3 +1257,11 @@ json DynamicMesh::getJSON()
 	}
 	return j;
 }
+
+void SceneSprite::flip(bool h, bool v)
+{
+	if (h)
+		mirrorH = mirrorH ? false : true;
+	if (v)
+		mirrorV = mirrorV ? false : true;
+}
