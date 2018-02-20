@@ -169,6 +169,7 @@ void N3sApp::update(bool runThisNesFrame)
 	// See if a game is loaded
 	if (loaded)
 	{
+		bool advancingFrameManually = inputState->functions[emu_advance_frame]->activatedThisFrame;
 		// See if we're in gameplay or editor mode and update respective view
 		switch (mode)
 		{
@@ -185,7 +186,7 @@ void N3sApp::update(bool runThisNesFrame)
 				if (State::load())
 					loadedStateThisFrame = true;
 			}
-			if ((!runThisNesFrame && !emulationPaused) || loadedStateThisFrame)
+			if ((!runThisNesFrame && (!emulationPaused || (emulationPaused && advancingFrameManually))) || loadedStateThisFrame)
 			{
 				if(!loadedStateThisFrame)
 					NesEmulator::ExecuteFrame();

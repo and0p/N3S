@@ -5,7 +5,7 @@ using namespace std;
 enum N3SFunction {
 	nes_p1_a, nes_p1_b, nes_p1_up, nes_p1_left, nes_p1_down, nes_p1_right, nes_p1_start, nes_p1_select,
 	nes_p2_a, nes_p2_b, nes_p2_up, nes_p2_left, nes_p2_down, nes_p2_right, nes_p2_start, nes_p2_select,
-	emu_pause, emu_reset, emu_savestate, emu_loadstate, emu_nextstate, emu_prevstate,
+	emu_pause, emu_reset, emu_savestate, emu_loadstate, emu_nextstate, emu_prevstate, emu_advance_frame,
 	tog_game, tog_editor, editor_alt,
 	cam_left, cam_right, cam_up, cam_down, cam_pan_in, cam_pan_out,
 	cam_move_left, cam_move_right, cam_move_up, cam_move_down, cam_reset,
@@ -309,6 +309,7 @@ const FunctionMapping functionMap[FUNCTION_COUNT] = {
 	{ emu_loadstate, "EMU LOAD", true, "F9", "" },
 	{ emu_nextstate, "NEXT SAVESTATE", true, "F7", "" },
 	{ emu_prevstate, "PREVIOUS SAVESTATE", true, "F6", "" },
+	{ emu_advance_frame, "ADVANCE FRAME", true, "P", "" },
 	{ tog_game, "GAME MODE", true, "F1", "" },
 	{ tog_editor, "EDITOR MODE", true, "F2", "" },
 	{ editor_alt, "EDITOR ALT", false, "ALT", "" },
